@@ -3,12 +3,15 @@
 Software Engineering Group Project for EBU6304 – Teaching Assistant Recruitment System
 
 ## Group Members
-- name:Haocheng Gao  github_id:francispaul2004 bupt_id:2023213304 QM_id:231220873 email:jp2023213304@qmul.ac.uk
-- name:Xinshuang Liu github_id:Jhon0213        bupt_id:2023213305 QM_id:213221283 email:jp2023213305@qmul.ac.uk
-- name:Chuan Yu      github_id:chuan123123456  bupt_id:2023213272 QM_id:231221700 email:jp2023213272@qmul.ac.uk
-- name:Ziqi Gao      github_id:Max             bupt_id:2023213316 QM_id:231221250 email:jp2023213316@qmul.ac.uk
-- name:Xianggan Xu   github_id:Gnaixux         bupt_id:2023213306 QM_id:231221412 email:jp2023213306@qmul.ac.uk
-- name:Zhibo Zhang   github_id:iapetuszzb      bupt_id:2023213278 QM_id:231221777 email:jp2023213278@qmul.ac.uk
+
+| Name | GitHub ID | BUPT ID | QM ID | Email |
+|---|---|---|---|---|
+| Haocheng Gao | francispaul2004 | 2023213304 | 231220873 | jp2023213304@qmul.ac.uk |
+| Xinshuang Liu | Jhon0213 | 2023213305 | 213221283 | jp2023213305@qmul.ac.uk |
+| Chuan Yu | chuan123123456 | 2023213272 | 231221700 | jp2023213272@qmul.ac.uk |
+| Ziqi Gao | Max | 2023213316 | 231221250 | jp2023213316@qmul.ac.uk |
+| Xianggan Xu | Gnaixux | 2023213306 | 231221412 | jp2023213306@qmul.ac.uk |
+| Zhibo Zhang | iapetuszzb | 2023213278 | 231221777 | jp2023213278@qmul.ac.uk |
 
 ## Project Overview
 
