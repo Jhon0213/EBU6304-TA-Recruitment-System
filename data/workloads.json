@@ -1,0 +1,26 @@
+[ {
+  "applicantId" : "A001",
+  "acceptedJobIds" : [ "J101" ],
+  "currentWeeklyHours" : 4,
+  "riskLevel" : "LOW"
+}, {
+  "applicantId" : "A002",
+  "acceptedJobIds" : [ "J104" ],
+  "currentWeeklyHours" : 2,
+  "riskLevel" : "LOW"
+}, {
+  "applicantId" : "A003",
+  "acceptedJobIds" : [ ],
+  "currentWeeklyHours" : 2,
+  "riskLevel" : "LOW"
+}, {
+  "applicantId" : "A004",
+  "acceptedJobIds" : [ "J102" ],
+  "currentWeeklyHours" : 3,
+  "riskLevel" : "LOW"
+}, {
+  "applicantId" : "A005",
+  "acceptedJobIds" : [ ],
+  "currentWeeklyHours" : 0,
+  "riskLevel" : "LOW"
+} ]
