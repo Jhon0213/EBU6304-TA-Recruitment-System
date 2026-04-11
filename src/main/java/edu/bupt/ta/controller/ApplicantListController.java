@@ -37,11 +37,26 @@ public class ApplicantListController {
     private final ComboBox<Job> jobSelector = new ComboBox<>();
     private final ListView<Row> listView = new ListView<>();
 
+    private final Button allTab = new Button();
+    private final Button underReviewTab = new Button();
+    private final Button rejectedTab = new Button();
+    private final Button acceptedTab = new Button();
+
+    private final List<Row> allRows = new ArrayList<>();
+    private StatusFilter statusFilter = StatusFilter.ALL;
+
     private final Job allJobsOption = buildAllJobsOption();
 
     private final Label detailSkills = new Label("-");
     private final Label detailAcademic = new Label("-");
     private Row selectedRow;
+
+    private enum StatusFilter {
+        ALL,
+        UNDER_REVIEW,
+        REJECTED,
+        ACCEPTED
+    }
 
     public ApplicantListController(ServiceRegistry services, User user) {
         this(services, user, null);
@@ -102,7 +117,7 @@ public class ApplicantListController {
         Button export = new Button("Export Report");
         export.getStyleClass().add("secondary-button");
 
-        HBox row = new HBox(10, title, jobSelector, spacer, filter, export);
+        HBox row = new HBox(10, title, jobSelector, filter, export, spacer);
         row.setAlignment(Pos.CENTER_LEFT);
         return row;
     }
@@ -111,18 +126,22 @@ public class ApplicantListController {
         VBox left = new VBox(10);
         left.getStyleClass().add("panel-card");
         left.setPadding(new Insets(12));
+        left.setMaxHeight(Double.MAX_VALUE);
+
+        HBox tabs = buildStatusTabs();
 
         listView.setCellFactory(param -> new ApplicantRowCell());
         listView.setPrefHeight(700);
         listView.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> updateDetail(newV));
         VBox.setVgrow(listView, Priority.ALWAYS);
 
-        left.getChildren().add(listView);
+        left.getChildren().addAll(tabs, listView);
 
         VBox right = new VBox(12);
         right.getStyleClass().add("panel-card");
         right.setPadding(new Insets(16));
         right.setPrefWidth(360);
+        right.setMaxHeight(Double.MAX_VALUE);
 
         Label title = new Label("Applicant Details");
         title.setStyle("-fx-font-size: 34px; -fx-font-weight: 800; -fx-text-fill: #0f172a;");
@@ -146,17 +165,69 @@ public class ApplicantListController {
         );
 
         HBox body = new HBox(16, left, right);
+        body.setAlignment(Pos.TOP_LEFT);
         HBox.setHgrow(left, Priority.ALWAYS);
         return body;
     }
 
+    private HBox buildStatusTabs() {
+        allTab.getStyleClass().addAll("applicant-status-tab", "applicant-status-tab-active");
+        underReviewTab.getStyleClass().add("applicant-status-tab");
+        rejectedTab.getStyleClass().add("applicant-status-tab");
+        acceptedTab.getStyleClass().add("applicant-status-tab");
+
+        allTab.setOnAction(e -> setStatusFilter(StatusFilter.ALL));
+        underReviewTab.setOnAction(e -> setStatusFilter(StatusFilter.UNDER_REVIEW));
+        rejectedTab.setOnAction(e -> setStatusFilter(StatusFilter.REJECTED));
+        acceptedTab.setOnAction(e -> setStatusFilter(StatusFilter.ACCEPTED));
+
+        HBox tabs = new HBox(10, allTab, underReviewTab, rejectedTab, acceptedTab);
+        tabs.getStyleClass().add("applicant-status-tabs");
+        tabs.setAlignment(Pos.CENTER_LEFT);
+        updateTabCounts();
+        return tabs;
+    }
+
+    private void setStatusFilter(StatusFilter filter) {
+        this.statusFilter = filter == null ? StatusFilter.ALL : filter;
+        updateTabStyles();
+        applyStatusFilter();
+    }
+
+    private void updateTabStyles() {
+        setActiveTab(allTab, statusFilter == StatusFilter.ALL);
+        setActiveTab(underReviewTab, statusFilter == StatusFilter.UNDER_REVIEW);
+        setActiveTab(rejectedTab, statusFilter == StatusFilter.REJECTED);
+        setActiveTab(acceptedTab, statusFilter == StatusFilter.ACCEPTED);
+    }
+
+    private void setActiveTab(Button button, boolean active) {
+        if (button == null) {
+            return;
+        }
+        if (active) {
+            if (!button.getStyleClass().contains("applicant-status-tab-active")) {
+                button.getStyleClass().add("applicant-status-tab-active");
+            }
+        } else {
+            button.getStyleClass().remove("applicant-status-tab-active");
+        }
+    }
+
     private VBox detailField(String title, Label value) {
-        VBox box = new VBox(4);
+        VBox box = new VBox(8);
+
         Label label = new Label(title);
-        label.setStyle("-fx-font-size: 11px; -fx-font-weight: 700; -fx-text-fill: #94a3b8;");
+        label.setStyle("-fx-font-size: 13px; -fx-font-weight: 800; -fx-text-fill: #94a3b8; -fx-letter-spacing: 0.8px;");
+
         value.setWrapText(true);
         value.setStyle("-fx-font-size: 13px; -fx-text-fill: #334155;");
-        box.getChildren().addAll(label, value);
+
+        VBox content = new VBox(value);
+        content.getStyleClass().add("soft-card");
+        content.setPadding(new Insets(12));
+
+        box.getChildren().addAll(label, content);
         return box;
     }
 
@@ -189,6 +260,8 @@ public class ApplicantListController {
         Job selectedJob = jobSelector.getValue();
         if (selectedJob == null) {
             listView.setItems(FXCollections.observableArrayList());
+            allRows.clear();
+            updateTabCounts();
             updateDetail(null);
             return;
         }
@@ -215,12 +288,88 @@ public class ApplicantListController {
             rows.add(new Row(app.getApplicationId(), applicantName, app.getStatus().name(), app.getMatchScore(), jobTitle));
         }
 
-        listView.setItems(FXCollections.observableArrayList(rows));
-        if (!rows.isEmpty()) {
+        allRows.clear();
+        allRows.addAll(rows);
+        updateTabCounts();
+        applyStatusFilter();
+    }
+
+    private void updateTabCounts() {
+        int allCount = allRows.size();
+        int underReviewCount = 0;
+        int rejectedCount = 0;
+        int acceptedCount = 0;
+
+        for (Row row : allRows) {
+            if (row == null || row.status == null) {
+                continue;
+            }
+            String status = row.status;
+            if ("SUBMITTED".equals(status) || "UNDER_REVIEW".equals(status)) {
+                underReviewCount++;
+            }
+            if ("REJECTED".equals(status)) {
+                rejectedCount++;
+            }
+            if ("ACCEPTED".equals(status)) {
+                acceptedCount++;
+            }
+        }
+
+        allTab.setText("All (" + allCount + ")");
+        underReviewTab.setText("Under Review (" + underReviewCount + ")");
+        rejectedTab.setText("Rejected (" + rejectedCount + ")");
+        acceptedTab.setText("Accepted (" + acceptedCount + ")");
+    }
+
+    private void applyStatusFilter() {
+        String selectedId = selectedRow == null ? null : selectedRow.applicationId;
+
+        List<Row> filtered = new ArrayList<>();
+        for (Row row : allRows) {
+            if (row == null) {
+                continue;
+            }
+            if (matchesStatusFilter(row)) {
+                filtered.add(row);
+            }
+        }
+
+        listView.setItems(FXCollections.observableArrayList(filtered));
+
+        if (selectedId != null) {
+            for (Row row : filtered) {
+                if (selectedId.equals(row.applicationId)) {
+                    listView.getSelectionModel().select(row);
+                    return;
+                }
+            }
+        }
+
+        if (!filtered.isEmpty()) {
             listView.getSelectionModel().selectFirst();
         } else {
             updateDetail(null);
         }
+    }
+
+    private boolean matchesStatusFilter(Row row) {
+        if (row == null) {
+            return false;
+        }
+        if (statusFilter == StatusFilter.ALL) {
+            return true;
+        }
+        String status = row.status;
+        if (status == null) {
+            return false;
+        }
+        return switch (statusFilter) {
+            case UNDER_REVIEW -> "SUBMITTED".equals(status) || "UNDER_REVIEW".equals(status);
+            case REJECTED -> "REJECTED".equals(status);
+            case ACCEPTED -> "ACCEPTED".equals(status);
+            case ALL -> true;
+        };
     }
 
     private void updateDetail(Row row) {
@@ -282,19 +431,31 @@ public class ApplicantListController {
             HBox.setHgrow(spacer, Priority.ALWAYS);
 
             Label status = new Label(item.status.replace('_', ' '));
-            status.setStyle("-fx-font-size: 10px; -fx-font-weight: 700; -fx-text-fill: #1d4ed8; -fx-background-color: #eff6ff; -fx-background-radius: 999; -fx-padding: 2 8 2 8;");
+            status.getStyleClass().add(statusPillClass(item.status));
 
             top.getChildren().addAll(name, spacer, status);
 
-                String metaText = (item.jobTitle == null || item.jobTitle.isBlank())
+            String metaText = (item.jobTitle == null || item.jobTitle.isBlank())
                     ? ("Application " + item.applicationId + "   |   Score " + item.matchScore + "%")
                     : ("Job " + item.jobTitle + "   |   Application " + item.applicationId + "   |   Score " + item.matchScore + "%");
 
-                Label meta = new Label(metaText);
+            Label meta = new Label(metaText);
             meta.setStyle("-fx-font-size: 12px; -fx-text-fill: #64748b;");
 
             row.getChildren().addAll(top, meta);
             setGraphic(row);
+        }
+
+        private static String statusPillClass(String status) {
+            if (status == null) {
+                return "status-pill-draft";
+            }
+            return switch (status) {
+                case "ACCEPTED" -> "status-pill-active";
+                case "REJECTED" -> "status-pill-danger";
+                case "SUBMITTED", "UNDER_REVIEW" -> "status-pill-draft";
+                default -> "status-pill-draft";
+            };
         }
     }
 

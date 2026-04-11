@@ -681,6 +681,35 @@
     -fx-padding: 4 10 4 10;
 }
 
+/* Applicant List */
+.applicant-status-tabs {
+    -fx-padding: 0 4 8 4;
+    -fx-border-color: transparent transparent -ta-border transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.button.applicant-status-tab {
+    -fx-background-color: transparent;
+    -fx-text-fill: -ta-muted;
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+    -fx-padding: 6 10 8 10;
+    -fx-background-radius: 8;
+}
+
+.button.applicant-status-tab:hover {
+    -fx-background-color: -ta-bg;
+}
+
+.button.applicant-status-tab-active {
+    -fx-text-fill: -ta-strong;
+    -fx-font-weight: 800;
+    -fx-border-color: transparent transparent -ta-navy transparent;
+    -fx-border-width: 0 0 3 0;
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+}
+
 .detail-scroll {
     -fx-background-color: white;
     -fx-border-color: #e2e8f0;
