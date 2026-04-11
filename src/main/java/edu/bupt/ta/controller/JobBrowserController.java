@@ -44,11 +44,12 @@ public class JobBrowserController {
     private final ComboBox<String> statusFilter = new ComboBox<>();
     private final ComboBox<String> jobTypeFilter = new ComboBox<>();
     private final ListView<JobWithApplication> jobList = new ListView<>();
-    private final JobDetailController jobDetailController = new JobDetailController();
+    private final JobDetailController jobDetailController;
 
     public JobBrowserController(ServiceRegistry services, User user) {
         this.services = services;
         this.user = user;
+        this.jobDetailController = new JobDetailController(services);
         initialize();
         loadJobs();
     }
