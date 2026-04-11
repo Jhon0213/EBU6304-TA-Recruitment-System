@@ -14,6 +14,7 @@ import javafx.scene.Parent;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -79,16 +80,12 @@ public class MODashboardController {
                 .toList();
 
         long openJobs = jobs.stream().filter(job -> job.getStatus() == JobStatus.OPEN).count();
-        long underReview = applications.stream()
-                .filter(app -> app.getStatus() == ApplicationStatus.UNDER_REVIEW)
-                .count();
-
         VBox page = new VBox(22);
         page.getStyleClass().add("app-surface");
         page.setPadding(new Insets(24));
         page.getChildren().setAll(
                 buildHero(jobs.size(), applications.size()),
-                buildKpis(jobs, applications, openJobs, underReview),
+                buildKpis(jobs, applications, openJobs),
                 buildBody(jobs)
         );
 
@@ -131,23 +128,35 @@ public class MODashboardController {
         return row;
     }
 
-    private HBox buildKpis(List<Job> jobs, List<Application> applications, long openJobs, long underReview) {
-        int totalApplicants = applications.size();
-        int reviewedRate = totalApplicants == 0 ? 0
-                : (int) Math.round(underReview * 100.0 / totalApplicants);
+    private HBox buildKpis(List<Job> jobs, List<Application> applications, long openJobs) {
+        long draftJobs = jobs.stream().filter(job -> job.getStatus() == JobStatus.DRAFT).count();
+        List<Job> activePipelineJobs = jobs.stream()
+                .filter(this::isInActiveApplicationScope)
+                .toList();
+        int activeApplications = activePipelineJobs.stream()
+                .mapToInt(this::countNonCancelledApplications)
+                .sum();
+        long underReviewApplications = activePipelineJobs.stream()
+                .flatMap(job -> services.applicationService().getApplicationsByJob(job.getJobId()).stream())
+                .filter(app -> app.getStatus() == ApplicationStatus.UNDER_REVIEW)
+                .count();
+        int reviewedRate = activeApplications == 0 ? 0
+                : (int) Math.round(underReviewApplications * 100.0 / activeApplications);
 
         HBox row = new HBox(16,
-                kpiCard("Total Jobs", String.valueOf(jobs.size()),
-                        jobs.isEmpty() ? "No postings yet" : openJobs + " currently open",
+                kpiCard("Managed Jobs", String.valueOf(jobs.size()),
+                        jobs.isEmpty() ? "No postings created yet" : openJobs + " currently open",
                         IconFactory.IconType.BRIEFCASE, "#e0f2fe", "#0284c7"),
-                kpiCard("Total Applicants", String.valueOf(totalApplicants),
-                        totalApplicants == 0 ? "Waiting for submissions" : "Across all managed jobs",
+                kpiCard("Active Applications", String.valueOf(activeApplications),
+                        "Open + unfilled expired jobs",
                         IconFactory.IconType.USERS, "#ecfdf3", "#10b981"),
-                kpiCard("Draft Jobs", String.valueOf(jobs.stream().filter(job -> job.getStatus() == JobStatus.DRAFT).count()),
-                        "Need publishing before applicants can apply",
+                kpiCard("Draft Jobs", String.valueOf(draftJobs),
+                        draftJobs == 0 ? "All jobs are currently publishable" : "Not visible to applicants until published",
                         IconFactory.IconType.FILE, "#fff7ed", "#f59e0b"),
                 kpiCard("Under Review", reviewedRate + "%",
-                        totalApplicants == 0 ? "No review activity yet" : "Active screening progress",
+                        activeApplications == 0
+                                ? "No active applications in pipeline"
+                                : underReviewApplications + " of " + activeApplications + " in screening",
                         IconFactory.IconType.EYE, "#eef2ff", "#6366f1")
         );
         row.setMinWidth(0);
@@ -193,11 +202,36 @@ public class MODashboardController {
 
         Label meta = new Label(metaText);
         meta.setWrapText(true);
+        meta.setMinHeight(Region.USE_PREF_SIZE);
+        meta.setTextOverrun(OverrunStyle.CLIP);
         meta.setMaxWidth(Double.MAX_VALUE);
         meta.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #10b981;");
+        meta.prefWidthProperty().bind(card.widthProperty().subtract(40));
 
         card.getChildren().addAll(header, value, meta);
         return card;
+    }
+
+    private boolean isInActiveApplicationScope(Job job) {
+        if (job == null || job.getStatus() == null) {
+            return false;
+        }
+        if (job.getStatus() == JobStatus.OPEN) {
+            return true;
+        }
+        if (job.getStatus() != JobStatus.EXPIRED) {
+            return false;
+        }
+        long acceptedCount = services.applicationService().getApplicationsByJob(job.getJobId()).stream()
+                .filter(app -> app.getStatus() == ApplicationStatus.ACCEPTED)
+                .count();
+        return acceptedCount < Math.max(job.getPositions(), 0);
+    }
+
+    private int countNonCancelledApplications(Job job) {
+        return (int) services.applicationService().getApplicationsByJob(job.getJobId()).stream()
+                .filter(app -> app.getStatus() != ApplicationStatus.CANCELLED)
+                .count();
     }
 
     private HBox buildBody(List<Job> jobs) {
@@ -301,13 +335,14 @@ public class MODashboardController {
 
         List<Job> deadlines = jobs.stream()
                 .filter(job -> job.getDeadline() != null)
+                .filter(job -> job.getStatus() == JobStatus.OPEN || job.getStatus() == JobStatus.EXPIRED)
                 .sorted(Comparator.comparing(Job::getDeadline))
                 .toList();
 
         if (deadlines.isEmpty()) {
             card.getChildren().add(centeredEmptyState(
-                    "No upcoming deadlines",
-                    "Deadlines for your jobs will appear here once active recruitment cycles are scheduled."
+                    "No active recruitment deadlines",
+                    "Only OPEN and EXPIRED jobs are shown in this panel."
             ));
         } else {
             VBox rows = new VBox(10);
@@ -330,7 +365,6 @@ public class MODashboardController {
                 .filter(job -> job.getStatus() == JobStatus.OPEN)
                 .filter(job -> services.applicationService().getApplicationsByJob(job.getJobId()).isEmpty())
                 .count();
-        long closedCount = jobs.stream().filter(job -> job.getStatus() == JobStatus.CLOSED).count();
 
         if (draftCount > 0) {
             body.getChildren().add(alertBox(
@@ -346,14 +380,6 @@ public class MODashboardController {
                     openWithoutApplicants + " open jobs have no applicants yet.",
                     "#eff6ff",
                     "#2563eb"
-            ));
-        }
-        if (closedCount > 0) {
-            body.getChildren().add(alertBox(
-                    "Closed jobs on record",
-                    closedCount + " jobs are already closed and ready for archive review.",
-                    "#ecfdf3",
-                    "#10b981"
             ));
         }
         if (body.getChildren().isEmpty()) {
