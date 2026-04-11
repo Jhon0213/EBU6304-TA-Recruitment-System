@@ -59,7 +59,8 @@ public class DialogControllerFactory {
 
     private static Alert create(Alert.AlertType type, String title, String header, String message, Window owner,
                                 String styleClass) {
-        Alert alert = new Alert(type, message, ButtonType.OK);
+        ButtonType ok = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+        Alert alert = new Alert(type, message, ok);
         setup(alert, title, header, owner, styleClass);
         return alert;
     }

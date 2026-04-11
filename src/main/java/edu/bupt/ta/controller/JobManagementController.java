@@ -59,7 +59,7 @@ public class JobManagementController {
     private final TableView<JobTableRow> table = new TableView<>();
 
     private HBox kpiRow;
-    private JobStatus currentFilterStatus;
+    private JobFilter currentFilter = JobFilter.ALL;
     private VBox listPanel;
     private VBox emptyState;
     private VBox jobListContent;
@@ -158,25 +158,33 @@ public class JobManagementController {
 
     private HBox buildKpiRow(List<Job> jobs) {
         long totalJobs = jobs.size();
-        int totalApplicants = jobs.stream()
-                .mapToInt(job -> services.applicationService().getApplicationsByJob(job.getJobId()).size())
-                .sum();
-        long draftJobs = jobs.stream().filter(job -> job.getStatus() == JobStatus.DRAFT).count();
-        long reviewedApplicants = jobs.stream()
-                .flatMap(job -> services.applicationService().getApplicationsByJob(job.getJobId()).stream())
-                .filter(app -> app.getStatus() == ApplicationStatus.UNDER_REVIEW || app.getStatus() == ApplicationStatus.ACCEPTED)
-                .count();
-        int reviewRate = totalApplicants == 0 ? 0 : (int) Math.round(reviewedApplicants * 100.0 / totalApplicants);
         long openJobs = jobs.stream().filter(job -> job.getStatus() == JobStatus.OPEN).count();
+        long draftJobs = jobs.stream().filter(job -> job.getStatus() == JobStatus.DRAFT).count();
+
+        List<Job> activePipelineJobs = jobs.stream()
+                .filter(this::isInActiveApplicationScope)
+                .toList();
+
+        int activeApplications = activePipelineJobs.stream()
+                .mapToInt(this::countNonCancelledApplications)
+                .sum();
+        long underReviewApplications = activePipelineJobs.stream()
+                .flatMap(job -> services.applicationService().getApplicationsByJob(job.getJobId()).stream())
+                .filter(app -> app.getStatus() == ApplicationStatus.UNDER_REVIEW)
+                .count();
+        int reviewRate = activeApplications == 0 ? 0 : (int) Math.round(underReviewApplications * 100.0 / activeApplications);
 
         HBox row = new HBox(16,
-                kpiCard("Total Jobs", String.valueOf(totalJobs),
-                        jobs.isEmpty() ? "No postings yet" : openJobs + " currently open"),
-                kpiCard("Total Applicants", String.valueOf(totalApplicants), "Across all managed jobs"),
+                kpiCard("Managed Jobs", String.valueOf(totalJobs),
+                        jobs.isEmpty() ? "No postings created yet" : openJobs + " currently open"),
+                kpiCard("Active Applications", String.valueOf(activeApplications),
+                        "Open + unfilled expired jobs"),
                 kpiCard("Draft Jobs", String.valueOf(draftJobs),
-                        draftJobs == 0 ? "No unpublished jobs" : "Need publishing before applicants can apply"),
+                        draftJobs == 0 ? "All jobs are currently publishable" : "Not visible to applicants until published"),
                 kpiCard("Under Review", reviewRate + "%",
-                        totalApplicants == 0 ? "No review activity yet" : "Active screening progress")
+                        activeApplications == 0
+                                ? "No active applications in pipeline"
+                                : underReviewApplications + " of " + activeApplications + " in screening")
         );
         row.setFillHeight(true);
         row.setMinWidth(0);
@@ -189,12 +197,34 @@ public class JobManagementController {
         return row;
     }
 
+    private boolean isInActiveApplicationScope(Job job) {
+        if (job == null || job.getStatus() == null) {
+            return false;
+        }
+        if (job.getStatus() == JobStatus.OPEN) {
+            return true;
+        }
+        if (job.getStatus() != JobStatus.EXPIRED) {
+            return false;
+        }
+        long acceptedCount = services.applicationService().getApplicationsByJob(job.getJobId()).stream()
+                .filter(app -> app.getStatus() == ApplicationStatus.ACCEPTED)
+                .count();
+        return acceptedCount < Math.max(job.getPositions(), 0);
+    }
+
+    private int countNonCancelledApplications(Job job) {
+        return (int) services.applicationService().getApplicationsByJob(job.getJobId()).stream()
+                .filter(app -> app.getStatus() != ApplicationStatus.CANCELLED)
+                .count();
+    }
+
     private VBox kpiCard(String titleText, String valueText, String metaText) {
         VBox card = new VBox(8);
         card.getStyleClass().add("panel-card");
         card.setPadding(new Insets(16));
         card.setMinWidth(0);
-        card.setPrefHeight(132);
+        card.setPrefHeight(144);
         HBox.setHgrow(card, Priority.ALWAYS);
 
         Label title = new Label(titleText);
@@ -206,7 +236,11 @@ public class JobManagementController {
 
         Label meta = new Label(metaText);
         meta.setWrapText(true);
+        meta.setMinHeight(Region.USE_PREF_SIZE);
+        meta.setTextOverrun(OverrunStyle.CLIP);
+        meta.setMaxWidth(Double.MAX_VALUE);
         meta.setStyle("-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #10b981;");
+        meta.prefWidthProperty().bind(card.widthProperty().subtract(32));
 
         card.getChildren().addAll(title, value, meta);
         return card;
@@ -799,9 +833,9 @@ public class JobManagementController {
         String activeSelectedJobId = selectedJobId;
 
         List<Job> jobs = services.jobService().getJobsByOrganiser(user.getUserId());
-        if (currentFilterStatus != null) {
-            jobs = jobs.stream().filter(job -> job.getStatus() == currentFilterStatus).toList();
-        }
+        jobs = jobs.stream()
+                .filter(this::matchesCurrentFilter)
+                .toList();
         jobs = jobs.stream()
                 .sorted(Comparator.comparing(Job::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
                 .toList();
@@ -872,7 +906,7 @@ public class JobManagementController {
     }
 
     private String buildJobListFingerprint(List<JobTableRow> rows) {
-        String filter = currentFilterStatus == null ? "ALL" : currentFilterStatus.name();
+        String filter = currentFilter.name();
         if (rows.isEmpty()) {
             return filter + "|EMPTY";
         }
@@ -1117,8 +1151,15 @@ public class JobManagementController {
     }
 
     private void onFilter() {
-        List<String> options = List.of("All Statuses", "OPEN", "DRAFT", "CLOSED", "EXPIRED");
-        String currentSelection = currentFilterStatus == null ? "All Statuses" : currentFilterStatus.name();
+        List<String> options = List.of(
+                JobFilter.ALL.label,
+                JobFilter.OPEN.label,
+                JobFilter.DRAFT.label,
+                JobFilter.CLOSED.label,
+                JobFilter.EXPIRED.label,
+                JobFilter.UNDER_REVIEW.label
+        );
+        String currentSelection = currentFilter.label;
         ChoiceDialog<String> dialog = new ChoiceDialog<>(currentSelection, options);
         dialog.setTitle("Filter Jobs");
         dialog.setHeaderText("Filter jobs by status");
@@ -1131,8 +1172,20 @@ public class JobManagementController {
         if (selected.isEmpty()) {
             return;
         }
-        currentFilterStatus = "All Statuses".equals(selected.get()) ? null : JobStatus.valueOf(selected.get());
+        currentFilter = JobFilter.fromLabel(selected.get());
         refresh();
+    }
+
+    private boolean matchesCurrentFilter(Job job) {
+        return switch (currentFilter) {
+            case ALL -> true;
+            case OPEN -> job.getStatus() == JobStatus.OPEN;
+            case DRAFT -> job.getStatus() == JobStatus.DRAFT;
+            case CLOSED -> job.getStatus() == JobStatus.CLOSED;
+            case EXPIRED -> job.getStatus() == JobStatus.EXPIRED;
+            case UNDER_REVIEW -> services.applicationService().getApplicationsByJob(job.getJobId()).stream()
+                    .anyMatch(app -> app.getStatus() == ApplicationStatus.UNDER_REVIEW);
+        };
     }
 
     private void onViewApplicants() {
@@ -1190,5 +1243,29 @@ public class JobManagementController {
     }
 
     private record JobTableRow(Job job, int appliedApplicantCount, int targetApplicantCount) {
+    }
+
+    private enum JobFilter {
+        ALL("All Statuses"),
+        OPEN("OPEN"),
+        DRAFT("DRAFT"),
+        CLOSED("CLOSED"),
+        EXPIRED("EXPIRED"),
+        UNDER_REVIEW("UNDER REVIEW");
+
+        private final String label;
+
+        JobFilter(String label) {
+            this.label = label;
+        }
+
+        private static JobFilter fromLabel(String label) {
+            for (JobFilter filter : values()) {
+                if (filter.label.equals(label)) {
+                    return filter;
+                }
+            }
+            return ALL;
+        }
     }
 }
