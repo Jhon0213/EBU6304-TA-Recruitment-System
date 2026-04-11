@@ -13,7 +13,6 @@ import support.TestDataSupport;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -47,7 +46,6 @@ class IntegrationFlowTest {
         job.setDeadline(LocalDateTime.now().plusDays(10));
         job.setOrganiserId("U101");
         job.setStatus(JobStatus.OPEN);
-        job.setCampuses(List.of(Job.CAMPUS_HAIDIAN, Job.CAMPUS_SHAHE));
 
         assertTrue(services.jobService().createJob(job).isValid());
         assertTrue(services.jobRepository().findAll().stream().anyMatch(j -> "Integration Job".equals(j.getTitle())));

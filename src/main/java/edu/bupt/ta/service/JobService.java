@@ -12,7 +12,6 @@ import edu.bupt.ta.util.ValidationResult;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 public class JobService {
@@ -149,7 +148,7 @@ public class JobService {
         boolean changed = false;
         for (Job job : jobs) {
             if (job.getStatus() == JobStatus.OPEN && job.getDeadline() != null
-                    && !job.getDeadline().isAfter(DateTimeUtils.now())) {
+                    && job.getDeadline().isBefore(DateTimeUtils.now())) {
                 job.setStatus(JobStatus.EXPIRED);
                 changed = true;
             }
@@ -181,15 +180,6 @@ public class JobService {
         }
         if (job.getOrganiserId() == null || job.getOrganiserId().isBlank()) {
             errors.add("Organiser ID is required.");
-        }
-        if (job.getCampuses() == null || job.getCampuses().isEmpty()) {
-            errors.add("Select at least one campus (Haidian / Shahe).");
-        } else {
-            for (String campus : job.getCampuses()) {
-                if (!Job.isAllowedCampusLabel(campus)) {
-                    errors.add("Invalid campus: " + Objects.toString(campus, ""));
-                }
-            }
         }
         return errors.isEmpty() ? ValidationResult.ok() : ValidationResult.fail(errors);
     }

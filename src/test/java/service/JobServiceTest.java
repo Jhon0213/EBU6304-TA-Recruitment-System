@@ -14,7 +14,6 @@ import support.TestDataSupport;
 
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -48,7 +47,6 @@ class JobServiceTest {
         job.setDeadline(LocalDateTime.now().plusDays(7));
         job.setOrganiserId("U101");
         job.setStatus(JobStatus.OPEN);
-        job.setCampuses(List.of(Job.CAMPUS_HAIDIAN));
 
         assertTrue(service.createJob(job).isValid());
     }
