@@ -114,7 +114,7 @@
   "applicantId" : "A001",
   "applyDate" : "2026-04-10T02:04:58.922162",
   "statement" : "",
-  "status" : "UNDER_REVIEW",
+  "status" : "SUBMITTED",
   "decisionNote" : "",
   "matchScore" : 80,
   "missingSkills" : [ ]
