@@ -32,6 +32,8 @@ import java.util.List;
 
 public class ApplicantListController {
 
+    private static final String ALL_JOBS_JOB_ID = "__ALL_JOBS__";
+
     private final ServiceRegistry services;
     private final User user;
     private final String preferredJobId;
@@ -57,6 +59,8 @@ public class ApplicantListController {
 
     private Row selectedRow;
     private String activeTab = "ALL";
+
+    private final Job allJobsOption = buildAllJobsOption();
 
     public ApplicantListController(ServiceRegistry services, User user) {
         this(services, user, null);
@@ -223,7 +227,13 @@ public class ApplicantListController {
 
     private void refreshJobs() {
         List<Job> jobs = services.jobService().getJobsByOrganiser(user.getUserId());
-        jobSelector.setItems(FXCollections.observableArrayList(jobs));
+        List<Job> selectorItems = new ArrayList<>();
+        if (!jobs.isEmpty()) {
+            selectorItems.add(allJobsOption);
+        }
+        selectorItems.addAll(jobs);
+
+        jobSelector.setItems(FXCollections.observableArrayList(selectorItems));
         if (jobs.isEmpty()) {
             jobSelector.setValue(null);
             refreshApplications();
@@ -231,6 +241,10 @@ public class ApplicantListController {
         }
 
         if (preferredJobId != null) {
+            if (ALL_JOBS_JOB_ID.equals(preferredJobId)) {
+                jobSelector.setValue(allJobsOption);
+                return;
+            }
             for (Job job : jobs) {
                 if (preferredJobId.equals(job.getJobId())) {
                     jobSelector.setValue(job);
@@ -243,9 +257,12 @@ public class ApplicantListController {
 
     private void refreshApplications() {
         Job selectedJob = jobSelector.getValue();
-        updateJobModeTabs(selectedJob, 0);
+        boolean allJobsSelected = isAllJobsOption(selectedJob);
+        Job goalJob = allJobsSelected ? null : selectedJob;
+
+        updateJobModeTabs(goalJob, 0);
         buildTabs(List.of());
-        updateGoal(selectedJob, List.of());
+        updateGoal(goalJob, List.of());
 
         if (selectedJob == null) {
             listView.setItems(FXCollections.observableArrayList());
@@ -254,8 +271,18 @@ public class ApplicantListController {
             return;
         }
 
-        List<Application> applications = services.applicationService().getApplicationsByJob(selectedJob.getJobId());
-        updateJobModeTabs(selectedJob, applications.size());
+        List<Application> applications;
+        if (allJobsSelected) {
+            applications = new ArrayList<>();
+            List<Job> jobs = services.jobService().getJobsByOrganiser(user.getUserId());
+            for (Job job : jobs) {
+                applications.addAll(services.applicationService().getApplicationsByJob(job.getJobId()));
+            }
+        } else {
+            applications = services.applicationService().getApplicationsByJob(selectedJob.getJobId());
+        }
+
+        updateJobModeTabs(goalJob, applications.size());
         List<Row> rows = new ArrayList<>();
         for (Application app : applications) {
             String applicantName = services.applicantProfileRepository().findById(app.getApplicantId())
@@ -267,6 +294,15 @@ public class ApplicantListController {
             int year = services.applicantProfileRepository().findById(app.getApplicantId())
                     .map(profile -> profile.getYear())
                     .orElse(0);
+
+            String jobTitle;
+            if (allJobsSelected) {
+                jobTitle = services.jobRepository().findById(app.getJobId())
+                        .map(Job::getTitle)
+                        .orElse(app.getJobId());
+            } else {
+                jobTitle = selectedJob.getTitle();
+            }
             rows.add(new Row(
                     app.getApplicationId(),
                     applicantName,
@@ -274,12 +310,12 @@ public class ApplicantListController {
                     app.getMatchScore(),
                     programme,
                     year,
-                    selectedJob.getTitle()
+                    jobTitle
             ));
         }
 
         buildTabs(rows);
-        updateGoal(selectedJob, rows);
+        updateGoal(goalJob, rows);
 
         List<Row> filtered = rows.stream().filter(this::matchesActiveTab).toList();
         listView.setItems(FXCollections.observableArrayList(filtered));
@@ -338,7 +374,17 @@ public class ApplicantListController {
     }
 
     private void updateGoal(Job job, List<Row> rows) {
-        int target = job == null ? 0 : Math.max(job.getPositions(), 0);
+        if (job == null) {
+            goalCount.setText("0 / 0");
+            goalCount.setStyle("-fx-font-size: 16px; -fx-font-weight: 900; -fx-text-fill: #334155;");
+            goalProgress.getChildren().clear();
+            RectangleBar bar = new RectangleBar(170, 6);
+            goalProgress.getChildren().add(bar.track());
+            goalProgress.getChildren().add(bar.fill(0, "#354a5f"));
+            return;
+        }
+
+        int target = Math.max(job.getPositions(), 0);
         long accepted = rows.stream().filter(row -> row.status == ApplicationStatus.ACCEPTED).count();
         goalCount.setText(accepted + " / " + target);
         goalCount.setStyle("-fx-font-size: 16px; -fx-font-weight: 900; -fx-text-fill: #334155;");
@@ -501,6 +547,17 @@ public class ApplicantListController {
         }
         JobEditorController editor = new JobEditorController();
         editor.show(job, user.getUserId());
+    }
+
+    private static Job buildAllJobsOption() {
+        Job job = new Job();
+        job.setJobId(ALL_JOBS_JOB_ID);
+        job.setTitle("All Jobs");
+        return job;
+    }
+
+    private boolean isAllJobsOption(Job job) {
+        return job != null && ALL_JOBS_JOB_ID.equals(job.getJobId());
     }
 
     private String humanStatus(ApplicationStatus status) {
