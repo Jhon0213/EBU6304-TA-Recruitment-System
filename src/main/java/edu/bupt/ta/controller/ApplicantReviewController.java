@@ -2,6 +2,7 @@ package edu.bupt.ta.controller;
 
 import edu.bupt.ta.dto.ApplicantReviewDTO;
 import edu.bupt.ta.enums.Role;
+import edu.bupt.ta.model.ApplicantProfile;
 import edu.bupt.ta.model.ResumeInfo;
 import edu.bupt.ta.model.User;
 import edu.bupt.ta.service.ServiceRegistry;
@@ -15,6 +16,8 @@ import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.Tooltip;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -80,20 +83,7 @@ public class ApplicantReviewController {
         Label subtitle = new Label("Applicant ID: " + dto.applicantId());
         subtitle.setStyle("-fx-font-size: 14px; -fx-text-fill: #64748b;");
 
-        VBox basicInfo = new VBox(8);
-        basicInfo.getStyleClass().add("panel-card");
-        basicInfo.setPadding(new Insets(14));
-        basicInfo.getChildren().addAll(
-                info("Technical Skills", String.join(", ", dto.technicalSkills())),
-                info("Availability", String.join(", ", dto.availability())),
-                info("Match Score", dto.matchScore() + "%"),
-                info("Matched Skills", safeJoin(dto.matchedSkills())),
-                info("Missing Skills", dto.missingSkills().isEmpty() ? "None" : String.join(", ", dto.missingSkills())),
-                info("Match Explanation", blankToDash(dto.matchExplanation())),
-                info("Workload", "Current " + dto.currentHours() + "h, Projected " + dto.projectedHours()
-                        + "h / Max " + dto.maxWeeklyHours() + "h (" + dto.riskLevel() + ")"),
-                info("Statement", dto.statement())
-        );
+        VBox basicInfo = buildBasicInformation(dto);
 
         VBox cvCard = buildCvCard(dto.applicantId());
 
@@ -135,6 +125,57 @@ public class ApplicantReviewController {
             view.getChildren().addAll(title, subtitle, basicInfo, cvCard, noteCard, actions);
         }
     }
+
+    private VBox buildBasicInformation(ApplicantReviewDTO dto) {
+        ApplicantProfile profile = services.applicantProfileRepository().findById(dto.applicantId()).orElse(null);
+
+        VBox card = new VBox(12);
+        card.getStyleClass().add("panel-card");
+        card.setPadding(new Insets(14));
+
+        Label header = new Label("Basic Information");
+        header.setStyle("-fx-font-size: 14px; -fx-font-weight: 900; -fx-text-fill: #0f172a;");
+
+        GridPane grid = new GridPane();
+        grid.setHgap(24);
+        grid.setVgap(14);
+
+        ColumnConstraints c0 = new ColumnConstraints();
+        c0.setPercentWidth(33);
+        ColumnConstraints c1 = new ColumnConstraints();
+        c1.setPercentWidth(33);
+        ColumnConstraints c2 = new ColumnConstraints();
+        c2.setPercentWidth(34);
+        grid.getColumnConstraints().addAll(c0, c1, c2);
+
+        String name = profile == null ? blankToDash(dto.applicantName()) : blankToDash(profile.getFullName());
+        String studentId = profile == null ? "-" : blankToDash(profile.getStudentId());
+        String email = profile == null ? "-" : blankToDash(profile.getEmail());
+        String phone = profile == null ? "-" : blankToDash(profile.getPhone());
+        String major = profile == null ? "-" : blankToDash(profile.getProgramme());
+
+        grid.add(basicField("Name", name), 0, 0);
+        grid.add(basicField("Student ID", studentId), 1, 0);
+        grid.add(basicField("Email address", email), 2, 0);
+
+        grid.add(basicField("Phone number", phone), 0, 1);
+        grid.add(basicField("Major", major), 1, 1);
+
+        card.getChildren().addAll(header, grid);
+        return card;
+    }
+
+    private VBox basicField(String label, String value) {
+        VBox box = new VBox(4);
+        Label t = new Label(label);
+        t.getStyleClass().add("section-kicker");
+        Label v = new Label(value == null || value.isBlank() ? "-" : value);
+        v.setWrapText(true);
+        v.setStyle("-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: #334155;");
+        box.getChildren().addAll(t, v);
+        return box;
+    }
+
 
     private VBox info(String label, String value) {
         VBox box = new VBox(2);
