@@ -84,6 +84,7 @@ public class ApplicantReviewController {
         subtitle.setStyle("-fx-font-size: 14px; -fx-text-fill: #64748b;");
 
         VBox basicInfo = buildBasicInformation(dto);
+        VBox statementCard = buildApplicantStatement(dto);
 
         VBox cvCard = buildCvCard(dto.applicantId());
 
@@ -99,7 +100,7 @@ public class ApplicantReviewController {
             noteValue.setWrapText(true);
             noteValue.setStyle("-fx-font-size: 13px; -fx-text-fill: #334155;");
             noteCard.getChildren().addAll(noteLabel, noteValue);
-            view.getChildren().addAll(title, subtitle, basicInfo, cvCard, noteCard);
+            view.getChildren().addAll(title, subtitle, basicInfo, statementCard, cvCard, noteCard);
         } else {
             VBox noteCard = new VBox(8);
             noteCard.getStyleClass().add("panel-card");
@@ -122,12 +123,19 @@ public class ApplicantReviewController {
             reject.setMaxWidth(Double.MAX_VALUE);
 
             HBox actions = new HBox(12, accept, reject);
-            view.getChildren().addAll(title, subtitle, basicInfo, cvCard, noteCard, actions);
+            view.getChildren().addAll(title, subtitle, basicInfo, statementCard, cvCard, noteCard, actions);
         }
     }
 
     private VBox buildBasicInformation(ApplicantReviewDTO dto) {
         ApplicantProfile profile = services.applicantProfileRepository().findById(dto.applicantId()).orElse(null);
+
+        int resumeCompletion;
+        try {
+            resumeCompletion = services.resumeService().calculateResumeCompletion(dto.applicantId());
+        } catch (Exception ignored) {
+            resumeCompletion = 0;
+        }
 
         VBox card = new VBox(12);
         card.getStyleClass().add("panel-card");
@@ -136,44 +144,72 @@ public class ApplicantReviewController {
         Label header = new Label("Basic Information");
         header.setStyle("-fx-font-size: 14px; -fx-font-weight: 900; -fx-text-fill: #0f172a;");
 
-        GridPane grid = new GridPane();
-        grid.setHgap(24);
-        grid.setVgap(14);
+        VBox body = new VBox(24);
 
-        ColumnConstraints c0 = new ColumnConstraints();
-        c0.setPercentWidth(33);
-        ColumnConstraints c1 = new ColumnConstraints();
-        c1.setPercentWidth(33);
-        ColumnConstraints c2 = new ColumnConstraints();
-        c2.setPercentWidth(34);
-        grid.getColumnConstraints().addAll(c0, c1, c2);
-
-        String name = profile == null ? blankToDash(dto.applicantName()) : blankToDash(profile.getFullName());
+        String fullName = profile == null ? blankToDash(dto.applicantName()) : blankToDash(profile.getFullName());
         String studentId = profile == null ? "-" : blankToDash(profile.getStudentId());
+        String programme = profile == null ? "-" : blankToDash(profile.getProgramme());
         String email = profile == null ? "-" : blankToDash(profile.getEmail());
         String phone = profile == null ? "-" : blankToDash(profile.getPhone());
-        String major = profile == null ? "-" : blankToDash(profile.getProgramme());
+        String campus = profile == null ? "-" : blankToDash(profile.getCampus());
+        String acceptCross = profile == null ? "-" : (profile.isAcceptCrossCampus() ? "Yes" : "No");
+        String year = profile == null || profile.getYear() <= 0 ? "-" : ("Year " + profile.getYear());
 
-        grid.add(basicField("Name", name), 0, 0);
-        grid.add(basicField("Student ID", studentId), 1, 0);
-        grid.add(basicField("Email address", email), 2, 0);
+        HBox row1 = new HBox(24,
+                infoCell("FULL NAME", fullName),
+                infoCell("STUDENT ID", studentId),
+                infoCell("DEGREE PROGRAM", programme)
+        );
 
-        grid.add(basicField("Phone number", phone), 0, 1);
-        grid.add(basicField("Major", major), 1, 1);
+        HBox row2 = new HBox(24,
+                infoCell("EMAIL", email),
+                infoCell("CV COMPLETION", resumeCompletion + "% complete"),
+                infoCell("PHONE", phone)
+        );
 
-        card.getChildren().addAll(header, grid);
+        HBox row3 = new HBox(24,
+                infoCell("CAMPUS", campus),
+                infoCell("ACCEPT CROSS-CAMPUS", acceptCross),
+                infoCell("ACADEMIC YEAR", year)
+        );
+
+        body.getChildren().addAll(row1, row2, row3);
+        card.getChildren().addAll(header, body);
         return card;
     }
 
-    private VBox basicField(String label, String value) {
-        VBox box = new VBox(4);
-        Label t = new Label(label);
-        t.getStyleClass().add("section-kicker");
+    private VBox infoCell(String label, String value) {
+        VBox box = new VBox(6);
+        box.setMinWidth(0);
+        box.setPrefWidth(0);
+        HBox.setHgrow(box, Priority.ALWAYS);
+
+        Label kicker = new Label(label);
+        kicker.getStyleClass().add("section-kicker");
+
         Label v = new Label(value == null || value.isBlank() ? "-" : value);
         v.setWrapText(true);
-        v.setStyle("-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: #334155;");
-        box.getChildren().addAll(t, v);
+        v.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #0f172a;");
+        v.setMaxWidth(Double.MAX_VALUE);
+
+        box.getChildren().addAll(kicker, v);
         return box;
+    }
+
+    private VBox buildApplicantStatement(ApplicantReviewDTO dto) {
+        VBox card = new VBox(10);
+        card.getStyleClass().add("panel-card");
+        card.setPadding(new Insets(14));
+
+        Label header = new Label("Applicant Statement");
+        header.setStyle("-fx-font-size: 14px; -fx-font-weight: 900; -fx-text-fill: #0f172a;");
+
+        Label statement = new Label(blankToDash(dto.statement()));
+        statement.setWrapText(true);
+        statement.setStyle("-fx-font-size: 13px; -fx-text-fill: #334155;");
+
+        card.getChildren().addAll(header, statement);
+        return card;
     }
 
 
