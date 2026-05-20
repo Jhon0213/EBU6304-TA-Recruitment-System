@@ -4,6 +4,7 @@ import edu.bupt.ta.enums.JobStatus;
 import edu.bupt.ta.enums.JobType;
 import edu.bupt.ta.model.Job;
 import edu.bupt.ta.model.User;
+import edu.bupt.ta.ui.IconFactory;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -30,6 +31,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -72,8 +74,8 @@ public class JobEditorController {
         root.getStyleClass().add("app-surface");
 
         VBox leftPanel = new VBox(0);
-        leftPanel.setPrefWidth(920);
-        leftPanel.setMinWidth(860);
+        leftPanel.setPrefWidth(760);
+        leftPanel.setMinWidth(700);
         leftPanel.getChildren().add(buildHeader(fields, source, stage, result));
         ScrollPane formScroll = new ScrollPane(buildFormContent(fields, !organisers.isEmpty()));
         formScroll.setFitToWidth(true);
@@ -253,10 +255,12 @@ public class JobEditorController {
         labels.add(minuteLabel, 2, 0);
         labels.add(statusLabelRow, 3, 0);
 
-        fields.deadline.setPrefWidth(280);
-        fields.deadline.setMinWidth(200);
+        fields.deadline.setPrefWidth(180);
+        fields.deadline.setMinWidth(140);
         configureTimeCombo(fields.deadlineHour);
         configureTimeCombo(fields.deadlineMinute);
+        fields.status.setMinWidth(140);
+        fields.status.setPrefWidth(180);
         fields.status.setMaxWidth(Double.MAX_VALUE);
 
         controls.add(fields.deadline, 0, 0);
@@ -275,82 +279,134 @@ public class JobEditorController {
     private VBox buildPreviewPanel(EditorFields fields) {
         VBox preview = new VBox(18);
         preview.setPadding(new Insets(24));
-        preview.setPrefWidth(340);
+        preview.setPrefWidth(560);
+        preview.setMinWidth(500);
         preview.setStyle("-fx-background-color: #ffffff; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 0 1;");
 
         Label heading = new Label("Live Preview Summary");
         heading.setStyle("-fx-font-size: 16px; -fx-font-weight: 900; -fx-text-fill: #0f172a;");
 
-        VBox card = new VBox(4);
-        card.setPadding(new Insets(16));
-        card.setStyle("-fx-background-color: linear-gradient(to bottom right, #354a5f, #243447); -fx-background-radius: 14;");
+        PreviewNodes nodes = new PreviewNodes();
 
-        Label cardCaption = new Label("JOB CARD PREVIEW");
-        cardCaption.setStyle("-fx-font-size: 10px; -fx-font-weight: 600; -fx-text-fill: #cbd5e1;");
+        nodes.cardTitle.setWrapText(true);
+        nodes.cardTitle.getStyleClass().add("position-detail-title");
 
-        Label cardTitle = new Label();
-        cardTitle.setWrapText(true);
-        cardTitle.setStyle("-fx-font-size: 15px; -fx-font-weight: 600; -fx-text-fill: white;");
+        nodes.statusChip.setMinWidth(Region.USE_PREF_SIZE);
 
-        Label cardMeta = new Label();
-        cardMeta.setWrapText(true);
-        cardMeta.setStyle("-fx-font-size: 11px; -fx-text-fill: #e2e8f0;");
+        HBox cardHeader = new HBox(10, nodes.cardTitle, nodes.statusChip);
+        cardHeader.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(nodes.cardTitle, Priority.ALWAYS);
 
-        card.getChildren().addAll(cardCaption, cardTitle, cardMeta);
+        nodes.cardMeta.setWrapText(true);
+        nodes.cardMeta.getStyleClass().add("position-detail-subtitle");
+        VBox.setMargin(nodes.cardMeta, new Insets(4, 0, 0, 0));
 
-        VBox metrics = new VBox(8);
-        Label metricTitle = new Label("KEY METRICS");
-        metricTitle.setStyle("-fx-font-size: 10px; -fx-font-weight: 600; -fx-text-fill: #94a3b8;");
+        nodes.organiserAvatar.getStyleClass().add("position-organiser-avatar");
+        nodes.organiserAvatar.setMinSize(42, 42);
+        nodes.organiserAvatar.setPrefSize(42, 42);
+        nodes.organiserAvatar.setMaxSize(42, 42);
+        nodes.organiserName.getStyleClass().add("position-organiser-name");
+        nodes.organiserDept.getStyleClass().add("position-organiser-dept");
+        VBox organiserCopy = new VBox(4, nodes.organiserName, nodes.organiserDept);
+        HBox organiserRow = new HBox(12, nodes.organiserAvatar, organiserCopy);
+        organiserRow.setAlignment(Pos.CENTER_LEFT);
 
-        Label semester = metricLine("Semester", "-");
-        Label campus = metricLine("Campus", "-");
-        Label positions = metricLine("Positions", "-");
-        Label deadline = metricLine("Deadline", "-");
-        Label organiser = metricLine("Organiser", "-");
+        VBox headerPreview = new VBox(14, cardHeader, nodes.cardMeta, organiserRow);
 
-        metrics.getChildren().addAll(metricTitle, semester, campus, positions, deadline, organiser);
+        HBox metrics = new HBox(12,
+                previewMetricCard("AVAILABLE", "SEATS", nodes.seatsMetric, IconFactory.IconType.USERS),
+                previewMetricCard("APPLICATION", "DEADLINE", nodes.deadlineMetric, IconFactory.IconType.CALENDAR)
+        );
 
-        VBox requirementCard = new VBox(8);
-        requirementCard.setPadding(new Insets(14));
-        requirementCard.setStyle("-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-radius: 12; -fx-background-radius: 12;");
+        VBox descriptionCard = previewSectionCard("JOB DESCRIPTION", nodes.description);
+        VBox responsibilitiesCard = previewSectionCard("KEY RESPONSIBILITIES", nodes.responsibilities);
 
-        Label requirementTitle = new Label("REQUIREMENTS CHECK");
-        requirementTitle.setStyle("-fx-font-size: 10px; -fx-font-weight: 600; -fx-text-fill: #354a5f;");
+        GridPane infoGrid = new GridPane();
+        infoGrid.setHgap(18);
+        infoGrid.setVgap(12);
+        ColumnConstraints c1 = new ColumnConstraints();
+        c1.setPercentWidth(50);
+        c1.setHgrow(Priority.ALWAYS);
+        ColumnConstraints c2 = new ColumnConstraints();
+        c2.setPercentWidth(50);
+        c2.setHgrow(Priority.ALWAYS);
+        infoGrid.getColumnConstraints().setAll(c1, c2);
+        infoGrid.add(previewInfoCell("Code", nodes.codeValue), 0, 0);
+        infoGrid.add(previewInfoCell("Professor", nodes.organiserValue), 1, 0);
+        infoGrid.add(previewInfoCell("Campus", nodes.campusValue), 0, 1);
+        infoGrid.add(previewInfoCell("Term", nodes.termValue), 1, 1);
 
-        Label requiredLine = new Label();
-        requiredLine.setWrapText(true);
-        requiredLine.setStyle("-fx-font-size: 12px; -fx-text-fill: #475569;");
+        VBox moduleCardBody = new VBox(infoGrid);
+        moduleCardBody.getStyleClass().add("position-section-card");
+        moduleCardBody.setPadding(new Insets(16));
+        VBox moduleCard = previewSection("MODULE INFO", moduleCardBody);
 
-        Label preferredLine = new Label();
-        preferredLine.setWrapText(true);
-        preferredLine.setStyle("-fx-font-size: 12px; -fx-text-fill: #475569;");
+        preview.getChildren().addAll(heading, headerPreview, metrics, descriptionCard, responsibilitiesCard, moduleCard);
 
-        Label gradeLine = new Label();
-        gradeLine.setWrapText(true);
-        gradeLine.setStyle("-fx-font-size: 12px; -fx-text-fill: #475569;");
-
-        requirementCard.getChildren().addAll(requirementTitle, requiredLine, preferredLine, gradeLine);
-
-        VBox editorCard = new VBox(4);
-        editorCard.setPadding(new Insets(12));
-        editorCard.getStyleClass().add("soft-info-card");
-
-        Label editorTitle = new Label("Admin (Last Editor)");
-        editorTitle.setStyle("-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: #334155;");
-
-        Label editorTime = new Label("Updated just now");
-        editorTime.setStyle("-fx-font-size: 12px; -fx-font-weight: 400; -fx-text-fill: #94a3b8;");
-
-        editorCard.getChildren().addAll(editorTitle, editorTime);
-
-        preview.getChildren().addAll(heading, card, metrics, requirementCard, editorCard);
-
-        Runnable updater = () -> updatePreview(fields, cardTitle, cardMeta, semester, campus, positions, deadline, organiser, requiredLine, preferredLine, gradeLine);
+        Runnable updater = () -> updatePreview(fields, nodes);
 
         bindPreviewListeners(fields, updater);
         updater.run();
 
         return preview;
+    }
+
+    private VBox previewMetricCard(String topLabel,
+                                   String bottomLabel,
+                                   Label valueLabel,
+                                   IconFactory.IconType iconType) {
+        Label top = new Label(topLabel);
+        top.getStyleClass().add("position-metric-kicker");
+        Label bottom = new Label(bottomLabel);
+        bottom.getStyleClass().add("position-metric-kicker");
+        valueLabel.getStyleClass().add("position-metric-value");
+        valueLabel.setWrapText(true);
+        valueLabel.setMinWidth(0);
+        valueLabel.setMaxWidth(Double.MAX_VALUE);
+
+        HBox valueRow = new HBox(6, IconFactory.glyph(iconType, 15, Color.web("#00c29f")), valueLabel);
+        valueRow.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(valueLabel, Priority.ALWAYS);
+
+        VBox card = new VBox(6, new VBox(0, top, bottom), valueRow);
+        card.getStyleClass().add("position-metric-card");
+        card.setPadding(new Insets(12, 14, 12, 14));
+        card.setMinWidth(150);
+        HBox.setHgrow(card, Priority.ALWAYS);
+        return card;
+    }
+
+    private VBox previewSectionCard(String headingText, Label bodyLabel) {
+        bodyLabel.getStyleClass().add("position-desc-text");
+        bodyLabel.setWrapText(true);
+        VBox body = new VBox(bodyLabel);
+        body.getStyleClass().add("position-section-card");
+        body.setPadding(new Insets(16));
+        return previewSection(headingText, body);
+    }
+
+    private VBox previewSection(String headingText, VBox body) {
+        Region accent = new Region();
+        accent.getStyleClass().add("position-section-accent");
+        accent.setPrefSize(6, 24);
+        accent.setMinSize(6, 24);
+        accent.setMaxSize(6, 24);
+        Label heading = new Label(headingText);
+        heading.getStyleClass().add("position-section-heading");
+        HBox titleRow = new HBox(10, accent, heading);
+        titleRow.setAlignment(Pos.CENTER_LEFT);
+        return new VBox(12, titleRow, body);
+    }
+
+    private VBox previewInfoCell(String labelText, Label valueLabel) {
+        Label key = new Label(labelText.toUpperCase());
+        key.getStyleClass().add("position-info-key");
+        valueLabel.getStyleClass().add("position-info-value");
+        valueLabel.setWrapText(true);
+        VBox cell = new VBox(3, key, valueLabel);
+        cell.setMinWidth(0);
+        GridPane.setHgrow(cell, Priority.ALWAYS);
+        return cell;
     }
 
     private VBox buildSectionTitle(String titleText) {
@@ -484,9 +540,9 @@ public class JobEditorController {
     }
 
     private void configureTimeCombo(ComboBox<String> combo) {
-        combo.setMinWidth(200);
-        combo.setPrefWidth(220);
-        combo.setMaxWidth(260);
+        combo.setMinWidth(110);
+        combo.setPrefWidth(150);
+        combo.setMaxWidth(Double.MAX_VALUE);
         combo.setVisibleRowCount(10);
     }
 
@@ -690,11 +746,14 @@ public class JobEditorController {
         fields.title.textProperty().addListener((obs, oldValue, newValue) -> updater.run());
         fields.moduleCode.textProperty().addListener((obs, oldValue, newValue) -> updater.run());
         fields.moduleName.textProperty().addListener((obs, oldValue, newValue) -> updater.run());
+        fields.type.valueProperty().addListener((obs, oldValue, newValue) -> updater.run());
         fields.semester.textProperty().addListener((obs, oldValue, newValue) -> updater.run());
         fields.positions.textProperty().addListener((obs, oldValue, newValue) -> updater.run());
         fields.deadline.valueProperty().addListener((obs, oldValue, newValue) -> updater.run());
         fields.deadlineHour.valueProperty().addListener((obs, oldValue, newValue) -> updater.run());
         fields.deadlineMinute.valueProperty().addListener((obs, oldValue, newValue) -> updater.run());
+        fields.status.valueProperty().addListener((obs, oldValue, newValue) -> updater.run());
+        fields.description.textProperty().addListener((obs, oldValue, newValue) -> updater.run());
         fields.requiredSkills.textProperty().addListener((obs, oldValue, newValue) -> updater.run());
         fields.preferredSkills.textProperty().addListener((obs, oldValue, newValue) -> updater.run());
         fields.organiser.valueProperty().addListener((obs, oldValue, newValue) -> updater.run());
@@ -703,44 +762,57 @@ public class JobEditorController {
         fields.campusShahe.selectedProperty().addListener((obs, oldValue, newValue) -> updater.run());
     }
 
-    private void updatePreview(EditorFields fields,
-                               Label cardTitle,
-                               Label cardMeta,
-                               Label semester,
-                               Label campus,
-                               Label positions,
-                               Label deadline,
-                               Label organiser,
-                               Label requiredLine,
-                               Label preferredLine,
-                               Label gradeLine) {
-        cardTitle.setText(fallback(fields.title.getText(), "Untitled Job"));
+    private void updatePreview(EditorFields fields, PreviewNodes nodes) {
+        nodes.cardTitle.setText(fallback(fields.title.getText(), "Untitled Job"));
         String module = fallback(fields.moduleCode.getText(), "TBD");
         String moduleName = fallback(fields.moduleName.getText(), "Module Name");
-        cardMeta.setText(module + " | " + moduleName);
+        nodes.cardMeta.setText(moduleName.toUpperCase() + " - " + fallback(fields.semester.getText(), "-").toUpperCase());
 
-        semester.setText("Semester: " + fallback(fields.semester.getText(), "-"));
-        campus.setText("Campus: " + formatCampusPreview(fields));
-        positions.setText("Positions: " + fallback(fields.positions.getText(), "-"));
-
-        deadline.setText("Deadline: " + formatDeadline(fields.deadline.getValue(), parseTime(fields.deadlineHour.getValue(), fields.deadlineMinute.getValue())));
-
-        organiser.setText("Organiser: " + fallback(selectedOrganiserName(fields), "-"));
-
+        JobStatus status = fields.status.getValue();
+        nodes.statusChip.setText(status == null ? "DRAFT" : status.name());
+        nodes.statusChip.setStyle(previewStatusStyle(status));
 
         List<String> requiredSkills = parseSkills(fields.requiredSkills.getText());
         List<String> preferredSkills = parseSkills(fields.preferredSkills.getText());
-        requiredLine.setText(requiredSkills.isEmpty()
-                ? "Required skills missing"
-                : "Required: " + String.join(", ", capThree(requiredSkills)));
-        preferredLine.setText(preferredSkills.isEmpty()
-                ? "Preferred skills not set"
-                : "Preferred: " + String.join(", ", capThree(preferredSkills)));
-        gradeLine.setText("Minimum grade: " + selectedMinimumGrade(fields));
+
+        int positionCount = parseInt(fields.positions.getText());
+        String postText = positionCount == 1 ? "1 Post" : Math.max(positionCount, 0) + " Posts";
+        String formattedDeadline = formatDeadline(fields.deadline.getValue(), parseTime(fields.deadlineHour.getValue(), fields.deadlineMinute.getValue()));
+        nodes.seatsMetric.setText(postText);
+        nodes.deadlineMetric.setText(formattedDeadline);
+
+        String description = fallback(fields.description.getText(), "No job description provided.");
+        nodes.description.setText(description);
+        nodes.responsibilities.setText(description);
+
+        nodes.organiserName.setText(fallback(selectedOrganiserName(fields), "-"));
+        nodes.organiserDept.setText(moduleName + " Department");
+        nodes.organiserAvatar.setText(initials(nodes.organiserName.getText()));
+        nodes.codeValue.setText(module + "-" + resolvePreviewYear(fields));
+        nodes.campusValue.setText(formatCampusPreview(fields));
+        nodes.termValue.setText(fallback(fields.semester.getText(), "-"));
+        nodes.organiserValue.setText(fallback(selectedOrganiserName(fields), "-"));
     }
 
-    private List<String> capThree(List<String> skills) {
-        return skills.stream().limit(3).toList();
+    private String previewStatusStyle(JobStatus status) {
+        String textColor;
+        String background;
+        if (status == JobStatus.OPEN) {
+            textColor = "#ffffff";
+            background = "#00c29f";
+        } else if (status == JobStatus.EXPIRED) {
+            textColor = "#b45309";
+            background = "#fffbeb";
+        } else if (status == JobStatus.CLOSED) {
+            textColor = "#64748b";
+            background = "#f1f5f9";
+        } else {
+            textColor = "#1d4ed8";
+            background = "#eff6ff";
+        }
+        return "-fx-font-size: 10px; -fx-font-weight: 800; -fx-text-fill: " + textColor
+                + "; -fx-background-color: " + background
+                + "; -fx-background-radius: 4; -fx-padding: 2 8 2 8;";
     }
 
     private String formatCampusPreview(EditorFields fields) {
@@ -752,6 +824,22 @@ public class JobEditorController {
             labels.add(Job.CAMPUS_SHAHE);
         }
         return labels.isEmpty() ? "-" : String.join(", ", labels);
+    }
+
+    private int resolvePreviewYear(EditorFields fields) {
+        LocalDate date = fields.deadline.getValue();
+        return date == null ? LocalDate.now().getYear() : date.getYear();
+    }
+
+    private String initials(String name) {
+        if (name == null || name.isBlank()) {
+            return "U";
+        }
+        String[] parts = name.trim().split("\\s+");
+        if (parts.length == 1) {
+            return parts[0].substring(0, Math.min(2, parts[0].length())).toUpperCase();
+        }
+        return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
     }
 
     private Label metricLine(String title, String value) {
@@ -859,7 +947,11 @@ public class JobEditorController {
     private String selectedOrganiserName(EditorFields fields) {
         User selected = fields.organiser.getValue();
         if (selected != null) {
-            return formatOrganiserLabel(selected);
+            String displayName = selected.getDisplayName();
+            if (displayName != null && !displayName.isBlank()) {
+                return displayName;
+            }
+            return selected.getUserId();
         }
         return fields.defaultOrganiserId;
     }
@@ -875,6 +967,23 @@ public class JobEditorController {
         String displayName = organiser.getDisplayName();
         return (displayName == null || displayName.isBlank() ? organiser.getUserId() : displayName)
                 + " (" + organiser.getUserId() + ")";
+    }
+
+    private static class PreviewNodes {
+        private final Label cardTitle = new Label();
+        private final Label statusChip = new Label();
+        private final Label cardMeta = new Label();
+        private final Label organiserAvatar = new Label();
+        private final Label organiserName = new Label();
+        private final Label organiserDept = new Label();
+        private final Label seatsMetric = new Label();
+        private final Label deadlineMetric = new Label();
+        private final Label description = new Label();
+        private final Label responsibilities = new Label();
+        private final Label codeValue = new Label();
+        private final Label campusValue = new Label();
+        private final Label termValue = new Label();
+        private final Label organiserValue = new Label();
     }
 
     private static class EditorFields {

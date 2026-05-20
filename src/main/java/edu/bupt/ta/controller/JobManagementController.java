@@ -58,7 +58,6 @@ public class JobManagementController {
     private final VBox view = new VBox(18);
     private final TableView<JobTableRow> table = new TableView<>();
 
-    private HBox kpiRow;
     private JobFilter currentFilter = JobFilter.ALL;
     private VBox listPanel;
     private VBox emptyState;
@@ -120,7 +119,6 @@ public class JobManagementController {
         view.setPadding(new Insets(24));
         view.setFillWidth(true);
 
-        kpiRow = buildKpiRow(List.of());
         listPanel = buildListPanelV3();
         VBox detailPanel = buildDetailPanel();
 
@@ -133,7 +131,7 @@ public class JobManagementController {
         listPanel.prefWidthProperty().bind(body.widthProperty().subtract(18).multiply(0.6));
         detailPanel.prefWidthProperty().bind(body.widthProperty().subtract(18).multiply(0.4));
 
-        view.getChildren().addAll(buildHeader(), kpiRow, body);
+        view.getChildren().addAll(buildHeader(), body);
     }
 
     private HBox buildHeader() {
@@ -154,96 +152,6 @@ public class JobManagementController {
         HBox row = new HBox(12, title, spacer, filter, create);
         row.setAlignment(Pos.CENTER_LEFT);
         return row;
-    }
-
-    private HBox buildKpiRow(List<Job> jobs) {
-        long totalJobs = jobs.size();
-        long openJobs = jobs.stream().filter(job -> job.getStatus() == JobStatus.OPEN).count();
-        long draftJobs = jobs.stream().filter(job -> job.getStatus() == JobStatus.DRAFT).count();
-
-        List<Job> activePipelineJobs = jobs.stream()
-                .filter(this::isInActiveApplicationScope)
-                .toList();
-
-        int activeApplications = activePipelineJobs.stream()
-                .mapToInt(this::countNonCancelledApplications)
-                .sum();
-        long underReviewApplications = activePipelineJobs.stream()
-                .flatMap(job -> services.applicationService().getApplicationsByJob(job.getJobId()).stream())
-                .filter(app -> app.getStatus() == ApplicationStatus.UNDER_REVIEW)
-                .count();
-        int reviewRate = activeApplications == 0 ? 0 : (int) Math.round(underReviewApplications * 100.0 / activeApplications);
-
-        HBox row = new HBox(16,
-                kpiCard("Managed Jobs", String.valueOf(totalJobs),
-                        jobs.isEmpty() ? "No postings created yet" : openJobs + " currently open"),
-                kpiCard("Active Applications", String.valueOf(activeApplications),
-                        "Open + unfilled expired jobs"),
-                kpiCard("Draft Jobs", String.valueOf(draftJobs),
-                        draftJobs == 0 ? "All jobs are currently publishable" : "Not visible to applicants until published"),
-                kpiCard("Under Review", reviewRate + "%",
-                        activeApplications == 0
-                                ? "No active applications in pipeline"
-                                : underReviewApplications + " of " + activeApplications + " in screening")
-        );
-        row.setFillHeight(true);
-        row.setMinWidth(0);
-        row.getChildren().forEach(child -> {
-            if (child instanceof VBox card) {
-                card.prefWidthProperty().bind(row.widthProperty().subtract(48).divide(4));
-                card.maxWidthProperty().bind(card.prefWidthProperty());
-            }
-        });
-        return row;
-    }
-
-    private boolean isInActiveApplicationScope(Job job) {
-        if (job == null || job.getStatus() == null) {
-            return false;
-        }
-        if (job.getStatus() == JobStatus.OPEN) {
-            return true;
-        }
-        if (job.getStatus() != JobStatus.EXPIRED) {
-            return false;
-        }
-        long acceptedCount = services.applicationService().getApplicationsByJob(job.getJobId()).stream()
-                .filter(app -> app.getStatus() == ApplicationStatus.ACCEPTED)
-                .count();
-        return acceptedCount < Math.max(job.getPositions(), 0);
-    }
-
-    private int countNonCancelledApplications(Job job) {
-        return (int) services.applicationService().getApplicationsByJob(job.getJobId()).stream()
-                .filter(app -> app.getStatus() != ApplicationStatus.CANCELLED)
-                .count();
-    }
-
-    private VBox kpiCard(String titleText, String valueText, String metaText) {
-        VBox card = new VBox(8);
-        card.getStyleClass().add("panel-card");
-        card.setPadding(new Insets(16));
-        card.setMinWidth(0);
-        card.setPrefHeight(144);
-        HBox.setHgrow(card, Priority.ALWAYS);
-
-        Label title = new Label(titleText);
-        title.setStyle("-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #94a3b8;");
-
-        Label value = new Label(valueText);
-        value.setWrapText(true);
-        value.setStyle("-fx-font-size: 32px; -fx-font-weight: 900; -fx-text-fill: #0f172a;");
-
-        Label meta = new Label(metaText);
-        meta.setWrapText(true);
-        meta.setMinHeight(Region.USE_PREF_SIZE);
-        meta.setTextOverrun(OverrunStyle.CLIP);
-        meta.setMaxWidth(Double.MAX_VALUE);
-        meta.setStyle("-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #10b981;");
-        meta.prefWidthProperty().bind(card.widthProperty().subtract(32));
-
-        card.getChildren().addAll(title, value, meta);
-        return card;
     }
 
     private VBox buildListPanel() {
@@ -856,8 +764,6 @@ public class JobManagementController {
         }
         lastPollFingerprint = fingerprint;
 
-        view.getChildren().set(1, buildKpiRow(jobs));
-
         if (jobListContent != null) {
             jobListContent.getChildren().setAll(rows.stream()
                     .map(row -> buildJobListRow(row, jobListContent))
@@ -1098,7 +1004,7 @@ public class JobManagementController {
 
     private void onCreate() {
         JobEditorController editor = new JobEditorController();
-        editor.show(null, user.getUserId()).ifPresent(job -> {
+        editor.show(null, user.getUserId(), List.of(user)).ifPresent(job -> {
             ValidationResult result = services.jobService().createJob(job);
             if (!result.isValid()) {
                 showError(String.join("\n", result.getErrors()));
@@ -1116,7 +1022,7 @@ public class JobManagementController {
         }
 
         JobEditorController editor = new JobEditorController();
-        editor.show(selected, user.getUserId()).ifPresent(job -> {
+        editor.show(selected, user.getUserId(), List.of(user)).ifPresent(job -> {
             ValidationResult result = services.jobService().updateJob(job);
             if (!result.isValid()) {
                 showError(String.join("\n", result.getErrors()));
