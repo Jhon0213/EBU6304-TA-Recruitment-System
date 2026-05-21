@@ -40,6 +40,14 @@ public final class AppPaths {
         return dataDir().resolve("audit_log.txt");
     }
 
+    public static Path notificationsJson() {
+        return dataDir().resolve("notifications.json");
+    }
+
+    public static Path favouriteJobsJson() {
+        return dataDir().resolve("favourite_jobs.json");
+    }
+
     public static Path exportDir() {
         return dataDir().resolve("export");
     }
@@ -50,5 +58,9 @@ public final class AppPaths {
 
     public static Path applicationExportCsv() {
         return exportDir().resolve("application_report.csv");
+    }
+
+    public static Path userSettingsJson() {
+        return dataDir().resolve("user_settings.json");
     }
 }

@@ -7,6 +7,7 @@ import edu.bupt.ta.model.Job;
 import edu.bupt.ta.model.User;
 import edu.bupt.ta.service.ServiceRegistry;
 import edu.bupt.ta.ui.IconFactory;
+import edu.bupt.ta.util.I18n;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -19,8 +20,11 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -37,13 +41,13 @@ public class JobDetailController {
     private final VBox content = new VBox(40);
 
     private final HBox warningBanner = new HBox(36);
-    private final Label warningTitle = new Label("Action Required: Profile Incomplete");
-    private final Label warningBody = new Label("Please complete your profile and upload your CV to apply for this position.");
-    private final Button completeProfileButton = new Button("Complete Profile");
+    private final Label warningTitle = new Label();
+    private final Label warningBody = new Label();
+    private final Button completeProfileButton = new Button();
 
     private final VBox detailCard = new VBox(40);
-    private final Label titleLabel = new Label("Select a position");
-    private final Label subtitleLabel = new Label("-");
+    private final Label titleLabel = new Label();
+    private final Label subtitleLabel = new Label();
     private final Label organiserNameLabel = new Label("-");
     private final Label organiserDeptLabel = new Label("-");
     private final Label organiserAvatarLabel = new Label("U");
@@ -51,16 +55,19 @@ public class JobDetailController {
     private final Label seatsMetricValue = new Label("-");
     private final Label deadlineMetricValue = new Label("-");
 
-    private final Label descLabel = new Label("Choose a job card on the left to preview details.");
+    private final Label descLabel = new Label();
     private final VBox responsibilitiesList = new VBox(8);
 
     private final Label infoCodeValue = new Label("-");
     private final Label infoProfessorValue = new Label("-");
     private final Label infoCampusValue = new Label("-");
     private final Label infoTermValue = new Label("-");
+    private final Label infoGradeValue = new Label("-");
 
-    private final Button applyButton = new Button("APPLY NOW");
+    private final Button applyButton = new Button();
 
+    private final StackPane heartIcon = new StackPane();
+    private Consumer<String> onFavouriteToggle;
     private Job currentJob;
     private String currentApplicantId;
     private ApplicationStatus currentApplicationStatus;
@@ -69,7 +76,24 @@ public class JobDetailController {
 
     public JobDetailController(ServiceRegistry services) {
         this.services = services;
+        I18n.initTranslations();
+        applyI18n();
         initialize();
+    }
+
+    private void applyI18n() {
+        warningTitle.setText(I18n.t("action_required"));
+        warningBody.setText(I18n.t("complete_profile_first"));
+        completeProfileButton.setText(I18n.t("complete_profile_btn"));
+    }
+
+    public void refreshI18n() {
+        applyI18n();
+        if (currentJob != null) {
+            setJobWithApplicationStatus(currentJob, currentApplicantId, currentApplicationStatus);
+        } else {
+            showEmptyState();
+        }
     }
 
     public Parent getView() {
@@ -82,6 +106,19 @@ public class JobDetailController {
 
     public void setOnCancel(Consumer<String> onCancel) {
         this.onCancel = onCancel;
+    }
+
+    public void setOnFavouriteToggle(Consumer<String> onFavouriteToggle) {
+        this.onFavouriteToggle = onFavouriteToggle;
+    }
+
+    public void updateHeartIconDirectly(String jobId, boolean isFavourite) {
+        if (currentJob != null && currentJob.getJobId().equals(jobId)) {
+            FontIcon heartFilled = (FontIcon) heartIcon.getChildren().get(0);
+            FontIcon heartEmpty = (FontIcon) heartIcon.getChildren().get(1);
+            heartFilled.setVisible(isFavourite);
+            heartEmpty.setVisible(!isFavourite);
+        }
     }
 
     public void setJob(Job job) {
@@ -107,20 +144,45 @@ public class JobDetailController {
         organiserDeptLabel.setText(resolveOrganiserDepartment(job));
         organiserAvatarLabel.setText(initialsFromName(organiserNameLabel.getText()));
 
-        seatsMetricValue.setText(job.getPositions() + " Posts");
+        String postsText = job.getPositions() == 1
+                ? I18n.t("post_single")
+                : I18n.t("posts_plural").replace("{n}", String.valueOf(job.getPositions()));
+        seatsMetricValue.setText(postsText);
         deadlineMetricValue.setText(formatMetricDeadline(job.getDeadline()));
 
         descLabel.setText(job.getDescription() == null || job.getDescription().isBlank()
-                ? "No job description provided."
+                ? I18n.t("no_job_description")
                 : job.getDescription());
 
         populateResponsibilities(job);
         populateModuleInfo(job);
         updateApplyButton();
+        updateHeartIcon();
     }
 
     public void setMatchExplanation(MatchExplanationDTO dto) {
         // Kept for compatibility with caller flow.
+    }
+
+    private void updateHeartIcon() {
+        if (currentJob == null) return;
+
+        FontIcon heartFilled = FontIcon.of(FontAwesomeSolid.HEART, 26);
+        heartFilled.setIconColor(Color.web("#ef4444"));
+        FontIcon heartEmpty = FontIcon.of(FontAwesomeSolid.HEART, 26);
+        heartEmpty.setIconColor(Color.web("#94a3b8"));
+
+        boolean isFav = false;
+        if (currentApplicantId != null && !currentApplicantId.isBlank()) {
+            isFav = services.favouriteJobRepository()
+                    .findByApplicantId(currentApplicantId)
+                    .map(f -> f.isFavourite(currentJob.getJobId()))
+                    .orElse(false);
+        }
+
+        heartFilled.setVisible(isFav);
+        heartEmpty.setVisible(!isFav);
+        heartIcon.getChildren().setAll(heartFilled, heartEmpty);
     }
 
     private void initialize() {
@@ -172,9 +234,9 @@ public class JobDetailController {
 
         HBox header = buildHeader();
         HBox metrics = buildMetrics();
-        VBox description = section("Job Description", buildDescriptionBlock());
-        VBox responsibilities = section("Key Responsibilities", buildResponsibilitiesBlock());
-        VBox moduleInfo = section("Module Info", buildModuleInfoBlock());
+        VBox description = section(I18n.t("job_description").toUpperCase(Locale.ENGLISH), buildDescriptionBlock());
+        VBox responsibilities = section(I18n.t("key_responsibilities").toUpperCase(Locale.ENGLISH), buildResponsibilitiesBlock());
+        VBox moduleInfo = section(I18n.t("module_info").toUpperCase(Locale.ENGLISH), buildModuleInfoBlock());
         Region divider = new Region();
         divider.getStyleClass().add("position-detail-divider");
         divider.setPrefHeight(1);
@@ -195,14 +257,19 @@ public class JobDetailController {
     }
 
     private HBox buildHeader() {
-        Label heart = new Label("♡");
-        heart.getStyleClass().add("position-favorite-icon");
-        HBox favButton = new HBox(heart);
+        heartIcon.getStyleClass().setAll("position-favorite-icon");
+        HBox favButton = new HBox(heartIcon);
         favButton.getStyleClass().add("position-favorite-button");
         favButton.setAlignment(Pos.CENTER);
         favButton.setMinSize(52, 52);
         favButton.setPrefSize(52, 52);
         favButton.setMaxSize(52, 52);
+        favButton.setCursor(javafx.scene.Cursor.HAND);
+        favButton.setOnMouseClicked(event -> {
+            if (currentJob != null && onFavouriteToggle != null) {
+                onFavouriteToggle.accept(currentJob.getJobId());
+            }
+        });
 
         titleLabel.getStyleClass().add("position-detail-title");
         titleLabel.setWrapText(true);
@@ -235,8 +302,8 @@ public class JobDetailController {
     }
 
     private HBox buildMetrics() {
-        VBox seats = metricCard("AVAILABLE", "SEATS", seatsMetricValue, IconFactory.IconType.USERS);
-        VBox deadline = metricCard("APPLICATION", "DEADLINE", deadlineMetricValue, IconFactory.IconType.CALENDAR);
+        VBox seats = metricCard(I18n.t("available_seats").toUpperCase(Locale.ENGLISH), I18n.t("seats_label").toUpperCase(Locale.ENGLISH), seatsMetricValue, IconFactory.IconType.USERS);
+        VBox deadline = metricCard(I18n.t("application_deadline").toUpperCase(Locale.ENGLISH), I18n.t("deadline_label").toUpperCase(Locale.ENGLISH), deadlineMetricValue, IconFactory.IconType.CALENDAR);
 
         HBox row = new HBox(14, seats, deadline);
         row.setAlignment(Pos.CENTER_LEFT);
@@ -320,10 +387,11 @@ public class JobDetailController {
         c2.setPercentWidth(50);
         grid.getColumnConstraints().setAll(c1, c2);
 
-        grid.add(infoCell("Code", infoCodeValue), 0, 0);
-        grid.add(infoCell("Professor", infoProfessorValue), 1, 0);
-        grid.add(infoCell("Campus", infoCampusValue), 0, 1);
-        grid.add(infoCell("Term", infoTermValue), 1, 1);
+        grid.add(infoCell(I18n.t("code_label").toUpperCase(Locale.ENGLISH), infoCodeValue), 0, 0);
+        grid.add(infoCell(I18n.t("professor_label").toUpperCase(Locale.ENGLISH), infoProfessorValue), 1, 0);
+        grid.add(infoCell(I18n.t("campus_label").toUpperCase(Locale.ENGLISH), infoCampusValue), 0, 1);
+        grid.add(infoCell(I18n.t("term_label").toUpperCase(Locale.ENGLISH), infoTermValue), 1, 1);
+        grid.add(infoCell(I18n.t("minimum_grade_label").toUpperCase(Locale.ENGLISH), infoGradeValue), 0, 2, 2, 1);
 
         VBox box = new VBox(grid);
         box.getStyleClass().add("position-module-card");
@@ -366,35 +434,37 @@ public class JobDetailController {
         int year = job.getDeadline() == null ? LocalDateTime.now().getYear() : job.getDeadline().getYear();
         infoCodeValue.setText((safe(job.getModuleCode()) + "-" + year).replace("--", "-"));
         infoProfessorValue.setText(resolveOrganiserName(job));
-        infoCampusValue.setText("Shahe Campus");
+        infoCampusValue.setText(I18n.t("shahe_campus"));
         infoTermValue.setText(resolveTerm(job));
+        infoGradeValue.setText(safe(job.getMinimumAcademicGrade()));
     }
 
     private void showEmptyState() {
         warningBanner.setVisible(false);
         warningBanner.setManaged(false);
 
-        titleLabel.setText("Select a position");
+        titleLabel.setText(I18n.t("select_position"));
         subtitleLabel.setText("-");
         organiserNameLabel.setText("-");
         organiserDeptLabel.setText("-");
         organiserAvatarLabel.setText("U");
         seatsMetricValue.setText("-");
         deadlineMetricValue.setText("-");
-        descLabel.setText("Choose a job card on the left to preview details.");
+        descLabel.setText(I18n.t("choose_job_card"));
 
         responsibilitiesList.getChildren().clear();
         responsibilitiesList.getChildren().add(
-                responsibilityRow("Select an open position to view responsibilities and requirements.")
+                responsibilityRow(I18n.t("no_responsibilities"))
         );
 
         infoCodeValue.setText("-");
         infoProfessorValue.setText("-");
         infoCampusValue.setText("-");
         infoTermValue.setText("-");
+        infoGradeValue.setText("-");
 
         applyButton.setDisable(true);
-        applyButton.setText("APPLY NOW");
+        applyButton.setText(I18n.t("apply_now"));
         applyButton.getStyleClass().setAll("button", "position-apply-button");
         applyButton.setOnAction(null);
     }
@@ -415,7 +485,7 @@ public class JobDetailController {
         applyButton.getStyleClass().setAll("button", "position-apply-button");
 
         if (currentApplicationStatus == ApplicationStatus.ACCEPTED) {
-            applyButton.setText("ACCEPTED");
+            applyButton.setText(I18n.t("accepted_short").toUpperCase(Locale.ENGLISH));
             applyButton.setDisable(true);
             applyButton.getStyleClass().add("position-apply-button-disabled");
             applyButton.setOnAction(null);
@@ -423,7 +493,7 @@ public class JobDetailController {
         }
 
         if (currentApplicationStatus == ApplicationStatus.SUBMITTED) {
-            applyButton.setText("CANCEL APPLICATION");
+            applyButton.setText(I18n.t("cancel_application").toUpperCase(Locale.ENGLISH));
             applyButton.setDisable(false);
             applyButton.getStyleClass().add("position-apply-button-danger");
             applyButton.setOnAction(event -> {
@@ -442,7 +512,7 @@ public class JobDetailController {
             return;
         }
 
-        applyButton.setText("APPLY NOW");
+        applyButton.setText(I18n.t("apply_now").toUpperCase(Locale.ENGLISH));
         applyButton.setDisable(false);
         applyButton.setOnAction(event -> {
             if (onApplyAction != null && currentJob != null) {
@@ -480,9 +550,9 @@ public class JobDetailController {
 
     private static String resolveOrganiserDepartment(Job job) {
         if (job.getModuleName() == null || job.getModuleName().isBlank()) {
-            return "Department";
+            return I18n.t("department_label");
         }
-        return job.getModuleName() + " Department";
+        return job.getModuleName() + " " + I18n.t("department_label");
     }
 
     private static String normalizeTerm(String term) {

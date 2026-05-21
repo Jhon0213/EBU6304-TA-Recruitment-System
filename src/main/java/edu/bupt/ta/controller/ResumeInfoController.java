@@ -3,6 +3,7 @@ package edu.bupt.ta.controller;
 import edu.bupt.ta.model.ResumeInfo;
 import edu.bupt.ta.model.User;
 import edu.bupt.ta.service.ServiceRegistry;
+import edu.bupt.ta.util.I18n;
 import edu.bupt.ta.util.ValidationResult;
 import javafx.geometry.Insets;
 import javafx.scene.Parent;
@@ -39,6 +40,7 @@ public class ResumeInfoController {
     public ResumeInfoController(ServiceRegistry services, User user) {
         this.services = services;
         this.user = user;
+        I18n.initTranslations();
         initialize();
     }
 
@@ -56,10 +58,10 @@ public class ResumeInfoController {
 
         HBox header = new HBox();
 
-        Label heading = new Label("Resume Information");
+        Label heading = new Label(I18n.t("resume_information"));
         heading.getStyleClass().add("section-title");
 
-        Label subtitle = new Label("Maintain structured CV data for matching and workload analysis.");
+        Label subtitle = new Label(I18n.t("maintain_resume_data"));
         subtitle.getStyleClass().add("body-muted");
 
         VBox titleBlock = new VBox(4, heading, subtitle);
@@ -67,11 +69,11 @@ public class ResumeInfoController {
         HBox spacer = new HBox();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Button reset = new Button("Reset");
+        Button reset = new Button(I18n.t("reset"));
         reset.getStyleClass().add("secondary-button");
         reset.setOnAction(event -> loadFromModel());
 
-        Button save = new Button("Save Resume");
+        Button save = new Button(I18n.t("save_resume"));
         save.getStyleClass().add("primary-button");
         save.setOnAction(event -> saveResume());
 
@@ -86,13 +88,13 @@ public class ResumeInfoController {
         form.setHgap(16);
         form.setVgap(14);
 
-        form.add(field("Relevant Modules (comma separated)", relevantModules), 0, 0, 2, 1);
-        form.add(field("Technical Skills (comma separated)", technicalSkills), 0, 1);
-        form.add(field("Language Skills (comma separated)", languageSkills), 1, 1);
-        form.add(field("Availability (comma separated)", availability), 0, 2);
-        form.add(field("Max Weekly Hours", maxWeeklyHours), 1, 2);
-        form.add(areaField("Experience", experience, 4), 0, 3, 2, 1);
-        form.add(areaField("Personal Statement", personalStatement, 5), 0, 4, 2, 1);
+        form.add(field(I18n.t("relevant_modules"), relevantModules), 0, 0, 2, 1);
+        form.add(field(I18n.t("technical_skills"), technicalSkills), 0, 1);
+        form.add(field(I18n.t("language_skills"), languageSkills), 1, 1);
+        form.add(field(I18n.t("availability_label"), availability), 0, 2);
+        form.add(field(I18n.t("max_weekly_hours"), maxWeeklyHours), 1, 2);
+        form.add(areaField(I18n.t("experience_label"), experience, 4), 0, 3, 2, 1);
+        form.add(areaField(I18n.t("personal_statement_label"), personalStatement, 5), 0, 4, 2, 1);
 
         formCard.getChildren().add(form);
 
@@ -100,10 +102,10 @@ public class ResumeInfoController {
         hintCard.getStyleClass().add("soft-card");
         hintCard.setPadding(new Insets(12));
 
-        Label hintTitle = new Label("Matching Quality Hint");
+        Label hintTitle = new Label(I18n.t("matching_quality_hint"));
         hintTitle.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #0f766e;");
 
-        Label hintText = new Label("Include required skills and availability windows to improve explainable match score.");
+        Label hintText = new Label(I18n.t("improve_match_hint"));
         hintText.setWrapText(true);
         hintText.setStyle("-fx-font-size: 12px; -fx-text-fill: #0f766e;");
 
@@ -170,7 +172,7 @@ public class ResumeInfoController {
             return;
         }
 
-        DialogControllerFactory.success("Resume Saved", "Resume saved successfully.",
+        DialogControllerFactory.success(I18n.t("resume_saved"), I18n.t("resume_saved_msg"),
                 view.getScene() == null ? null : view.getScene().getWindow());
     }
 

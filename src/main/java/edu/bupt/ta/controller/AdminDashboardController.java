@@ -6,6 +6,7 @@ import edu.bupt.ta.dto.AuditLogItemDTO;
 import edu.bupt.ta.enums.RiskLevel;
 import edu.bupt.ta.model.User;
 import edu.bupt.ta.service.ServiceRegistry;
+import edu.bupt.ta.util.I18n;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -72,8 +73,8 @@ public class AdminDashboardController {
     private final Label totalApplicationsValue = new Label("0");
     private final Label acceptedValue = new Label("0");
     private final Label highRiskValue = new Label("0");
-    private final Label workloadFooter = new Label("Showing 0 of 0 TAs");
-    private final Button sortButton = new Button("Sort");
+    private final Label workloadFooter = new Label();
+    private final Button sortButton = new Button();
 
     private SortMode sortMode = SortMode.RISK_PRIORITY;
 
@@ -108,21 +109,21 @@ public class AdminDashboardController {
     }
 
     private HBox buildTopBar() {
-        Label title = new Label("Workload Monitoring");
+        Label title = new Label(I18n.t("workload_monitoring"));
         title.setStyle("-fx-font-size: 22px; -fx-font-weight: 900; -fx-text-fill: #1e293b;");
 
-        searchField.setPromptText("Search TA by name or ID...");
+        searchField.setPromptText(I18n.t("search_ta_name_id"));
         searchField.setPrefWidth(340);
 
-        riskFilter.getItems().setAll("ALL RISK", "HIGH", "MEDIUM", "LOW");
-        riskFilter.setValue("ALL RISK");
+        riskFilter.getItems().setAll(I18n.t("all_risk"), I18n.t("high_risk"), I18n.t("medium_risk"), I18n.t("low_risk"));
+        riskFilter.setValue(I18n.t("all_risk"));
         riskFilter.setPrefWidth(146);
 
-        Button refreshButton = new Button("Refresh");
+        Button refreshButton = new Button(I18n.t("refresh"));
         refreshButton.getStyleClass().add("secondary-button");
         refreshButton.setOnAction(event -> refresh());
 
-        Button export = new Button("Export Report");
+        Button export = new Button(I18n.t("export"));
         export.setStyle("-fx-background-color: #354a5f; -fx-text-fill: white; -fx-font-weight: 600; -fx-background-radius: 8; -fx-padding: 10 16 10 16;");
         export.setOnAction(event -> exportWorkload());
 
@@ -136,10 +137,10 @@ public class AdminDashboardController {
 
     private HBox buildKpiRow() {
         HBox row = new HBox(16,
-                metricCard(MetricIcon.JOBS, "TOTAL JOBS", totalJobsValue, "+5%", "#2563eb", "#eff6ff", false),
-                metricCard(MetricIcon.APPLICATIONS, "TOTAL APPLICATIONS", totalApplicationsValue, "-2%", "#7c3aed", "#f5f3ff", false),
-                metricCard(MetricIcon.ACCEPTED, "ACCEPTED APPS", acceptedValue, "+12%", "#10b981", "#ecfdf3", false),
-                metricCard(MetricIcon.RISK, "HIGH-RISK TAS", highRiskValue, "+3%", "#ef4444", "#fff1f2", true)
+                metricCard(MetricIcon.JOBS, I18n.t("total_jobs_kpi"), totalJobsValue, "+5%", "#2563eb", "#eff6ff", false),
+                metricCard(MetricIcon.APPLICATIONS, I18n.t("total_applications_kpi"), totalApplicationsValue, "-2%", "#7c3aed", "#f5f3ff", false),
+                metricCard(MetricIcon.ACCEPTED, I18n.t("accepted_apps_kpi"), acceptedValue, "+12%", "#10b981", "#ecfdf3", false),
+                metricCard(MetricIcon.RISK, I18n.t("high_risk_tas_kpi"), highRiskValue, "+3%", "#ef4444", "#fff1f2", true)
         );
         return row;
     }
@@ -193,17 +194,17 @@ public class AdminDashboardController {
         card.setPadding(new Insets(18));
 
         VBox titleBlock = new VBox(4);
-        Label heading = new Label("Workload Monitoring Table");
+        Label heading = new Label(I18n.t("workload_monitoring_table"));
         heading.setStyle("-fx-font-size: 16px; -fx-font-weight: 900; -fx-text-fill: #1e293b;");
 
-        Label subtitle = new Label("Real-time tracking of weekly teaching hours per student");
+        Label subtitle = new Label(I18n.t("realtime_tracking_hours"));
         subtitle.setStyle("-fx-font-size: 13px; -fx-font-weight: 400; -fx-text-fill: #94a3b8;");
         titleBlock.getChildren().addAll(heading, subtitle);
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Button filterButton = new Button("Filter");
+        Button filterButton = new Button(I18n.t("filter"));
         filterButton.getStyleClass().add("secondary-button");
         filterButton.setOnAction(event -> riskFilter.show());
 
@@ -213,7 +214,7 @@ public class AdminDashboardController {
         HBox header = new HBox(12, titleBlock, spacer, filterButton, sortButton);
         header.setAlignment(Pos.CENTER_LEFT);
 
-        TableColumn<AdminWorkloadRowDTO, String> applicantCol = new TableColumn<>("TA NAME");
+        TableColumn<AdminWorkloadRowDTO, String> applicantCol = new TableColumn<>(I18n.t("ta_name"));
         applicantCol.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().applicantName()));
         applicantCol.setCellFactory(column -> new TableCell<>() {
             @Override
@@ -243,15 +244,15 @@ public class AdminDashboardController {
             }
         });
 
-        TableColumn<AdminWorkloadRowDTO, String> studentIdCol = new TableColumn<>("STUDENT ID");
+        TableColumn<AdminWorkloadRowDTO, String> studentIdCol = new TableColumn<>(I18n.t("student_id_label"));
         studentIdCol.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().studentId()));
         studentIdCol.setCellFactory(column -> mutedTextCell());
 
-        TableColumn<AdminWorkloadRowDTO, Number> acceptedJobsCol = new TableColumn<>("ACCEPTED JOBS");
+        TableColumn<AdminWorkloadRowDTO, Number> acceptedJobsCol = new TableColumn<>(I18n.t("accepted_jobs_label"));
         acceptedJobsCol.setCellValueFactory(cell -> new SimpleIntegerProperty(cell.getValue().acceptedJobs()));
         acceptedJobsCol.setCellFactory(column -> centeredNumberCell());
 
-        TableColumn<AdminWorkloadRowDTO, Number> hoursCol = new TableColumn<>("WEEKLY HOURS");
+        TableColumn<AdminWorkloadRowDTO, Number> hoursCol = new TableColumn<>(I18n.t("weekly_hours_label"));
         hoursCol.setCellValueFactory(cell -> new SimpleIntegerProperty(cell.getValue().currentWeeklyHours()));
         hoursCol.setCellFactory(column -> new TableCell<>() {
             @Override
@@ -271,7 +272,7 @@ public class AdminDashboardController {
             }
         });
 
-        TableColumn<AdminWorkloadRowDTO, Number> maxCol = new TableColumn<>("MAX LIMIT");
+        TableColumn<AdminWorkloadRowDTO, Number> maxCol = new TableColumn<>(I18n.t("max_limit_label"));
         maxCol.setCellValueFactory(cell -> new SimpleIntegerProperty(cell.getValue().maxWeeklyHours()));
         maxCol.setCellFactory(column -> new TableCell<>() {
             @Override
@@ -287,7 +288,7 @@ public class AdminDashboardController {
             }
         });
 
-        TableColumn<AdminWorkloadRowDTO, String> riskCol = new TableColumn<>("RISK LEVEL");
+        TableColumn<AdminWorkloadRowDTO, String> riskCol = new TableColumn<>(I18n.t("risk_level_label"));
         riskCol.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().riskLevel()));
         riskCol.setCellFactory(column -> new TableCell<>() {
             @Override
@@ -305,7 +306,7 @@ public class AdminDashboardController {
             }
         });
 
-        TableColumn<AdminWorkloadRowDTO, String> noteCol = new TableColumn<>("NOTES");
+        TableColumn<AdminWorkloadRowDTO, String> noteCol = new TableColumn<>(I18n.t("notes_label"));
         noteCol.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().note()));
         noteCol.setCellFactory(column -> new TableCell<>() {
             @Override
@@ -329,7 +330,7 @@ public class AdminDashboardController {
         workloadTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         workloadTable.setFixedCellSize(74);
         workloadTable.setPrefHeight(390);
-        workloadTable.setPlaceholder(new Label("No workload records match the current filters."));
+        workloadTable.setPlaceholder(new Label(I18n.t("no_workload_records_match")));
 
         workloadFooter.setStyle("-fx-font-size: 12px; -fx-text-fill: #94a3b8;");
 
@@ -342,21 +343,21 @@ public class AdminDashboardController {
         card.getStyleClass().add("panel-card");
         card.setPadding(new Insets(18));
 
-        Label heading = new Label("Audit Log");
+        Label heading = new Label(I18n.t("audit_log"));
         heading.setStyle("-fx-font-size: 16px; -fx-font-weight: 900; -fx-text-fill: #1e293b;");
 
-        Label subtitle = new Label("Recent system actions recorded for jobs, applications, and review decisions");
+        Label subtitle = new Label(I18n.t("audit_log_desc"));
         subtitle.getStyleClass().add("body-muted");
 
-        TableColumn<AuditLogItemDTO, String> timeCol = new TableColumn<>("TIME");
+        TableColumn<AuditLogItemDTO, String> timeCol = new TableColumn<>(I18n.t("time_label"));
         timeCol.setCellValueFactory(cell -> new SimpleStringProperty(formatTime(cell.getValue().timestamp())));
         timeCol.setCellFactory(column -> mutedTextCell());
 
-        TableColumn<AuditLogItemDTO, String> actorCol = new TableColumn<>("ACTOR");
+        TableColumn<AuditLogItemDTO, String> actorCol = new TableColumn<>(I18n.t("actor_label"));
         actorCol.setCellValueFactory(cell -> new SimpleStringProperty(
                 cell.getValue().actorName() + " (" + cell.getValue().actorUserId() + ")"));
 
-        TableColumn<AuditLogItemDTO, String> actionCol = new TableColumn<>("ACTION");
+        TableColumn<AuditLogItemDTO, String> actionCol = new TableColumn<>(I18n.t("action_label2"));
         actionCol.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().action()));
         actionCol.setCellFactory(column -> new TableCell<>() {
             @Override
@@ -374,13 +375,13 @@ public class AdminDashboardController {
             }
         });
 
-        TableColumn<AuditLogItemDTO, String> detailCol = new TableColumn<>("DETAIL");
+        TableColumn<AuditLogItemDTO, String> detailCol = new TableColumn<>(I18n.t("detail_label"));
         detailCol.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().detail()));
 
         auditLogTable.getColumns().setAll(timeCol, actorCol, actionCol, detailCol);
         auditLogTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         auditLogTable.setPrefHeight(250);
-        auditLogTable.setPlaceholder(new Label("No audit logs found."));
+        auditLogTable.setPlaceholder(new Label(I18n.t("no_audit_logs_found")));
 
         card.getChildren().addAll(heading, subtitle, auditLogTable);
         return card;
@@ -406,8 +407,8 @@ public class AdminDashboardController {
                             || contains(workload.note(), keyword))
                     .toList();
         }
-        if (selectedRisk != null && !"ALL RISK".equals(selectedRisk)) {
-            RiskLevel targetRisk = RiskLevel.valueOf(selectedRisk);
+        if (selectedRisk != null && !I18n.t("all_risk").equals(selectedRisk)) {
+            RiskLevel targetRisk = RiskLevel.valueOf(selectedRisk.toUpperCase(Locale.ROOT));
             workloads = workloads.stream()
                     .filter(workload -> targetRisk.name().equals(workload.riskLevel()))
                     .toList();
@@ -423,8 +424,8 @@ public class AdminDashboardController {
         workloads = workloads.stream().sorted(comparator).toList();
 
         workloadTable.setItems(FXCollections.observableArrayList(workloads));
-        workloadFooter.setText("Showing " + workloads.size() + " of " + allWorkloads.size() + " TAs");
-        sortButton.setText(sortMode == SortMode.RISK_PRIORITY ? "Sort: Risk" : "Sort: Hours");
+        workloadFooter.setText(I18n.t("showing_n_of_m_tas").replace("{n}", String.valueOf(workloads.size())).replace("{m}", String.valueOf(allWorkloads.size())));
+        sortButton.setText(sortMode == SortMode.RISK_PRIORITY ? I18n.t("sort_by_risk") : I18n.t("sort_by_hours"));
 
         List<AuditLogItemDTO> auditLogs = services.adminMonitoringService().getAuditLogs();
         if (!keyword.isEmpty()) {
@@ -681,7 +682,7 @@ public class AdminDashboardController {
 
     private void exportWorkload() {
         Path path = services.exportService().exportWorkloadReport();
-        DialogControllerFactory.info("Workload CSV Generated", "Exported: " + path.toAbsolutePath(),
+        DialogControllerFactory.info(I18n.t("workload_csv_generated"), I18n.t("exported_colon") + " " + path.toAbsolutePath(),
                 view.getScene() == null ? null : view.getScene().getWindow());
     }
 

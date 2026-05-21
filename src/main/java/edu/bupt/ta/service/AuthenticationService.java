@@ -53,4 +53,35 @@ public class AuthenticationService {
     public boolean hasRole(Role role) {
         return currentUser != null && currentUser.getRole() == role;
     }
+
+    public String updatePassword(String currentPassword, String newPassword) {
+        if (currentUser == null) {
+            return "Not logged in.";
+        }
+        if (!PasswordUtils.matches(currentPassword, currentUser.getPasswordHash())) {
+            return "Incorrect current password.";
+        }
+        if (newPassword == null || newPassword.length() < 6) {
+            return "Password must be at least 6 characters.";
+        }
+        currentUser.setPasswordHash(PasswordUtils.sha256(newPassword));
+        userRepository.save(currentUser);
+        return null;
+    }
+
+    public String updateUsername(String newUsername) {
+        if (currentUser == null) {
+            return "Not logged in.";
+        }
+        if (newUsername == null || newUsername.isBlank()) {
+            return "Username cannot be empty.";
+        }
+        Optional<User> existing = userRepository.findByUsername(newUsername.trim());
+        if (existing.isPresent() && !existing.get().getUserId().equals(currentUser.getUserId())) {
+            return "Username already taken.";
+        }
+        currentUser.setUsername(newUsername.trim());
+        userRepository.save(currentUser);
+        return null;
+    }
 }

@@ -7,6 +7,7 @@ import edu.bupt.ta.model.Job;
 import edu.bupt.ta.model.User;
 import edu.bupt.ta.service.ServiceRegistry;
 import edu.bupt.ta.util.DisplayPlaceholders;
+import edu.bupt.ta.util.I18n;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -49,13 +50,13 @@ public class ApplicantListController {
     private final VBox leftContent = new VBox(14);
     private final VBox emptyState = new VBox(14);
 
-    private final Label detailName = new Label("Applicant Details");
-    private final Label detailMeta = new Label("Select an applicant to review key information.");
+    private final Label detailName = new Label(I18n.t("applicant_details_label"));
+    private final Label detailMeta = new Label(I18n.t("select_applicant_view_info"));
     private final VBox skillsBox = new VBox(10);
     private final VBox academicBox = new VBox(10);
     private final VBox insightBox = new VBox(10);
-    private final Button acceptButton = new Button("Accept");
-    private final Button viewFullButton = new Button("View Full Application");
+    private final Button acceptButton = new Button(I18n.t("accept"));
+    private final Button viewFullButton = new Button(I18n.t("details"));
 
     private Row selectedRow;
     private String activeTab = "ALL";
@@ -95,10 +96,10 @@ public class ApplicantListController {
         topRow.setAlignment(Pos.CENTER_LEFT);
 
         VBox titleBlock = new VBox(4);
-        Label title = new Label("Applicant List");
+        Label title = new Label(I18n.t("applicant_list"));
         title.getStyleClass().add("page-title");
 
-        Label caption = new Label("RECRUITMENT GOAL");
+        Label caption = new Label(I18n.t("recruitment_goal"));
         caption.getStyleClass().add("tiny-kicker");
 
         RectangleBar bar = new RectangleBar(170, 6);
@@ -111,7 +112,7 @@ public class ApplicantListController {
         titleBlock.getChildren().addAll(title, goalRow);
 
         jobSelector.setPrefWidth(260);
-        jobSelector.setPromptText("Select your job");
+        jobSelector.setPromptText(I18n.t("select_your_job"));
         jobSelector.setCellFactory(param -> new javafx.scene.control.ListCell<>() {
             @Override
             protected void updateItem(Job item, boolean empty) {
@@ -131,11 +132,11 @@ public class ApplicantListController {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Button filter = new Button("Filter");
+        Button filter = new Button(I18n.t("filter"));
         filter.getStyleClass().add("secondary-button");
         filter.setOnAction(event -> cycleTab());
 
-        Button export = new Button("Export Report");
+        Button export = new Button(I18n.t("export_report"));
         export.getStyleClass().add("secondary-button");
         export.setOnAction(event -> services.exportService().exportApplicationReport());
 
@@ -185,18 +186,18 @@ public class ApplicantListController {
         detailMeta.setStyle("-fx-font-size: 13px; -fx-font-weight: 400; -fx-text-fill: #64748b;");
         detailMeta.setWrapText(true);
 
-        Label skillKicker = new Label("SKILLS OVERLAP");
+        Label skillKicker = new Label(I18n.t("skills_overlap"));
         skillKicker.getStyleClass().add("tiny-kicker");
 
-        Label academicKicker = new Label("ACADEMIC RECORD");
+        Label academicKicker = new Label(I18n.t("academic_record"));
         academicKicker.getStyleClass().add("tiny-kicker");
 
-        Label insightKicker = new Label("INSIGHTS");
+        Label insightKicker = new Label(I18n.t("insights"));
         insightKicker.getStyleClass().add("tiny-kicker");
 
-        skillsBox.getChildren().add(detailCard("No applicant selected", "Select an applicant to view overlap information."));
-        academicBox.getChildren().add(detailCard("Awaiting selection", "Matched and missing skills will appear here."));
-        insightBox.getChildren().add(detailCard("Review summary", "Current workload, risk level and statement preview will appear here."));
+        skillsBox.getChildren().add(detailCard(I18n.t("no_applicant_selected"), I18n.t("select_applicant_view_info")));
+        academicBox.getChildren().add(detailCard(I18n.t("awaiting_selection"), I18n.t("matched_missing_skills")));
+        insightBox.getChildren().add(detailCard(I18n.t("review_summary"), I18n.t("current_workload_risk_statement")));
 
         acceptButton.getStyleClass().add("primary-button");
         acceptButton.setMaxWidth(Double.MAX_VALUE);
@@ -266,7 +267,7 @@ public class ApplicantListController {
 
         if (selectedJob == null) {
             listView.setItems(FXCollections.observableArrayList());
-            showEmptyState("No job selected", "Select a managed job to review its applicants.");
+            showEmptyState(I18n.t("no_job_selected"), I18n.t("select_managed_job_review"));
             updateDetail(null);
             return;
         }
@@ -290,7 +291,7 @@ public class ApplicantListController {
                     .orElse(app.getApplicantId());
             String programme = services.applicantProfileRepository().findById(app.getApplicantId())
                     .map(profile -> safe(profile.getProgramme()))
-                    .orElse("Programme pending");
+                    .orElse(I18n.t("programme_pending"));
             int year = services.applicantProfileRepository().findById(app.getApplicantId())
                     .map(profile -> profile.getYear())
                     .orElse(0);
@@ -321,7 +322,7 @@ public class ApplicantListController {
         listView.setItems(FXCollections.observableArrayList(filtered));
 
         if (filtered.isEmpty()) {
-            showEmptyState("No applicants for this job yet", "Candidates will appear here once they start submitting their resumes and supporting documents.");
+            showEmptyState(I18n.t("no_applicants_for_job"), I18n.t("candidates_appear_here"));
             updateDetail(null);
             return;
         }
@@ -340,9 +341,9 @@ public class ApplicantListController {
         long accepted = rows.stream().filter(row -> row.status == ApplicationStatus.ACCEPTED).count();
 
         tabBar.getChildren().setAll(
-                tabButton("ALL", "All (" + rows.size() + ")"),
-                tabButton("UNDER_REVIEW", "Under Review (" + underReview + ")"),
-                tabButton("ACCEPTED", "Accepted (" + accepted + ")")
+                tabButton("ALL", I18n.t("all_count", rows.size())),
+                tabButton("UNDER_REVIEW", I18n.t("under_review_count2", underReview)),
+                tabButton("ACCEPTED", I18n.t("accepted_count2", accepted))
         );
     }
 
@@ -361,11 +362,11 @@ public class ApplicantListController {
     }
 
     private void updateJobModeTabs(Job job, int applicantCount) {
-        Button applicantsTab = new Button("Applicants (" + applicantCount + ")");
+        Button applicantsTab = new Button(I18n.tl("applicants_count", applicantCount));
         applicantsTab.setStyle("-fx-background-color: transparent; -fx-text-fill: #334155; -fx-font-size: 14px; -fx-font-weight: 900; -fx-border-color: transparent transparent #334155 transparent; -fx-border-width: 0 0 2 0; -fx-padding: 4 2 8 2;");
         applicantsTab.setDisable(true);
 
-        Button detailsTab = new Button("Job Details");
+        Button detailsTab = new Button(I18n.t("job_details_label"));
         detailsTab.setStyle("-fx-background-color: transparent; -fx-text-fill: #94a3b8; -fx-font-size: 14px; -fx-font-weight: 600; -fx-padding: 4 2 8 2;");
         detailsTab.setDisable(job == null);
         detailsTab.setOnAction(event -> openJobDetails(job));
@@ -429,9 +430,9 @@ public class ApplicantListController {
         internalCard.setPadding(new Insets(14));
         internalCard.setMaxWidth(360);
 
-        Label internalTitle = new Label("Add internal candidate");
+        Label internalTitle = new Label(I18n.t("add_internal_candidate"));
         internalTitle.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #334155;");
-        Label internalMeta = new Label("Manually upload information for a known student candidate for internal tracking.");
+        Label internalMeta = new Label(I18n.t("manually_upload_student"));
         internalMeta.setWrapText(true);
         internalMeta.setStyle("-fx-font-size: 12px; -fx-font-weight: 400; -fx-text-fill: #64748b;");
         internalCard.getChildren().addAll(internalTitle, internalMeta);
@@ -446,11 +447,11 @@ public class ApplicantListController {
         insightBox.getChildren().clear();
 
         if (row == null) {
-            detailName.setText("Applicant Details");
-            detailMeta.setText("Select an applicant to review key information.");
-            skillsBox.getChildren().add(detailCard("No applicant selected", "Select an applicant to view overlap information."));
-            academicBox.getChildren().add(detailCard("Awaiting selection", "Matched and missing skills will appear here."));
-            insightBox.getChildren().add(detailCard("Review summary", "Current workload, risk level and statement preview will appear here."));
+            detailName.setText(I18n.t("applicant_details_label"));
+            detailMeta.setText(I18n.t("select_applicant_view_info"));
+            skillsBox.getChildren().add(detailCard(I18n.t("no_applicant_selected"), I18n.t("select_applicant_view_info")));
+            academicBox.getChildren().add(detailCard(I18n.t("awaiting_selection"), I18n.t("matched_missing_skills")));
+            insightBox.getChildren().add(detailCard(I18n.t("review_summary"), I18n.t("current_workload_risk_statement")));
             acceptButton.setDisable(true);
             viewFullButton.setDisable(true);
             return;
@@ -461,30 +462,30 @@ public class ApplicantListController {
         detailMeta.setText(row.programme + (row.year > 0 ? ", Year " + row.year : "") + "  •  Match " + DisplayPlaceholders.MATCH_VALUE + "  •  " + humanStatus(row.status));
 
         skillsBox.getChildren().add(detailCard(
-                dto.matchedSkills().isEmpty() ? "Relevant skills pending" : dto.matchedSkills().get(0),
+                dto.matchedSkills().isEmpty() ? I18n.t("relevant_skills_pending") : dto.matchedSkills().get(0),
                 DisplayPlaceholders.MATCH_DETAILS
         ));
         skillsBox.getChildren().add(detailCard(
-                "Teaching Availability",
-                dto.availability().isEmpty() ? "Availability not provided yet." : String.join(", ", dto.availability())
+                I18n.t("teaching_availability"),
+                dto.availability().isEmpty() ? I18n.t("availability_not_provided") : String.join(", ", dto.availability())
         ));
 
         academicBox.getChildren().add(detailCard(
-                "Technical Skills",
-                dto.technicalSkills().isEmpty() ? "No technical skills listed." : String.join(", ", dto.technicalSkills())
+                I18n.t("technical_skills"),
+                dto.technicalSkills().isEmpty() ? I18n.t("no_technical_skills_listed") : String.join(", ", dto.technicalSkills())
         ));
         academicBox.getChildren().add(detailCard(
-                "Missing Skills",
-                dto.missingSkills().isEmpty() ? "No obvious gaps detected." : String.join(", ", dto.missingSkills())
+                I18n.t("missing_skills"),
+                dto.missingSkills().isEmpty() ? I18n.t("no_obvious_gaps") : String.join(", ", dto.missingSkills())
         ));
 
         insightBox.getChildren().add(detailCard(
-                "Workload Check",
+                I18n.t("workload_check"),
                 "Current " + dto.currentHours() + "h • Projected " + dto.projectedHours() + "h / Max " + dto.maxWeeklyHours() + "h • Risk " + dto.riskLevel()
         ));
         insightBox.getChildren().add(detailCard(
-                "Statement Preview",
-                dto.statement() == null || dto.statement().isBlank() ? "No statement submitted." : dto.statement()
+                I18n.t("statement_preview"),
+                dto.statement() == null || dto.statement().isBlank() ? I18n.t("no_statement_submitted") : dto.statement()
         ));
 
         acceptButton.setDisable(row.status == ApplicationStatus.ACCEPTED);
@@ -519,7 +520,7 @@ public class ApplicantListController {
 
     private void openReview() {
         if (selectedRow == null) {
-            DialogControllerFactory.validationError("Please select one applicant first.",
+            DialogControllerFactory.validationError(I18n.t("select_applicant_first"),
                     view.getScene() == null ? null : view.getScene().getWindow());
             return;
         }
@@ -529,7 +530,7 @@ public class ApplicantListController {
         if (view.getScene() != null) {
             stage.initOwner(view.getScene().getWindow());
         }
-        stage.setTitle("Applicant Review");
+        stage.setTitle(I18n.t("applicant_review"));
 
         Parent reviewView = new ApplicantReviewController(services, user, selectedRow.applicationId).getView();
         Scene scene = new Scene(reviewView, 980, 780);
@@ -552,7 +553,7 @@ public class ApplicantListController {
     private static Job buildAllJobsOption() {
         Job job = new Job();
         job.setJobId(ALL_JOBS_JOB_ID);
-        job.setTitle("All Jobs");
+        job.setTitle(I18n.t("all_jobs_label"));
         return job;
     }
 
@@ -562,19 +563,19 @@ public class ApplicantListController {
 
     private String humanStatus(ApplicationStatus status) {
         if (status == null) {
-            return "Pending";
+            return I18n.t("pending");
         }
         return switch (status) {
-            case SUBMITTED -> "Submitted";
-            case UNDER_REVIEW -> "Under Review";
-            case ACCEPTED -> "Accepted";
-            case REJECTED -> "Rejected";
-            case CANCELLED -> "Cancelled";
+            case SUBMITTED -> I18n.t("submitted_lower");
+            case UNDER_REVIEW -> I18n.t("under_review");
+            case ACCEPTED -> I18n.t("accepted_lower");
+            case REJECTED -> I18n.t("rejected_lower");
+            case CANCELLED -> I18n.t("cancelled_lower");
         };
     }
 
     private String safe(String value) {
-        return value == null || value.isBlank() ? "Profile pending" : value;
+        return value == null || value.isBlank() ? I18n.t("profile_pending") : value;
     }
 
     private Label styledLabel(String text, String style) {
@@ -643,11 +644,11 @@ public class ApplicantListController {
     ) {
         String statusLabel() {
             return switch (status) {
-                case SUBMITTED -> "Submitted";
-                case UNDER_REVIEW -> "Under Review";
-                case ACCEPTED -> "Accepted";
-                case REJECTED -> "Rejected";
-                case CANCELLED -> "Cancelled";
+                case SUBMITTED -> I18n.t("submitted_lower");
+                case UNDER_REVIEW -> I18n.t("under_review");
+                case ACCEPTED -> I18n.t("accepted_lower");
+                case REJECTED -> I18n.t("rejected_lower");
+                case CANCELLED -> I18n.t("cancelled_lower");
             };
         }
 

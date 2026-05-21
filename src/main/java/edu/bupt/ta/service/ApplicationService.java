@@ -25,6 +25,7 @@ public class ApplicationService {
     private final ResumeInfoRepository resumeInfoRepository;
     private final AuditLogRepository auditLogRepository;
     private final MatchingService matchingService;
+    private NotificationService notificationService;
 
     public ApplicationService(ApplicationRepository applicationRepository,
                               JobRepository jobRepository,
@@ -32,12 +33,28 @@ public class ApplicationService {
                               ResumeInfoRepository resumeInfoRepository,
                               AuditLogRepository auditLogRepository,
                               MatchingService matchingService) {
+        this(applicationRepository, jobRepository, profileRepository, resumeInfoRepository,
+                auditLogRepository, matchingService, null);
+    }
+
+    public ApplicationService(ApplicationRepository applicationRepository,
+                              JobRepository jobRepository,
+                              ApplicantProfileRepository profileRepository,
+                              ResumeInfoRepository resumeInfoRepository,
+                              AuditLogRepository auditLogRepository,
+                              MatchingService matchingService,
+                              NotificationService notificationService) {
         this.applicationRepository = applicationRepository;
         this.jobRepository = jobRepository;
         this.profileRepository = profileRepository;
         this.resumeInfoRepository = resumeInfoRepository;
         this.auditLogRepository = auditLogRepository;
         this.matchingService = matchingService;
+        this.notificationService = notificationService;
+    }
+
+    public void setNotificationService(NotificationService notificationService) {
+        this.notificationService = notificationService;
     }
 
     public ValidationResult apply(String applicantId, String jobId, String statement) {
@@ -90,6 +107,10 @@ public class ApplicationService {
         applicationRepository.save(application);
         auditLogRepository.append(new AuditLogEntry(DateTimeUtils.now(), applicantId, "APPLY_JOB",
                 newId + " created for " + jobId));
+
+        if (notificationService != null) {
+            notificationService.notifyNewApplicationToOrganiser(newId, jobId);
+        }
         return ValidationResult.ok();
     }
 

@@ -7,6 +7,7 @@ import edu.bupt.ta.model.Application;
 import edu.bupt.ta.model.Job;
 import edu.bupt.ta.model.User;
 import edu.bupt.ta.service.ServiceRegistry;
+import edu.bupt.ta.util.I18n;
 import edu.bupt.ta.util.ValidationResult;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -64,8 +65,8 @@ public class JobManagementController {
     private VBox jobListContent;
     private String selectedJobId;
 
-    private final Label detailTitle = new Label("Select a job");
-    private final Label detailSubtitle = new Label("Choose a row to view job details and applicant activity.");
+    private final Label detailTitle = new Label(I18n.t("select_a_job"));
+    private final Label detailSubtitle = new Label(I18n.t("choose_row_preview"));
     private final HBox detailBadges = new HBox(8);
     private final Label ovModuleName = new Label("-");
     private final Label ovModuleCode = new Label("-");
@@ -86,9 +87,9 @@ public class JobManagementController {
     private final Label reviewCount = new Label("0");
     private final Label hiredCount = new Label("0");
     private final HBox avatarRow = new HBox(6);
-    private final Button viewApplicantsButton = new Button("View All Applicants");
-    private final Button editButton = new Button("Edit Job Details");
-    private final Button closeButton = new Button("Close Job");
+    private final Button viewApplicantsButton = new Button(I18n.t("view_all_applicants"));
+    private final Button editButton = new Button(I18n.t("edit_job_details"));
+    private final Button closeButton = new Button(I18n.t("close_job_btn"));
 
     private Timeline jobStatusRefreshTimeline;
 
@@ -105,6 +106,7 @@ public class JobManagementController {
         this.onViewApplicants = onViewApplicants;
         this.preferredJobId = preferredJobId;
         this.selectedJobId = preferredJobId;
+        I18n.initTranslations();
         initialize();
         refresh();
         installPeriodicJobStatusRefresh();
@@ -135,17 +137,17 @@ public class JobManagementController {
     }
 
     private HBox buildHeader() {
-        Label title = new Label("My Jobs");
+        Label title = new Label(I18n.t("my_jobs"));
         title.getStyleClass().add("page-title");
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Button filter = new Button("Filter");
+        Button filter = new Button(I18n.t("filter_btn"));
         filter.getStyleClass().add("secondary-button");
         filter.setOnAction(event -> onFilter());
 
-        Button create = new Button("+ Create New Job");
+        Button create = new Button(I18n.t("create_new_job"));
         create.getStyleClass().add("primary-button");
         create.setOnAction(event -> onCreate());
 
@@ -163,7 +165,7 @@ public class JobManagementController {
         panel.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(panel, Priority.ALWAYS);
 
-        TableColumn<JobTableRow, JobTableRow> titleCol = new TableColumn<>("JOB TITLE");
+        TableColumn<JobTableRow, JobTableRow> titleCol = new TableColumn<>(I18n.t("job_title_header"));
         titleCol.setCellValueFactory(cell -> new SimpleObjectProperty<>(cell.getValue()));
         titleCol.setCellFactory(column -> new TableCell<>() {
             @Override
@@ -197,7 +199,7 @@ public class JobManagementController {
             }
         });
 
-        TableColumn<JobTableRow, String> applicantsCol = new TableColumn<>("APPLICANTS");
+        TableColumn<JobTableRow, String> applicantsCol = new TableColumn<>(I18n.t("applicants_header"));
         applicantsCol.setCellValueFactory(cell ->
                 new SimpleStringProperty(cell.getValue().appliedApplicantCount() + "/" + cell.getValue().targetApplicantCount()));
         applicantsCol.setCellFactory(column -> new TableCell<>() {
@@ -220,7 +222,7 @@ public class JobManagementController {
             }
         });
 
-        TableColumn<JobTableRow, String> statusCol = new TableColumn<>("STATUS");
+        TableColumn<JobTableRow, String> statusCol = new TableColumn<>(I18n.t("status_header"));
         statusCol.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().job().getStatus().name()));
         statusCol.setCellFactory(column -> new TableCell<>() {
             @Override
@@ -276,7 +278,7 @@ public class JobManagementController {
         panel.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(panel, Priority.ALWAYS);
 
-        TableColumn<JobTableRow, JobTableRow> titleCol = new TableColumn<>("JOB TITLE");
+        TableColumn<JobTableRow, JobTableRow> titleCol = new TableColumn<>(I18n.t("job_title_header"));
         titleCol.setCellValueFactory(cell -> new SimpleObjectProperty<>(cell.getValue()));
         titleCol.setCellFactory(column -> new TableCell<>() {
             @Override
@@ -311,7 +313,7 @@ public class JobManagementController {
             }
         });
 
-        TableColumn<JobTableRow, String> createdCol = new TableColumn<>("CREATED");
+        TableColumn<JobTableRow, String> createdCol = new TableColumn<>(I18n.t("created_header"));
         createdCol.setCellValueFactory(cell -> new SimpleStringProperty(formatListDate(cell.getValue().job().getCreatedAt())));
         createdCol.setCellFactory(column -> new TableCell<>() {
             @Override
@@ -334,7 +336,7 @@ public class JobManagementController {
             }
         });
 
-        TableColumn<JobTableRow, String> applicantsCol = new TableColumn<>("APPLICANTS");
+        TableColumn<JobTableRow, String> applicantsCol = new TableColumn<>(I18n.t("applicants_header"));
         applicantsCol.setCellValueFactory(cell ->
                 new SimpleStringProperty(cell.getValue().appliedApplicantCount() + "/" + cell.getValue().targetApplicantCount()));
         applicantsCol.setCellFactory(column -> new TableCell<>() {
@@ -358,7 +360,7 @@ public class JobManagementController {
             }
         });
 
-        TableColumn<JobTableRow, String> statusCol = new TableColumn<>("STATUS");
+        TableColumn<JobTableRow, String> statusCol = new TableColumn<>(I18n.t("status_header"));
         statusCol.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().job().getStatus().name()));
         statusCol.setCellFactory(column -> new TableCell<>() {
             @Override
@@ -438,10 +440,10 @@ public class JobManagementController {
 
     private HBox buildListHeader(VBox host) {
         HBox header = new HBox(0,
-                headerCell("JOB TITLE", host.widthProperty().subtract(24).multiply(0.38), Pos.CENTER_LEFT),
-                headerCell("CREATED", host.widthProperty().subtract(24).multiply(0.22), Pos.CENTER),
-                headerCell("APPLICANTS", host.widthProperty().subtract(24).multiply(0.18), Pos.CENTER),
-                headerCell("STATUS", host.widthProperty().subtract(24).multiply(0.18), Pos.CENTER)
+                headerCell(I18n.t("job_title_header"), host.widthProperty().subtract(24).multiply(0.38), Pos.CENTER_LEFT),
+                headerCell(I18n.t("created_header"), host.widthProperty().subtract(24).multiply(0.22), Pos.CENTER),
+                headerCell(I18n.t("applicants_header"), host.widthProperty().subtract(24).multiply(0.18), Pos.CENTER),
+                headerCell(I18n.t("status_header"), host.widthProperty().subtract(24).multiply(0.18), Pos.CENTER)
         );
         header.setStyle("-fx-background-color: #fbfcfe; -fx-background-radius: 12 12 0 0; "
                 + "-fx-border-color: transparent transparent #edf2f7 transparent;");
@@ -542,14 +544,14 @@ public class JobManagementController {
         ghost.setMaxSize(120, 120);
         ghost.getChildren().add(styledLabel("JOBS", "-fx-font-size: 24px; -fx-font-weight: 900; -fx-text-fill: #d4dde8;"));
 
-        Label title = new Label("No job posts yet");
+        Label title = new Label(I18n.t("no_jobs_yet"));
         title.setStyle("-fx-font-size: 24px; -fx-font-weight: 900; -fx-text-fill: #0f172a;");
 
-        Label subtitle = new Label("Create your first job post to start collecting applications.");
+        Label subtitle = new Label(I18n.t("create_first_job"));
         subtitle.setWrapText(true);
         subtitle.setStyle("-fx-font-size: 14px; -fx-font-weight: 400; -fx-text-fill: #64748b;");
 
-        Button create = new Button("+ Create New Job");
+        Button create = new Button(I18n.t("create_new_job"));
         create.getStyleClass().add("primary-button");
         create.setOnAction(event -> onCreate());
 
@@ -564,7 +566,7 @@ public class JobManagementController {
         shell.setMinWidth(0);
         shell.setMaxWidth(Double.MAX_VALUE);
 
-        Label kicker = new Label("JOB DETAILS");
+        Label kicker = new Label(I18n.t("job_details_label"));
         kicker.getStyleClass().add("tiny-kicker");
 
         detailTitle.setStyle("-fx-font-size: 18px; -fx-font-weight: 900; -fx-text-fill: #0f172a;");
@@ -594,17 +596,17 @@ public class JobManagementController {
         oc2.setHgrow(Priority.ALWAYS);
         overviewGrid.getColumnConstraints().setAll(oc1, oc2);
 
-        overviewGrid.add(detailSpecCell("Module name", ovModuleName), 0, 0, 2, 1);
-        overviewGrid.add(detailSpecCell("Module code", ovModuleCode), 0, 1);
-        overviewGrid.add(detailSpecCell("Semester", ovSemester), 1, 1);
-        overviewGrid.add(detailSpecCell("Job type", ovJobType), 0, 2);
-        overviewGrid.add(detailSpecCell("Open slots", ovSlots), 1, 2);
-        overviewGrid.add(detailSpecCell("Campus", ovCampuses), 0, 3, 2, 1);
-        overviewGrid.add(detailSpecCell("Job ID", ovJobId), 0, 4);
-        overviewGrid.add(detailSpecCell("Publication status", ovStatus), 1, 4);
-        overviewGrid.add(detailSpecCell("Created", ovCreated), 0, 5);
-        overviewGrid.add(detailSpecCell("Deadline", ovApplyBy), 1, 5);
-        overviewGrid.add(detailSpecCell("Applications", ovApplications), 0, 6, 2, 1);
+        overviewGrid.add(detailSpecCell(I18n.t("module_name_label"), ovModuleName), 0, 0, 2, 1);
+        overviewGrid.add(detailSpecCell(I18n.t("module_code_label"), ovModuleCode), 0, 1);
+        overviewGrid.add(detailSpecCell(I18n.t("semester_label"), ovSemester), 1, 1);
+        overviewGrid.add(detailSpecCell(I18n.t("job_type_label"), ovJobType), 0, 2);
+        overviewGrid.add(detailSpecCell(I18n.t("open_slots_label"), ovSlots), 1, 2);
+        overviewGrid.add(detailSpecCell(I18n.t("campus_label_mo"), ovCampuses), 0, 3, 2, 1);
+        overviewGrid.add(detailSpecCell(I18n.t("job_id_label"), ovJobId), 0, 4);
+        overviewGrid.add(detailSpecCell(I18n.t("publication_status"), ovStatus), 1, 4);
+        overviewGrid.add(detailSpecCell(I18n.t("created_label"), ovCreated), 0, 5);
+        overviewGrid.add(detailSpecCell(I18n.t("deadline_label_mo"), ovApplyBy), 1, 5);
+        overviewGrid.add(detailSpecCell(I18n.t("applications_label"), ovApplications), 0, 6, 2, 1);
 
         overviewCard.getChildren().addAll(overviewKicker, overviewGrid);
 
@@ -612,7 +614,7 @@ public class JobManagementController {
         descriptionCard.getStyleClass().add("soft-info-card");
         descriptionCard.setPadding(new Insets(16));
 
-        Label descriptionKicker = new Label("DESCRIPTION");
+        Label descriptionKicker = new Label(I18n.t("description_label"));
         descriptionKicker.getStyleClass().add("tiny-kicker");
 
         descriptionBody.setWrapText(true);
@@ -625,28 +627,28 @@ public class JobManagementController {
         requirementCard.getStyleClass().add("soft-info-card");
         requirementCard.setPadding(new Insets(16));
 
-        Label requirementKicker = new Label("SKILLS & REQUIREMENTS");
+        Label requirementKicker = new Label(I18n.t("skills_requirements"));
         requirementKicker.getStyleClass().add("tiny-kicker");
 
         requirementCard.getChildren().addAll(
                 requirementKicker,
-                detailSpecCell("Required Skills", requiredSkillsBody),
-                detailSpecCell("Preferred Skills", preferredSkillsBody),
-                detailSpecCell("Minimum Academic Grade", minimumGradeBody)
+                detailSpecCell(I18n.t("required_skills"), requiredSkillsBody),
+                detailSpecCell(I18n.t("preferred_skills"), preferredSkillsBody),
+                detailSpecCell(I18n.t("min_grade"), minimumGradeBody)
         );
 
         VBox applicantCard = new VBox(12);
         applicantCard.getStyleClass().add("soft-info-card");
         applicantCard.setPadding(new Insets(16));
 
-        Label applicantKicker = new Label("APPLICANT STATUS");
+        Label applicantKicker = new Label(I18n.t("applicant_status_label"));
         applicantKicker.getStyleClass().add("tiny-kicker");
 
         applicantCard.getChildren().addAll(
                 applicantKicker,
-                statLine("Applied", appliedCount, "#2563eb"),
-                statLine("Under Review", reviewCount, "#8b5cf6"),
-                statLine("Hired", hiredCount, "#10b981"),
+                statLine(I18n.t("applied_label"), appliedCount, "#2563eb"),
+                statLine(I18n.t("under_review_label"), reviewCount, "#8b5cf6"),
+                statLine(I18n.t("hired_label"), hiredCount, "#10b981"),
                 avatarRow
         );
 
@@ -849,8 +851,8 @@ public class JobManagementController {
         avatarRow.getChildren().clear();
 
         if (job == null) {
-            detailTitle.setText("Select a job");
-            detailSubtitle.setText("Choose a row to view job details.");
+            detailTitle.setText(I18n.t("select_a_job"));
+            detailSubtitle.setText(I18n.t("choose_row_preview"));
             detailBadges.getChildren().clear();
             clearOverviewFields();
             requiredSkillsBody.setText("-");
@@ -873,9 +875,9 @@ public class JobManagementController {
         detailTitle.setText(fallback(job.getTitle(), "Untitled Job"));
         detailSubtitle.setText(detailHeroSubtitle(job));
         populateOverviewFields(job, applications.size());
-        requiredSkillsBody.setText(joinOrFallback(job.getRequiredSkills(), "Not specified"));
-        preferredSkillsBody.setText(joinOrFallback(job.getPreferredSkills(), "Not specified"));
-        minimumGradeBody.setText(fallback(job.getMinimumAcademicGrade(), "Not specified"));
+        requiredSkillsBody.setText(joinOrFallback(job.getRequiredSkills(), I18n.t("not_specified")));
+        preferredSkillsBody.setText(joinOrFallback(job.getPreferredSkills(), I18n.t("not_specified")));
+        minimumGradeBody.setText(fallback(job.getMinimumAcademicGrade(), I18n.t("not_specified")));
         detailBadges.getChildren().addAll(
                 buildMiniChip(fallback(job.getModuleCode(), "MODULE"), "#eff6ff", "#2563eb"),
                 buildJobTypeChip(job.getType()),
@@ -883,7 +885,7 @@ public class JobManagementController {
         );
         String desc = job.getDescription();
         descriptionBody.setText(desc == null || desc.isBlank()
-                ? "No description provided for this job."
+                ? I18n.t("no_description_job")
                 : desc.trim());
 
         appliedCount.setText(String.valueOf(applied));
@@ -892,7 +894,7 @@ public class JobManagementController {
 
         applications.stream().limit(4).forEach(app -> avatarRow.getChildren().add(applicantAvatar(app)));
         if (avatarRow.getChildren().isEmpty()) {
-            avatarRow.getChildren().add(styledLabel("No applicants yet", "-fx-font-size: 12px; -fx-font-weight: 400; -fx-text-fill: #94a3b8;"));
+            avatarRow.getChildren().add(styledLabel(I18n.t("no_applicants_yet"), "-fx-font-size: 12px; -fx-font-weight: 400; -fx-text-fill: #94a3b8;"));
         }
     }
 
@@ -1017,7 +1019,7 @@ public class JobManagementController {
     private void onEdit() {
         Job selected = selectedJob();
         if (selected == null) {
-            showError("Please select one job first.");
+            showError(I18n.t("select_job_first"));
             return;
         }
 
@@ -1035,12 +1037,14 @@ public class JobManagementController {
     private void onClose() {
         Job selected = selectedJob();
         if (selected == null) {
-            showError("Please select one job first.");
+            showError(I18n.t("select_job_first"));
             return;
         }
+        String confirmTitle = I18n.t("close_job_btn");
+        String confirmMsg = I18n.t("close_job_confirm", "Close \"{title}\" now? Closed jobs cannot receive new applications.").replace("{title}", selected.getTitle());
         boolean confirmed = DialogControllerFactory.confirmAction(
-                "Close Job",
-                "Close \"" + selected.getTitle() + "\" now? Closed jobs cannot receive new applications.",
+                confirmTitle,
+                confirmMsg,
                 view.getScene() == null ? null : view.getScene().getWindow());
         if (!confirmed) {
             return;
@@ -1051,7 +1055,7 @@ public class JobManagementController {
             refresh();
             return;
         }
-        DialogControllerFactory.success("Job Closed", "The job was set to CLOSED successfully.",
+        DialogControllerFactory.success(I18n.t("job_closed"), I18n.t("job_closed_msg"),
                 view.getScene() == null ? null : view.getScene().getWindow());
         refresh();
     }
@@ -1067,9 +1071,9 @@ public class JobManagementController {
         );
         String currentSelection = currentFilter.label;
         ChoiceDialog<String> dialog = new ChoiceDialog<>(currentSelection, options);
-        dialog.setTitle("Filter Jobs");
-        dialog.setHeaderText("Filter jobs by status");
-        dialog.setContentText("Status:");
+        dialog.setTitle(I18n.t("filter_jobs_title"));
+        dialog.setHeaderText(I18n.t("filter_by_status"));
+        dialog.setContentText(I18n.t("status_filter_label"));
         if (view.getScene() != null && view.getScene().getWindow() != null) {
             dialog.initOwner(view.getScene().getWindow());
         }
@@ -1097,7 +1101,7 @@ public class JobManagementController {
     private void onViewApplicants() {
         Job selected = selectedJob();
         if (selected == null) {
-            showError("Please select one job first.");
+            showError(I18n.t("select_job_first"));
             return;
         }
         if (onViewApplicants != null) {

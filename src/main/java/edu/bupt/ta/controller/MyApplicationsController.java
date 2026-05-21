@@ -5,6 +5,9 @@ import edu.bupt.ta.model.Application;
 import edu.bupt.ta.model.Job;
 import edu.bupt.ta.model.User;
 import edu.bupt.ta.service.ServiceRegistry;
+import edu.bupt.ta.ui.IconFactory;
+import edu.bupt.ta.util.I18n;
+import edu.bupt.ta.util.ValidationResult;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -20,8 +23,9 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import edu.bupt.ta.ui.IconFactory;
-import edu.bupt.ta.util.ValidationResult;
+import javafx.scene.Scene;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 
 import java.time.LocalDateTime;
 import java.time.Month;
@@ -31,10 +35,8 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import javafx.scene.Scene;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
 
 public class MyApplicationsController {
 
@@ -62,12 +64,9 @@ public class MyApplicationsController {
     private final StackPane timelineFinalDot = new StackPane();
     private final Label timelineSubmittedDate = new Label("-");
     private final Label timelineReviewDate = new Label("-");
-    private final Label timelineFinalTitle = new Label("Final Decision");
+    private final Label timelineFinalTitle = new Label(I18n.t("final_decision"));
     private final Label timelineFinalDate = new Label("-");
     private final VBox timelineFinalBlock = new VBox(2);
-
-    private final Button viewFullButton = new Button("View Full Application");
-    private final Button withdrawButton = new Button("Withdraw Application");
 
     private Parent normalState;
 
@@ -78,15 +77,23 @@ public class MyApplicationsController {
     private String activeFilter = "ALL";
     private String selectedApplicationId;
 
+    private Consumer<Job> onViewJobDetails;
+
     private static final DateTimeFormatter CARD_APPLY_DATE = DateTimeFormatter.ofPattern("MMM dd");
     private static final DateTimeFormatter STAGE_DATE = DateTimeFormatter.ofPattern("MMM dd, yyyy");
     private static final DateTimeFormatter FEEDBACK_TIME = DateTimeFormatter.ofPattern("MMM dd, HH:mm");
     private static final DateTimeFormatter TIMELINE_TIME = DateTimeFormatter.ofPattern("MMM dd, yyyy · h:mm a");
     private static final double CARD_RIGHT_INFO_WIDTH = 166;
 
-    public MyApplicationsController(ServiceRegistry services, User user) {
+    private final Button viewJobButton = new Button(I18n.t("view_job_details"));
+    private final Button viewFullButton = new Button(I18n.t("view_full_application"));
+    private final Button withdrawButton = new Button(I18n.t("withdraw_application"));
+
+    public MyApplicationsController(ServiceRegistry services, User user, Consumer<Job> onViewJobDetails) {
+        I18n.initTranslations();
         this.services = services;
         this.user = user;
+        this.onViewJobDetails = onViewJobDetails;
         initialize();
         refresh();
     }
@@ -101,6 +108,10 @@ public class MyApplicationsController {
         applicationCardsScroll.getStyleClass().add("my-app-list-scroll");
         applicationCardsScroll.setFitToWidth(true);
         applicationCardsScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+
+        viewJobButton.getStyleClass().add("my-app-action-neutral");
+        viewJobButton.setMaxWidth(Double.MAX_VALUE);
+        viewJobButton.setOnAction(event -> viewJobDetails());
 
         viewFullButton.getStyleClass().add("my-app-action-neutral");
         viewFullButton.setMaxWidth(Double.MAX_VALUE);
@@ -141,12 +152,12 @@ public class MyApplicationsController {
 
     private ApplicationRecord toRecord(Application application) {
         Job job = services.jobService().getJob(application.getJobId()).orElse(null);
-        String reviewer = "Module Organiser";
+        String reviewer = I18n.t("module_organiser_label");
         if (job != null && job.getOrganiserId() != null) {
             reviewer = services.userRepository().findById(job.getOrganiserId())
                     .map(User::getDisplayName)
                     .filter(name -> !name.isBlank())
-                    .orElse("Module Organiser");
+                    .orElse(I18n.t("module_organiser_label"));
         }
         return new ApplicationRecord(application, job, reviewer);
     }
@@ -171,16 +182,16 @@ public class MyApplicationsController {
         rail.setMinWidth(200);
         rail.setMaxWidth(200);
 
-        Label heading = new Label("STATUS OVERVIEW");
+        Label heading = new Label(I18n.t("status_overview"));
         heading.getStyleClass().addAll("tiny-kicker", "my-app-status-overview-title");
 
         statusLinks.getStyleClass().add("my-app-status-links");
         statusLinks.getChildren().setAll(
-                createStatusButton("ALL", "All Applications", IconFactory.IconType.CLIPBOARD, Color.web("#475569")),
-                createStatusButton("UNDER_REVIEW", "Under Review", IconFactory.IconType.SEARCH, Color.web("#f59e0b")),
-                createStatusButton("SUBMITTED", "SUBMITTED", IconFactory.IconType.FILE, Color.web("#475569")),
-                createStatusButton("ACCEPTED", "Accepted", IconFactory.IconType.CHECK_CIRCLE, Color.web("#10b981")),
-                createStatusButton("REJECTED", "Rejected", IconFactory.IconType.ALERT_TRIANGLE, Color.web("#ef4444"))
+                createStatusButton("ALL", I18n.t("all_applications"), IconFactory.IconType.CLIPBOARD, Color.web("#475569")),
+                createStatusButton("UNDER_REVIEW", I18n.t("under_review_status"), IconFactory.IconType.SEARCH, Color.web("#f59e0b")),
+                createStatusButton("SUBMITTED", I18n.t("all_applications"), IconFactory.IconType.FILE, Color.web("#475569")),
+                createStatusButton("ACCEPTED", I18n.t("accepted_status"), IconFactory.IconType.CHECK_CIRCLE, Color.web("#10b981")),
+                createStatusButton("REJECTED", I18n.t("rejected_status"), IconFactory.IconType.ALERT_TRIANGLE, Color.web("#ef4444"))
         );
 
         Region spacer = new Region();
@@ -230,15 +241,6 @@ public class MyApplicationsController {
         VBox filterBar = new VBox();
         filterBar.getStyleClass().add("my-app-filter-bar");
 
-        HBox sortRow = new HBox(8);
-        sortRow.setAlignment(Pos.CENTER_RIGHT);
-        sortRow.getStyleClass().add("my-app-sort-row");
-        Button sortButton = new Button("Sort by: Applied Date  ↓");
-        sortButton.getStyleClass().add("my-app-sort-button");
-        sortButton.setFocusTraversable(false);
-        sortRow.getChildren().add(sortButton);
-
-        filterBar.getChildren().add(sortRow);
         VBox.setVgrow(applicationCardsScroll, Priority.ALWAYS);
         panel.getChildren().addAll(filterBar, applicationCardsScroll);
         return panel;
@@ -253,16 +255,14 @@ public class MyApplicationsController {
 
         HBox header = new HBox();
         header.getStyleClass().add("my-app-detail-header");
-        Label title = new Label("Application Details");
+        Label title = new Label(I18n.t("application_details"));
         title.getStyleClass().add("my-app-detail-title");
-        Label close = new Label("×");
-        close.getStyleClass().add("my-app-detail-close");
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        header.getChildren().addAll(title, spacer, close);
+        header.getChildren().addAll(title, spacer);
 
-        Label currentStageKicker = new Label("CURRENT STAGE");
+        Label currentStageKicker = new Label(I18n.t("current_stage"));
         currentStageKicker.getStyleClass().addAll("tiny-kicker", "my-app-stage-kicker");
 
         detailStageIconShell.getStyleClass().add("my-app-stage-icon-shell");
@@ -277,7 +277,7 @@ public class MyApplicationsController {
 
         HBox feedbackHeading = new HBox(8,
                 IconFactory.glyph(IconFactory.IconType.INFO_CIRCLE, 12, Color.web("#475569")),
-                sectionTitle("Reviewer Feedback"));
+                sectionTitle(I18n.t("reviewer_feedback")));
         feedbackHeading.setAlignment(Pos.CENTER_LEFT);
 
         feedbackAvatar.getStyleClass().add("my-app-feedback-avatar");
@@ -296,9 +296,9 @@ public class MyApplicationsController {
 
         VBox feedbackSection = new VBox(12, feedbackHeading, feedbackCard);
 
-        Label timelineTitle = sectionTitle("Timeline");
-        Label submittedTitle = timelineStepTitle("Application Submitted");
-        Label reviewTitle = timelineStepTitle("Application Under Review");
+        Label timelineTitle = sectionTitle(I18n.t("timeline_label"));
+        Label submittedTitle = timelineStepTitle(I18n.t("application_submitted"));
+        Label reviewTitle = timelineStepTitle(I18n.t("application_under_review"));
         timelineFinalTitle.getStyleClass().add("my-app-timeline-step-title");
 
         timelineSubmittedDate.getStyleClass().add("my-app-timeline-step-date");
@@ -326,7 +326,7 @@ public class MyApplicationsController {
         VBox timelineSection = new VBox(16, timelineTitle, timelineStack);
         timelineSection.getStyleClass().add("my-app-timeline-section");
 
-        VBox actionFooter = new VBox(8, viewFullButton, withdrawButton);
+        VBox actionFooter = new VBox(8, viewJobButton, viewFullButton, withdrawButton);
         actionFooter.getStyleClass().add("my-app-action-footer");
 
         VBox detailContent = new VBox(24, stageCard, feedbackSection, timelineSection, actionFooter);
@@ -416,9 +416,9 @@ public class MyApplicationsController {
     private Parent buildNoResultCard() {
         VBox card = new VBox(8);
         card.getStyleClass().add("my-app-no-results");
-        Label title = new Label("No applications in this status");
+        Label title = new Label(I18n.t("no_applications_status"));
         title.getStyleClass().add("my-app-no-results-title");
-        Label subtitle = new Label("Try switching to another status or clear filters.");
+        Label subtitle = new Label(I18n.t("try_switching"));
         subtitle.getStyleClass().add("my-app-no-results-subtitle");
         card.getChildren().addAll(title, subtitle);
         return card;
@@ -472,20 +472,21 @@ public class MyApplicationsController {
         metaRow.setMaxWidth(Double.MAX_VALUE);
         metaRow.getChildren().addAll(
                 buildMetaItem(IconFactory.IconType.CALENDAR, resolveSemesterLabel(job, application)),
-                buildMetaItem(IconFactory.IconType.INFO_CIRCLE, "Applied " + application.getApplyDate().format(CARD_APPLY_DATE)),
-                buildMetaItem(IconFactory.IconType.USER, row.reviewer()));
+                buildMetaItem(IconFactory.IconType.INFO_CIRCLE, I18n.t("application_submitted") + " " + application.getApplyDate().format(CARD_APPLY_DATE)),
+                buildMetaItem(IconFactory.IconType.USER, row.reviewer())
+        );
 
         VBox content = new VBox(7, titleRow, metaRow);
         HBox.setHgrow(content, Priority.ALWAYS);
         content.setMaxWidth(Double.MAX_VALUE);
         content.setMinWidth(0);
 
-        Label idLabel = new Label("ID: " + application.getApplicationId());
+        Label idLabel = new Label(I18n.t("application_detail_title") + ": " + application.getApplicationId());
         idLabel.getStyleClass().add("my-app-card-id");
         idLabel.setMaxWidth(Double.MAX_VALUE);
         idLabel.setAlignment(Pos.CENTER_RIGHT);
 
-        Label updated = new Label("Updated " + toRelative(application.getApplyDate()));
+        Label updated = new Label(I18n.t("refresh_btn") + " " + toRelative(application.getApplyDate()));
         updated.getStyleClass().add("my-app-card-updated");
         updated.setMaxWidth(Double.MAX_VALUE);
         updated.setAlignment(Pos.CENTER_RIGHT);
@@ -529,7 +530,7 @@ public class MyApplicationsController {
             feedbackBody.setText("-");
             timelineSubmittedDate.setText("-");
             timelineReviewDate.setText("-");
-            timelineFinalTitle.setText("Final Decision");
+            timelineFinalTitle.setText(I18n.t("final_decision"));
             timelineFinalDate.setText("-");
             timelineSubmittedDot.setStyle(dotStyle("#10b981"));
             timelineReviewDot.setStyle(dotStyle("#f59e0b"));
@@ -537,6 +538,7 @@ public class MyApplicationsController {
             timelineFinalBlock.setOpacity(0.4);
             withdrawButton.setDisable(true);
             viewFullButton.setDisable(true);
+            viewJobButton.setDisable(true);
             return;
         }
 
@@ -561,10 +563,10 @@ public class MyApplicationsController {
         boolean finalized = status == ApplicationStatus.ACCEPTED
                 || status == ApplicationStatus.REJECTED
                 || status == ApplicationStatus.CANCELLED;
-        timelineFinalTitle.setText("Final Decision");
+        timelineFinalTitle.setText(I18n.t("final_decision"));
         timelineFinalDate.setText(finalized
                 ? submittedAt.plusDays(7).format(TIMELINE_TIME)
-                : "Expected within 2 weeks");
+                : I18n.t("final_decision_expected"));
 
         timelineSubmittedDot.setStyle(dotStyle("#10b981"));
         timelineReviewDot.setStyle(dotStyle("#f59e0b"));
@@ -577,6 +579,7 @@ public class MyApplicationsController {
         }
 
         viewFullButton.setDisable(false);
+        viewJobButton.setDisable(row.job() == null);
         withdrawButton.setDisable(status != ApplicationStatus.SUBMITTED);
     }
 
@@ -586,11 +589,11 @@ public class MyApplicationsController {
             return "\"" + application.getDecisionNote().trim() + "\"";
         }
         return switch (application.getStatus()) {
-            case SUBMITTED -> "\"Your application has been submitted successfully and is currently queued for review.\"";
-            case UNDER_REVIEW -> "\"Your application is currently under academic review. We will update this panel after the interview stage.\"";
-            case ACCEPTED -> "\"Congratulations. You have been selected for this position. Further onboarding details will be shared shortly.\"";
-            case REJECTED -> "\"Thank you for applying. This role has moved forward with another candidate.\"";
-            case CANCELLED -> "\"This application was withdrawn.\"";
+            case SUBMITTED -> "\"" + I18n.t("application_submitted") + "\"";
+            case UNDER_REVIEW -> "\"" + I18n.t("application_under_review") + "\"";
+            case ACCEPTED -> "\"" + I18n.t("accepted_status") + "\"";
+            case REJECTED -> "\"" + I18n.t("rejected_status") + "\"";
+            case CANCELLED -> "\"" + I18n.t("application_withdrawn") + "\"";
         };
     }
 
@@ -611,8 +614,8 @@ public class MyApplicationsController {
         }
         Month month = application.getApplyDate().getMonth();
         String term = switch (month) {
-            case SEPTEMBER, OCTOBER, NOVEMBER, DECEMBER -> "Fall";
-            default -> "Spring";
+            case SEPTEMBER, OCTOBER, NOVEMBER, DECEMBER -> I18n.t("fall_term");
+            default -> I18n.t("spring_term");
         };
         return term + " " + application.getApplyDate().getYear();
     }
@@ -629,11 +632,11 @@ public class MyApplicationsController {
 
     private String displayStatus(ApplicationStatus status) {
         return switch (status) {
-            case UNDER_REVIEW -> "UNDER REVIEW";
-            case ACCEPTED -> "ACCEPTED";
-            case REJECTED -> "REJECTED";
-            case CANCELLED -> "CANCELLED";
-            case SUBMITTED -> "SUBMITTED";
+            case UNDER_REVIEW -> I18n.t("under_review_status").toUpperCase();
+            case ACCEPTED -> I18n.t("accepted_status").toUpperCase();
+            case REJECTED -> I18n.t("rejected_status").toUpperCase();
+            case CANCELLED -> I18n.t("application_withdrawn").toUpperCase();
+            case SUBMITTED -> I18n.t("all_applications").toUpperCase();
         };
     }
 
@@ -664,22 +667,24 @@ public class MyApplicationsController {
     private String toRelative(LocalDateTime timestamp) {
         LocalDateTime now = LocalDateTime.now();
         if (timestamp.isAfter(now)) {
-            return "just now";
+            return I18n.t("just_now");
         }
         long minutes = java.time.Duration.between(timestamp, now).toMinutes();
         if (minutes < 60) {
-            return minutes <= 1 ? "1m ago" : minutes + "m ago";
+            return minutes <= 1 ? I18n.t("mins_ago_unit", 1) : I18n.t("mins_ago_unit", (int) minutes);
         }
         long hours = minutes / 60;
         if (hours < 24) {
-            return hours + "h ago";
+            return I18n.t("hours_ago_unit", (int) hours);
         }
         long days = hours / 24;
         if (days < 7) {
-            return days + " day" + (days == 1 ? "" : "s") + " ago";
+            if (days == 1) return I18n.t("day_singular");
+            return I18n.t("days_ago_unit", (int) days);
         }
         long weeks = days / 7;
-        return weeks + " week" + (weeks == 1 ? "" : "s") + " ago";
+        if (weeks == 1) return I18n.t("week_singular");
+        return I18n.t("weeks_ago_unit", (int) weeks);
     }
 
     private String initialsOf(String name) {
@@ -706,7 +711,7 @@ public class MyApplicationsController {
         if (view.getScene() != null) {
             stage.initOwner(view.getScene().getWindow());
         }
-        stage.setTitle("Application Detail");
+        stage.setTitle(I18n.t("application_detail_title"));
 
         Parent reviewView = new ApplicantReviewController(
                 services, user, row.application().getApplicationId(), true).getView();
@@ -719,21 +724,32 @@ public class MyApplicationsController {
         stage.showAndWait();
     }
 
+    private void viewJobDetails() {
+        ApplicationRecord row = findSelectedApplication();
+        if (row == null || row.job() == null) {
+            return;
+        }
+
+        if (onViewJobDetails != null) {
+            onViewJobDetails.accept(row.job());
+        }
+    }
+
     private void withdrawSelectedApplication() {
         ApplicationRecord row = findSelectedApplication();
         if (row == null) {
             return;
         }
         if (row.application().getStatus() != ApplicationStatus.SUBMITTED) {
-            DialogControllerFactory.operationFailed("Unable to withdraw",
-                    "Only submitted applications can be withdrawn.",
+            DialogControllerFactory.operationFailed(I18n.t("unable_to_withdraw"),
+                    I18n.t("only_submitted_withdraw"),
                     view.getScene() == null ? null : view.getScene().getWindow());
             return;
         }
 
         boolean confirmed = DialogControllerFactory.confirmAction(
-                "Withdraw Application",
-                "Are you sure you want to withdraw this application?",
+                I18n.t("withdraw_confirm_title"),
+                I18n.t("withdraw_confirm_msg"),
                 view.getScene() == null ? null : view.getScene().getWindow());
         if (!confirmed) {
             return;
@@ -741,14 +757,14 @@ public class MyApplicationsController {
 
         ValidationResult result = services.applicationService().cancelApplication(applicantId, row.application().getJobId());
         if (!result.isValid()) {
-            DialogControllerFactory.operationFailed("Withdraw Failed",
-                    result.getErrors().isEmpty() ? "Unable to withdraw application." : String.join("\n", result.getErrors()),
+            DialogControllerFactory.operationFailed(I18n.t("unable_to_withdraw"),
+                    result.getErrors().isEmpty() ? I18n.t("unable_to_withdraw") : String.join("\n", result.getErrors()),
                     view.getScene() == null ? null : view.getScene().getWindow());
             return;
         }
 
-        DialogControllerFactory.success("Application Withdrawn",
-                "Your application has been withdrawn successfully.",
+        DialogControllerFactory.success(I18n.t("application_withdrawn"),
+                I18n.t("withdraw_success_msg"),
                 view.getScene() == null ? null : view.getScene().getWindow());
         refresh();
     }
@@ -759,22 +775,22 @@ public class MyApplicationsController {
         root.setAlignment(Pos.CENTER);
         root.setPadding(new Insets(48));
 
-        Label title = new Label("No applications yet");
+        Label title = new Label(I18n.t("no_applications_yet"));
         title.getStyleClass().add("my-app-empty-title");
 
-        Label subtitle = new Label("You have not applied to any TA positions yet. Start by browsing open roles.");
+        Label subtitle = new Label(I18n.t("no_applications_subtitle"));
         subtitle.getStyleClass().add("my-app-empty-subtitle");
         subtitle.setWrapText(true);
         subtitle.setMaxWidth(520);
 
         HBox actions = new HBox(10);
         actions.setAlignment(Pos.CENTER);
-        Button browse = new Button("Browse Open Jobs");
+        Button browse = new Button(I18n.t("browse_open_jobs"));
         browse.getStyleClass().add("primary-button");
-        browse.setOnAction(event -> DialogControllerFactory.info("Browse Jobs",
-                "Use the Browse Jobs page from the left navigation.",
+        browse.setOnAction(event -> DialogControllerFactory.info(I18n.t("browse_jobs"),
+                I18n.t("use_browse_page"),
                 view.getScene() == null ? null : view.getScene().getWindow()));
-        Button refreshButton = new Button("Refresh");
+        Button refreshButton = new Button(I18n.t("refresh_btn"));
         refreshButton.getStyleClass().add("secondary-button");
         refreshButton.setOnAction(event -> refresh());
         actions.getChildren().addAll(browse, refreshButton);

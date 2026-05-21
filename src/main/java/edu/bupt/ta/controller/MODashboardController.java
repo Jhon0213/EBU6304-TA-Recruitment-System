@@ -7,6 +7,7 @@ import edu.bupt.ta.model.Job;
 import edu.bupt.ta.model.User;
 import edu.bupt.ta.service.ServiceRegistry;
 import edu.bupt.ta.ui.IconFactory;
+import edu.bupt.ta.util.I18n;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -84,7 +85,7 @@ public class MODashboardController {
         page.getStyleClass().add("app-surface");
         page.setPadding(new Insets(24));
         page.getChildren().setAll(
-                buildHero(jobs.size(), applications.size()),
+                buildHero(jobs.size(), applications.size(), openJobs),
                 buildKpis(jobs, applications, openJobs),
                 buildBody(jobs)
         );
@@ -96,18 +97,18 @@ public class MODashboardController {
         view.setCenter(scrollPane);
     }
 
-    private HBox buildHero(int jobCount, int applicationCount) {
+    private HBox buildHero(int jobCount, int applicationCount, long openJobs) {
         VBox copy = new VBox(6);
         copy.setMinWidth(0);
         HBox.setHgrow(copy, Priority.ALWAYS);
 
-        Label title = new Label("Welcome back, " + displayName() + ".");
+        Label title = new Label(I18n.tl("welcome_back_mo", displayName()));
         title.getStyleClass().add("page-title");
         title.setWrapText(true);
 
         Label subtitle = new Label(jobCount == 0
-                ? "You have not created any job posts in this recruitment cycle yet."
-                : "You are managing " + jobCount + " jobs and " + applicationCount + " applications this cycle.");
+                ? I18n.t("no_job_posts_created")
+                : I18n.tl("managing_job_posts", jobCount, openJobs, applicationCount));
         subtitle.setWrapText(true);
         subtitle.setStyle("-fx-font-size: 15px; -fx-font-weight: 500; -fx-text-fill: #64748b;");
         copy.getChildren().addAll(title, subtitle);
@@ -115,11 +116,11 @@ public class MODashboardController {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Button manageJobs = new Button("Job Management");
+        Button manageJobs = new Button(I18n.t("job_management_sidebar"));
         manageJobs.getStyleClass().add("secondary-button");
         manageJobs.setOnAction(event -> openJobManagement.accept(null));
 
-        Button browseApplicants = new Button("Applicant List");
+        Button browseApplicants = new Button(I18n.t("applicant_list_sidebar"));
         browseApplicants.getStyleClass().add("primary-button");
         browseApplicants.setOnAction(event -> openApplicantList.run());
 
@@ -144,19 +145,19 @@ public class MODashboardController {
                 : (int) Math.round(underReviewApplications * 100.0 / activeApplications);
 
         HBox row = new HBox(16,
-                kpiCard("Managed Jobs", String.valueOf(jobs.size()),
-                        jobs.isEmpty() ? "No postings created yet" : openJobs + " currently open",
+                kpiCard(I18n.t("managed_jobs"), String.valueOf(jobs.size()),
+                        jobs.isEmpty() ? I18n.t("no_postings_created_yet") : I18n.tl("currently_open", openJobs),
                         IconFactory.IconType.BRIEFCASE, "#e0f2fe", "#0284c7"),
-                kpiCard("Active Applications", String.valueOf(activeApplications),
-                        "Open + unfilled expired jobs",
+                kpiCard(I18n.t("active_applications"), String.valueOf(activeApplications),
+                        I18n.t("open_unfilled_expired"),
                         IconFactory.IconType.USERS, "#ecfdf3", "#10b981"),
-                kpiCard("Draft Jobs", String.valueOf(draftJobs),
-                        draftJobs == 0 ? "All jobs are currently publishable" : "Not visible to applicants until published",
+                kpiCard(I18n.t("draft_jobs"), String.valueOf(draftJobs),
+                        draftJobs == 0 ? I18n.t("all_jobs_publishable") : I18n.t("not_visible_until_published"),
                         IconFactory.IconType.FILE, "#fff7ed", "#f59e0b"),
-                kpiCard("Under Review", reviewedRate + "%",
+                kpiCard(I18n.t("under_review_count"), reviewedRate + "%",
                         activeApplications == 0
-                                ? "No active applications in pipeline"
-                                : underReviewApplications + " of " + activeApplications + " in screening",
+                                ? I18n.t("no_active_applications")
+                                : I18n.tl("in_screening", underReviewApplications, activeApplications),
                         IconFactory.IconType.EYE, "#eef2ff", "#6366f1")
         );
         row.setMinWidth(0);
@@ -250,7 +251,7 @@ public class MODashboardController {
     }
 
     private VBox recentJobsCard(List<Job> jobs) {
-        VBox card = shellCard("Recent Jobs (Last 3 Months)");
+        VBox card = shellCard(I18n.t("recent_jobs_3_months"));
         card.setPrefHeight(RECENT_JOBS_HEIGHT);
         card.setMinHeight(RECENT_JOBS_HEIGHT);
         LocalDateTime cutoff = LocalDateTime.now().minusMonths(RECENT_JOB_MONTHS);
@@ -262,8 +263,8 @@ public class MODashboardController {
 
         if (recent.isEmpty()) {
             card.getChildren().add(centeredEmptyState(
-                    "No recent jobs yet",
-                    "Jobs created in the last " + RECENT_JOB_MONTHS + " months will appear here."
+                    I18n.t("no_recent_jobs"),
+                    I18n.t("created_last_3_months")
             ));
         } else {
             VBox rows = new VBox(10);
@@ -277,7 +278,7 @@ public class MODashboardController {
     }
 
     private VBox draftJobsCard(List<Job> jobs) {
-        VBox card = shellCard("Draft Jobs");
+        VBox card = shellCard(I18n.t("draft_jobs"));
         card.setPrefHeight(DRAFT_JOBS_HEIGHT);
         card.setMinHeight(DRAFT_JOBS_HEIGHT);
 
@@ -287,8 +288,8 @@ public class MODashboardController {
 
         if (drafts.isEmpty()) {
             card.getChildren().add(centeredEmptyState(
-                    "No draft jobs pending",
-                    "Any unpublished job posts will appear here for quick follow-up."
+                    I18n.t("no_draft_jobs_pending"),
+                    I18n.t("unpublished_job_posts")
             ));
         } else {
             VBox rows = new VBox(10);
@@ -302,7 +303,7 @@ public class MODashboardController {
     }
 
     private VBox quickActionsCard() {
-        VBox card = shellCard("Quick Actions");
+        VBox card = shellCard(I18n.t("quick_actions_mo"));
         card.setStyle("-fx-background-color: linear-gradient(to bottom right, #14b8a6, #10b981);"
                 + "-fx-background-radius: 24; -fx-border-radius: 24;");
         card.setPrefHeight(RIGHT_CARD_HEIGHT);
@@ -310,17 +311,17 @@ public class MODashboardController {
 
         card.getChildren().clear();
 
-        Label title = new Label("Quick Actions");
+        Label title = new Label(I18n.t("quick_actions_mo"));
         title.setStyle("-fx-font-size: 22px; -fx-font-weight: 900; -fx-text-fill: white;");
 
-        Label body = new Label("Jump straight into your most common organiser workflows.");
+        Label body = new Label(I18n.t("jump_workflows"));
         body.setWrapText(true);
         body.setStyle("-fx-font-size: 13px; -fx-font-weight: 500; -fx-text-fill: rgba(255,255,255,0.88);");
 
         VBox actions = new VBox(10,
-                actionButton("Manage Jobs", () -> openJobManagement.accept(null)),
-                actionButton("Review Applicants", openApplicantList),
-                actionButton("Update Profile", openProfile)
+                actionButton(I18n.t("manage_jobs_btn"), () -> openJobManagement.accept(null)),
+                actionButton(I18n.t("review_applicants_btn"), openApplicantList),
+                actionButton(I18n.t("update_profile_btn"), openProfile)
         );
 
         VBox bodyBox = new VBox(14, body, actions);
@@ -329,7 +330,7 @@ public class MODashboardController {
     }
 
     private VBox deadlineCard(List<Job> jobs) {
-        VBox card = shellCard("Recruitment Deadlines");
+        VBox card = shellCard(I18n.t("recruitment_deadlines_mo"));
         card.setPrefHeight(RIGHT_CARD_HEIGHT);
         card.setMinHeight(RIGHT_CARD_HEIGHT);
 
@@ -341,8 +342,8 @@ public class MODashboardController {
 
         if (deadlines.isEmpty()) {
             card.getChildren().add(centeredEmptyState(
-                    "No active recruitment deadlines",
-                    "Only OPEN and EXPIRED jobs are shown in this panel."
+                    I18n.t("no_active_deadlines"),
+                    I18n.t("only_open_expired")
             ));
         } else {
             VBox rows = new VBox(10);
@@ -355,7 +356,7 @@ public class MODashboardController {
     }
 
     private VBox statusCheckCard(List<Job> jobs) {
-        VBox card = shellCard("Status Check");
+        VBox card = shellCard(I18n.t("status_check_mo"));
         card.setPrefHeight(RIGHT_CARD_HEIGHT);
         card.setMinHeight(RIGHT_CARD_HEIGHT);
         VBox body = new VBox(10);
@@ -368,24 +369,24 @@ public class MODashboardController {
 
         if (draftCount > 0) {
             body.getChildren().add(alertBox(
-                    "Draft jobs pending",
-                    draftCount + " draft jobs still need publishing.",
+                    I18n.t("draft_jobs_pending"),
+                    I18n.tl("draft_jobs_pending_desc", draftCount),
                     "#fff7ed",
                     "#f59e0b"
             ));
         }
         if (openWithoutApplicants > 0) {
             body.getChildren().add(alertBox(
-                    "Open jobs without applicants",
-                    openWithoutApplicants + " open jobs have no applicants yet.",
+                    I18n.t("open_jobs_without_applicants"),
+                    I18n.tl("open_no_applicants_desc", openWithoutApplicants),
                     "#eff6ff",
                     "#2563eb"
             ));
         }
         if (body.getChildren().isEmpty()) {
             body.getChildren().add(alertBox(
-                    "All clear",
-                    "There are no immediate job management issues right now.",
+                    I18n.t("all_clear_mo"),
+                    I18n.t("no_management_issues"),
                     "#ecfdf3",
                     "#10b981"
             ));
@@ -539,12 +540,12 @@ public class MODashboardController {
         VBox copy = new VBox(4);
         copy.setMinWidth(0);
 
-        Label title = new Label(fallback(job.getTitle(), "Untitled job"));
+        Label title = new Label(fallback(job.getTitle(), I18n.t("untitled_job")));
         title.setWrapText(true);
         title.setMaxWidth(Double.MAX_VALUE);
         title.setStyle("-fx-font-size: 15px; -fx-font-weight: 700; -fx-text-fill: #0f172a;");
 
-        Label meta = new Label(fallback(job.getModuleCode(), "-") + " • " + fallback(job.getModuleName(), "No module name"));
+        Label meta = new Label(fallback(job.getModuleCode(), "-") + " • " + fallback(job.getModuleName(), I18n.t("module_name")));
         meta.setWrapText(true);
         meta.setMaxWidth(Double.MAX_VALUE);
         meta.setStyle("-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #64748b;");
@@ -552,7 +553,7 @@ public class MODashboardController {
         copy.getChildren().addAll(title, meta);
         HBox.setHgrow(copy, Priority.ALWAYS);
 
-        Label applicants = new Label(applicantCount + " applicants");
+        Label applicants = new Label(I18n.tl("applicants_label", applicantCount));
         applicants.setStyle("-fx-font-size: 12px; -fx-font-weight: 700; -fx-text-fill: #475569;"
                 + "-fx-background-color: #f1f5f9; -fx-background-radius: 999; -fx-padding: 6 10 6 10;");
 
@@ -586,7 +587,7 @@ public class MODashboardController {
                 + "-fx-background-color: " + tone.badgeBackground() + "; -fx-background-radius: 14; -fx-padding: 10 8 10 8;");
 
         VBox copy = new VBox(4);
-        Label title = new Label(fallback(job.getTitle(), "Untitled job"));
+        Label title = new Label(fallback(job.getTitle(), I18n.t("untitled_job")));
         title.setWrapText(true);
         title.setStyle("-fx-font-size: 13px; -fx-font-weight: 700; -fx-text-fill: #0f172a;");
 
@@ -613,7 +614,7 @@ public class MODashboardController {
     }
 
     private Label buildStatusChip(JobStatus status) {
-        String text = status == null ? "-" : status.name();
+        String text = status == null ? "-" : I18n.t("job_status_" + status.name().toLowerCase());
         String background = status == null ? "#f1f5f9" : switch (status) {
             case OPEN -> "#dcfce7";
             case DRAFT -> "#e0e7ff";
@@ -637,7 +638,7 @@ public class MODashboardController {
         if (user.getDisplayName() != null && !user.getDisplayName().isBlank()) {
             return user.getDisplayName().trim();
         }
-        return "Professor";
+        return I18n.t("professor");
     }
 
     private String formatDeadline(LocalDateTime deadline) {
@@ -646,19 +647,19 @@ public class MODashboardController {
 
     private String deadlineMeta(LocalDateTime deadline) {
         if (deadline == null) {
-            return "No deadline set";
+            return I18n.t("no_deadline_set");
         }
         long days = java.time.temporal.ChronoUnit.DAYS.between(LocalDateTime.now().toLocalDate(), deadline.toLocalDate());
         if (days < 0) {
-            return "Deadline passed " + formatDeadline(deadline);
+            return I18n.tl("deadline_passed", formatDeadline(deadline));
         }
         if (days <= 3) {
-            return "Urgent - closes " + formatDeadline(deadline);
+            return I18n.tl("urgent_closes", formatDeadline(deadline));
         }
         if (days <= 10) {
-            return "Approaching - closes " + formatDeadline(deadline);
+            return I18n.tl("approaching_closes", formatDeadline(deadline));
         }
-        return "Deadline closes " + formatDeadline(deadline);
+        return I18n.tl("deadline_closes", formatDeadline(deadline));
     }
 
     private DeadlineTone deadlineTone(LocalDateTime deadline) {

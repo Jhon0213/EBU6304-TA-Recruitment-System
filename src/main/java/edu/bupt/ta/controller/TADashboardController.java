@@ -11,6 +11,7 @@ import edu.bupt.ta.model.User;
 import edu.bupt.ta.service.ApplicantProfileService;
 import edu.bupt.ta.service.ServiceRegistry;
 import edu.bupt.ta.ui.IconFactory;
+import edu.bupt.ta.util.I18n;
 import edu.bupt.ta.util.ValidationResult;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -63,6 +64,7 @@ public class TADashboardController {
     public TADashboardController(ServiceRegistry services, User user) {
         this.services = services;
         this.user = user;
+        I18n.initTranslations();
         initialize();
     }
 
@@ -106,19 +108,19 @@ public class TADashboardController {
                         || app.getStatus() == ApplicationStatus.ACCEPTED)
                 .count();
 
-        Label title = new Label("Welcome back, " + resolveApplicantDisplayName() + " 👋");
+        Label title = new Label(I18n.t("welcome_back").replace("{name}", resolveApplicantDisplayName() + " \uD83D\uDC4B"));
         title.getStyleClass().add("page-title");
 
-        Label subtitle = new Label("You have " + activeApplications + " active applications for this recruitment cycle.");
+        Label subtitle = new Label(I18n.t("active_applications").replace("{n}", String.valueOf(activeApplications)));
         subtitle.setStyle("-fx-font-size: 14px; -fx-font-weight: 400; -fx-text-fill: #64748b;");
 
         VBox left = new VBox(4, title, subtitle);
 
-        Button viewSchedule = new Button("View Schedule");
+        Button viewSchedule = new Button(I18n.t("view_schedule"));
         viewSchedule.getStyleClass().add("secondary-button");
         viewSchedule.setOnAction(event -> openApplicationsModal());
 
-        Button browseJobs = new Button("Browse New Jobs");
+        Button browseJobs = new Button(I18n.t("browse_new_jobs"));
         browseJobs.getStyleClass().add("primary-button");
         browseJobs.setOnAction(event -> openJobBrowserModal());
 
@@ -151,18 +153,18 @@ public class TADashboardController {
     private VBox buildProfileCard(int filled, int total) {
         VBox card = baseStatCard();
 
-        Label pill = buildMiniPill(filled >= total ? "COMPLETE" : "INCOMPLETE", filled >= total ? "success" : "warning");
+        Label pill = buildMiniPill(filled >= total ? I18n.t("complete") : I18n.t("incomplete"), filled >= total ? "success" : "warning");
         HBox header = metricHeader("PROFILE STATUS", pill);
 
         HBox valueRow = new HBox(4);
         Label filledLabel = new Label(String.valueOf(filled));
         filledLabel.setStyle("-fx-font-size: 30px; -fx-font-weight: 900; -fx-text-fill: #0f172a;");
-        Label totalLabel = new Label("/ " + total + " fields");
+        Label totalLabel = new Label(I18n.t("fields_filled").replace("{n}", String.valueOf(total)));
         totalLabel.setStyle("-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: #94a3b8;");
         valueRow.getChildren().addAll(filledLabel, totalLabel);
         valueRow.setAlignment(Pos.BASELINE_LEFT);
 
-        Label sub = new Label(filled >= total ? "All fields filled" : (total - filled) + " field(s) remaining");
+        Label sub = new Label(filled >= total ? I18n.t("all_fields_filled") : I18n.t("fields_remaining").replace("{n}", String.valueOf(total - filled)));
         sub.setStyle("-fx-font-size: 12px; -fx-font-weight: 400; -fx-text-fill: #64748b;");
 
         card.getChildren().addAll(header, valueRow, sub);
@@ -172,14 +174,14 @@ public class TADashboardController {
     private VBox buildResumeCard(int completion, boolean hasCv) {
         VBox card = baseStatCard();
 
-        Label pill = buildMiniPill(hasCv ? "UPLOADED" : "INCOMPLETE", hasCv ? "success" : "warning");
+        Label pill = buildMiniPill(hasCv ? I18n.t("uploaded") : I18n.t("incomplete"), hasCv ? "success" : "warning");
         HBox header = metricHeader("CV STATUS", pill);
 
-        Label file = new Label(hasCv ? resume.getCvFileName() : "Add your latest CV");
+        Label file = new Label(hasCv ? resume.getCvFileName() : I18n.t("add_cv"));
         file.setStyle("-fx-font-size: 18px; -fx-font-weight: 600; -fx-text-fill: #0f172a;");
         file.setWrapText(true);
 
-        Label meta = new Label(hasCv ? completion + "% completion" : "Resume completion " + completion + "%");
+        Label meta = new Label(I18n.t("completion_percent").replace("{n}", String.valueOf(completion)));
         meta.setStyle("-fx-font-size: 12px; -fx-font-weight: 400; -fx-text-fill: #64748b;");
 
         card.getChildren().addAll(header, file, meta);
@@ -220,13 +222,13 @@ public class TADashboardController {
     private VBox buildApplicationCard(int applicationCount) {
         VBox card = baseStatCard();
 
-        Label pill = buildMiniPill("ACTIVE", "neutral");
+        Label pill = buildMiniPill(I18n.t("active"), "neutral");
         HBox header = metricHeader("MY APPLICATIONS", pill);
 
         Label count = new Label(String.format("%02d", applicationCount));
         count.setStyle("-fx-font-size: 30px; -fx-font-weight: 900; -fx-text-fill: #0f172a;");
 
-        Label meta = new Label(applicationCount == 0 ? "No submissions yet" : "Track current recruitment progress");
+        Label meta = new Label(applicationCount == 0 ? I18n.t("no_submissions_yet") : I18n.t("track_progress"));
         meta.setStyle("-fx-font-size: 12px; -fx-font-weight: 400; -fx-text-fill: #64748b;");
 
         card.getChildren().addAll(header, count, meta);
@@ -272,10 +274,10 @@ public class TADashboardController {
         card.getStyleClass().add("panel-card");
         card.setPadding(new Insets(18));
 
-        Label title = new Label("Recent Open Jobs");
+        Label title = new Label(I18n.t("recent_open_jobs"));
         title.setStyle("-fx-font-size: 18px; -fx-font-weight: 900; -fx-text-fill: #0f172a;");
 
-        Button viewAll = new Button("View All");
+        Button viewAll = new Button(I18n.t("view_all"));
         viewAll.setStyle("-fx-background-color: transparent; -fx-text-fill: #475569; -fx-font-size: 12px; -fx-font-weight: 600;");
         viewAll.setOnAction(event -> openJobBrowserModal());
 
@@ -288,7 +290,7 @@ public class TADashboardController {
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         table.setFixedCellSize(-1);
         table.setPrefHeight(280);
-        table.setPlaceholder(new Label("No recent jobs available."));
+        table.setPlaceholder(new Label(I18n.t("no_recent_jobs")));
 
         TableColumn<JobSummaryRow, JobSummaryRow> titleCol = new TableColumn<>("JOB TITLE");
         titleCol.setCellValueFactory(cell -> new SimpleObjectProperty<>(cell.getValue()));
@@ -390,15 +392,56 @@ public class TADashboardController {
         card.getStyleClass().add("panel-card");
         card.setPadding(new Insets(18));
 
-        Label title = new Label("Recommended for You");
+        HBox header = new HBox(8);
+        Label title = new Label(I18n.t("recommended_for_you"));
         title.setStyle("-fx-font-size: 18px; -fx-font-weight: 900; -fx-text-fill: #0f172a;");
 
-        HBox row = new HBox(14, placeholderRecommendCard(), placeholderRecommendCard());
-        card.getChildren().addAll(title, row);
+        Label aiTag = new Label(I18n.t("ai_auto_match"));
+        aiTag.setStyle("-fx-font-size: 11px; -fx-font-weight: 700; -fx-text-fill: white;"
+                + "-fx-background-color: #6366f1; -fx-background-radius: 999;"
+                + "-fx-padding: 3 10 3 10;");
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        header.getChildren().addAll(title, spacer, aiTag);
+        header.setAlignment(Pos.CENTER_LEFT);
+
+        List<Job> recommendedJobs = services.jobService().searchJobs(null).stream()
+                .filter(job -> job.getStatus() == JobStatus.OPEN && job.getDeadline() != null)
+                .sorted(Comparator.comparing(Job::getDeadline))
+                .limit(2)
+                .toList();
+
+        HBox row = new HBox(14);
+        row.setFillHeight(true);
+        HBox.setHgrow(row, Priority.ALWAYS);
+        row.setMaxWidth(Double.MAX_VALUE);
+
+        if (recommendedJobs.size() >= 2) {
+            VBox card1 = recommendationCard(recommendedJobs.get(0), 92);
+            VBox card2 = recommendationCard(recommendedJobs.get(1), 85);
+            HBox.setHgrow(card1, Priority.ALWAYS);
+            HBox.setHgrow(card2, Priority.ALWAYS);
+            row.getChildren().addAll(card1, card2);
+        } else if (recommendedJobs.size() == 1) {
+            VBox card1 = recommendationCard(recommendedJobs.get(0), 92);
+            VBox card2 = placeholderRecommendCard(87);
+            HBox.setHgrow(card1, Priority.ALWAYS);
+            HBox.setHgrow(card2, Priority.ALWAYS);
+            row.getChildren().addAll(card1, card2);
+        } else {
+            VBox card1 = placeholderRecommendCard(90);
+            VBox card2 = placeholderRecommendCard(83);
+            HBox.setHgrow(card1, Priority.ALWAYS);
+            HBox.setHgrow(card2, Priority.ALWAYS);
+            row.getChildren().addAll(card1, card2);
+        }
+
+        card.getChildren().addAll(header, row);
         return card;
     }
 
-    private VBox placeholderRecommendCard() {
+    private VBox placeholderRecommendCard(int matchScore) {
         VBox box = new VBox(10);
         box.getStyleClass().add("soft-info-card");
         box.setPadding(new Insets(14));
@@ -410,7 +453,6 @@ public class TADashboardController {
         Region descBar1 = skeletonBar(Double.MAX_VALUE, 10);
         Region descBar2 = skeletonBar(Double.MAX_VALUE, 10);
         Region descBar3 = skeletonBar(120, 10);
-
         Region hoursBar = skeletonBar(60, 10);
         Region deadlineBar = skeletonBar(80, 10);
         Region footerSpacer = new Region();
@@ -437,11 +479,13 @@ public class TADashboardController {
         return bar;
     }
 
-    private VBox recommendationCard(Job job) {
+    private VBox recommendationCard(Job job, int matchScore) {
         VBox box = new VBox(10);
         box.getStyleClass().add("soft-info-card");
         box.setPadding(new Insets(14));
-        box.setPrefWidth(260);
+        HBox.setHgrow(box, Priority.ALWAYS);
+        box.setCursor(javafx.scene.Cursor.HAND);
+        box.setOnMouseClicked(event -> openJobDetailModal(job));
 
         Label tag = new Label(fallback(job.getModuleCode(), "BUPT"));
         tag.getStyleClass().addAll("mini-pill", "mini-pill-neutral");
@@ -450,25 +494,28 @@ public class TADashboardController {
         title.setWrapText(true);
         title.setStyle("-fx-font-size: 16px; -fx-font-weight: 600; -fx-text-fill: #0f172a;");
 
-        Label desc = new Label(fallback(job.getDescription(), "Recommended based on your current skills and workload balance."));
+        Label desc = new Label(fallback(job.getDescription(), I18n.t("recommended_skill_match")));
         desc.setWrapText(true);
+        desc.setMaxWidth(Double.MAX_VALUE);
         desc.setStyle("-fx-font-size: 12px; -fx-font-weight: 400; -fx-text-fill: #64748b;");
 
         HBox footer = new HBox();
         footer.setAlignment(Pos.CENTER_LEFT);
 
-        Label hours = new Label(job.getWeeklyHours() + "h/week");
+        Label hours = new Label(job.getWeeklyHours() + I18n.t("hours_per_week"));
         hours.setStyle("-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #334155;");
 
-        Label deadline = new Label("Deadline: " + formatDate(job.getDeadline()));
+        Label deadline = new Label(I18n.t("deadline_label") + formatDate(job.getDeadline()));
         deadline.setStyle("-fx-font-size: 11px; -fx-font-weight: 400; -fx-text-fill: #94a3b8;");
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        footer.getChildren().addAll(hours, spacer, deadline);
 
+        Label matchRate = new Label(I18n.tl("match_rate_percent", matchScore));
+        matchRate.setStyle("-fx-font-size: 12px; -fx-font-weight: 800; -fx-text-fill: #6366f1;");
+
+        footer.getChildren().addAll(hours, spacer, matchRate, deadline);
         box.getChildren().addAll(tag, title, desc, footer);
-        HBox.setHgrow(box, Priority.ALWAYS);
         return box;
     }
 
@@ -477,23 +524,23 @@ public class TADashboardController {
         card.getStyleClass().add("accent-panel");
         card.setPadding(new Insets(18));
 
-        Label title = new Label("Quick Actions");
+        Label title = new Label(I18n.t("quick_actions"));
         title.setStyle("-fx-font-size: 22px; -fx-font-weight: 900; -fx-text-fill: white;");
 
-        Button profileButton = quickActionButton("Complete Profile", IconFactory.IconType.PENCIL);
+        Button profileButton = quickActionButton(I18n.t("complete_profile"), IconFactory.IconType.PENCIL);
         profileButton.setOnAction(event -> openProfileModal());
 
         HBox profileRow = new HBox(profileButton);
         HBox.setHgrow(profileButton, Priority.ALWAYS);
         profileRow.setAlignment(Pos.CENTER_LEFT);
 
-        Button uploadCv = quickActionButton("Upload CV / Portfolio", IconFactory.IconType.UPLOAD);
+        Button uploadCv = quickActionButton(I18n.t("upload_cv_portfolio"), IconFactory.IconType.UPLOAD);
         uploadCv.setOnAction(event -> openCvModal());
 
-        Button browseJobs = quickActionButton("Browse Jobs", IconFactory.IconType.SEARCH);
+        Button browseJobs = quickActionButton(I18n.t("browse_jobs"), IconFactory.IconType.SEARCH);
         browseJobs.setOnAction(event -> openJobBrowserModal());
 
-        Button viewApplications = quickActionButton("View Applications", IconFactory.IconType.CLIPBOARD);
+        Button viewApplications = quickActionButton(I18n.t("my_applications"), IconFactory.IconType.CLIPBOARD);
         viewApplications.setOnAction(event -> openApplicationsModal());
 
         card.getChildren().addAll(title, profileRow, uploadCv, browseJobs, viewApplications);
@@ -515,7 +562,7 @@ public class TADashboardController {
         card.getStyleClass().add("panel-card");
         card.setPadding(new Insets(18));
 
-        Label title = new Label("Status Check");
+        Label title = new Label(I18n.t("status_check"));
         title.setStyle("-fx-font-size: 16px; -fx-font-weight: 900; -fx-text-fill: #0f172a;");
 
         VBox body = new VBox(10);
@@ -526,18 +573,18 @@ public class TADashboardController {
         int maxHours = Math.max(services.workloadService().getWorkload(applicantId).maxWeeklyHours(), 1);
 
         if (!hasCv) {
-            body.getChildren().add(alertBox("Missing Documents", "Please upload your CV or portfolio before applying widely.", "#fff1f2", "#ef4444"));
+            body.getChildren().add(alertBox(I18n.t("missing_documents"), I18n.t("missing_cv_msg"), "#fff1f2", "#ef4444"));
         }
         if (!missingSections.isEmpty()) {
-            body.getChildren().add(alertBox("Profile Incomplete", "Resume sections missing: " + String.join(", ", missingSections), "#fff7ed", "#f59e0b"));
+            body.getChildren().add(alertBox(I18n.t("profile_incomplete"), I18n.t("profile_missing_sections").replace("{sections}", String.join(", ", missingSections)), "#fff7ed", "#f59e0b"));
         } else if (profileCompletion < 100) {
-            body.getChildren().add(alertBox("Profile Incomplete", "Update your applicant profile to reach full completion.", "#fff7ed", "#f59e0b"));
+            body.getChildren().add(alertBox(I18n.t("profile_incomplete"), I18n.t("profile_incomplete_msg"), "#fff7ed", "#f59e0b"));
         }
         if (currentHours >= maxHours || currentHours * 1.0 / maxHours > 0.8) {
-            body.getChildren().add(alertBox("Workload Warning", "Current workload is close to your weekly limit.", "#eff6ff", "#2563eb"));
+            body.getChildren().add(alertBox(I18n.t("workload_warning"), I18n.t("workload_warning_msg"), "#eff6ff", "#2563eb"));
         }
         if (body.getChildren().isEmpty()) {
-            body.getChildren().add(alertBox("All Set", "Your documents and workload status look healthy.", "#ecfdf3", "#10b981"));
+            body.getChildren().add(alertBox(I18n.t("all_set"), I18n.t("all_set_msg"), "#ecfdf3", "#10b981"));
         }
 
         card.getChildren().addAll(title, body);
@@ -578,7 +625,7 @@ public class TADashboardController {
         card.getStyleClass().add("panel-card");
         card.setPadding(new Insets(18));
 
-        Label title = new Label("Recruitment Deadlines");
+        Label title = new Label(I18n.t("recruitment_deadlines"));
         title.setStyle("-fx-font-size: 16px; -fx-font-weight: 900; -fx-text-fill: #0f172a;");
 
         VBox body = new VBox(10);
@@ -589,7 +636,7 @@ public class TADashboardController {
                 .toList();
 
         if (deadlines.isEmpty()) {
-            Label empty = new Label("No upcoming deadlines right now.");
+            Label empty = new Label(I18n.t("no_upcoming_deadlines"));
             empty.setStyle("-fx-font-size: 12px; -fx-font-weight: 400; -fx-text-fill: #94a3b8;");
             body.getChildren().add(empty);
         } else {
@@ -615,7 +662,7 @@ public class TADashboardController {
         title.setStyle("-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #334155;");
         title.setWrapText(true);
 
-        Label meta = new Label(fallback(job.getModuleCode(), "-") + " • " + formatDate(job.getDeadline()));
+        Label meta = new Label(fallback(job.getModuleCode(), "-") + " \u2022 " + formatDate(job.getDeadline()));
         meta.setStyle("-fx-font-size: 11px; -fx-font-weight: 400; -fx-text-fill: #94a3b8;");
 
         VBox body = new VBox(2, title, meta);
@@ -737,11 +784,11 @@ public class TADashboardController {
 
         ValidationResult result = services.applicationService().apply(applicantId, job.getJobId(), statementOpt.get());
         if (!result.isValid()) {
-            DialogControllerFactory.operationFailed("Apply Failed", String.join("\n", result.getErrors()),
+            DialogControllerFactory.operationFailed(I18n.t("apply_failed"), String.join("\n", result.getErrors()),
                     view.getScene() == null ? null : view.getScene().getWindow());
             return;
         }
-        DialogControllerFactory.success("Application Submitted", "Your application was submitted successfully.",
+        DialogControllerFactory.success(I18n.t("apply_success"), I18n.t("apply_success_msg"),
                 view.getScene() == null ? null : view.getScene().getWindow());
         initialize();
     }
@@ -770,6 +817,12 @@ public class TADashboardController {
         detailCtrl.setOnCancel(cancelledApplicantId -> {
             cancelApplication(job);
         });
+        detailCtrl.setOnFavouriteToggle(jobId -> {
+            toggleFavourite(jobId);
+            detailCtrl.updateHeartIconDirectly(jobId,
+                    services.favouriteJobRepository().findByApplicantId(applicantId)
+                            .map(f -> f.isFavourite(jobId)).orElse(false));
+        });
 
         showModal("Job Detail", detailCtrl.getView(), 800, 820);
     }
@@ -777,17 +830,27 @@ public class TADashboardController {
     private void cancelApplication(Job job) {
         ValidationResult result = services.applicationService().cancelApplication(applicantId, job.getJobId());
         if (!result.isValid()) {
-            DialogControllerFactory.operationFailed("Cancel Failed", String.join("\n", result.getErrors()),
+            DialogControllerFactory.operationFailed(I18n.t("cancel_failed"), String.join("\n", result.getErrors()),
                     view.getScene() == null ? null : view.getScene().getWindow());
             return;
         }
-        DialogControllerFactory.success("Cancel Success", "Application cancelled successfully.",
+        DialogControllerFactory.success(I18n.t("cancel_success"), I18n.t("cancel_success_msg"),
                 view.getScene() == null ? null : view.getScene().getWindow());
         initialize();
     }
 
+    private void toggleFavourite(String jobId) {
+        if (applicantId == null) return;
+        var favouriteOpt = services.favouriteJobRepository().findByApplicantId(applicantId);
+        var favourite = favouriteOpt.orElseGet(() -> new edu.bupt.ta.model.FavouriteJob(applicantId, new java.util.ArrayList<>()));
+        favourite.toggleFavourite(jobId);
+        services.favouriteJobRepository().saveForApplicant(favourite);
+    }
+
     private void openApplicationsModal() {
-        showModal("My Applications", new MyApplicationsController(services, user).getView(), 1180, 820);
+        showModal("My Applications", new MyApplicationsController(services, user, job -> {
+            showModal("Job Details", new JobDetailController(services).getView(), 900, 700);
+        }).getView(), 1180, 820);
     }
 
     private void openProfileModal() {
