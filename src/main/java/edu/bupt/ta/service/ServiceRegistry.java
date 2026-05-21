@@ -3,9 +3,12 @@ package edu.bupt.ta.service;
 import edu.bupt.ta.repository.ApplicantProfileRepository;
 import edu.bupt.ta.repository.ApplicationRepository;
 import edu.bupt.ta.repository.AuditLogRepository;
+import edu.bupt.ta.repository.FavouriteJobRepository;
 import edu.bupt.ta.repository.JobRepository;
+import edu.bupt.ta.repository.NotificationRepository;
 import edu.bupt.ta.repository.ResumeInfoRepository;
 import edu.bupt.ta.repository.UserRepository;
+import edu.bupt.ta.repository.UserSettingsRepository;
 import edu.bupt.ta.repository.WorkloadRepository;
 
 public class ServiceRegistry {
@@ -17,6 +20,11 @@ public class ServiceRegistry {
     private final ApplicationRepository applicationRepository = new ApplicationRepository();
     private final WorkloadRepository workloadRepository = new WorkloadRepository();
     private final AuditLogRepository auditLogRepository = new AuditLogRepository();
+    private final NotificationRepository notificationRepository = new NotificationRepository(
+            edu.bupt.ta.config.AppPaths.notificationsJson());
+    private final FavouriteJobRepository favouriteJobRepository = new FavouriteJobRepository(
+            edu.bupt.ta.config.AppPaths.favouriteJobsJson());
+    private final UserSettingsRepository userSettingsRepository = new UserSettingsRepository();
 
     private final AuthenticationService authenticationService = new AuthenticationService(userRepository);
     private final ApplicantProfileService applicantProfileService = new ApplicantProfileService(
@@ -45,6 +53,15 @@ public class ServiceRegistry {
             userRepository, applicantProfileRepository, resumeInfoRepository, jobRepository,
             applicationRepository, workloadRepository, auditLogRepository, jobService, workloadService
     );
+    private NotificationService notificationService;
+
+    public ServiceRegistry() {
+        this.notificationService = new NotificationService(
+                notificationRepository, jobRepository, applicationRepository, applicantProfileRepository
+        );
+        applicationService.setNotificationService(notificationService);
+        reviewService.setNotificationService(notificationService);
+    }
 
     public UserRepository userRepository() {
         return userRepository;
@@ -112,5 +129,17 @@ public class ServiceRegistry {
 
     public AdminMonitoringService adminMonitoringService() {
         return adminMonitoringService;
+    }
+
+    public NotificationService notificationService() {
+        return notificationService;
+    }
+
+    public FavouriteJobRepository favouriteJobRepository() {
+        return favouriteJobRepository;
+    }
+
+    public UserSettingsRepository userSettingsRepository() {
+        return userSettingsRepository;
     }
 }

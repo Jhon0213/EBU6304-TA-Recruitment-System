@@ -9,6 +9,7 @@ import edu.bupt.ta.service.ServiceRegistry;
 import edu.bupt.ta.ui.IconFactory;
 import edu.bupt.ta.util.DateTimeUtils;
 import edu.bupt.ta.util.IdGenerator;
+import edu.bupt.ta.util.I18n;
 import edu.bupt.ta.util.PasswordUtils;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -56,6 +57,7 @@ public class LoginController {
     public LoginController(ServiceRegistry services, Consumer<User> onLoginSuccess) {
         this.services = services;
         this.onLoginSuccess = onLoginSuccess;
+        I18n.initTranslations();
         initialize();
     }
 
@@ -101,12 +103,12 @@ public class LoginController {
         );
         brandIcon.getStyleClass().add("login-brand-icon");
 
-        Label brandTitle = new Label("BUPT International School");
+        Label brandTitle = new Label(I18n.t("bupt_title"));
         brandTitle.getStyleClass().add("login-brand-title");
 
         brandRow.getChildren().addAll(brandIcon, brandTitle);
 
-        Label hero = new Label("Teaching Assistant\nRecruitment System");
+        Label hero = new Label(I18n.t("ta_recruitment_title"));
         hero.getStyleClass().add("login-hero-title");
 
         VBox topBlock = new VBox(48, brandRow, hero);
@@ -124,11 +126,11 @@ public class LoginController {
         );
         secureIcon.getStyleClass().add("login-left-meta-icon");
 
-        Label secure = new Label("Secure Academic Portal for Students & Faculty");
+        Label secure = new Label(I18n.t("secure_portal"));
         secure.getStyleClass().add("login-left-meta");
         secureRow.getChildren().addAll(secureIcon, secure);
 
-        Label copyright = new Label("© 2026 Beijing University of Posts and Telecommunications. All rights reserved.");
+        Label copyright = new Label(I18n.t("copyright"));
         copyright.getStyleClass().add("login-left-footer");
 
         VBox footer = new VBox(12, secureRow, copyright);
@@ -148,17 +150,17 @@ public class LoginController {
         content.setPrefWidth(448);
         content.getStyleClass().add("login-content");
 
-        Label heading = new Label("Portal Login");
+        Label heading = new Label(I18n.t("portal_login"));
         heading.getStyleClass().add("login-heading");
 
-        Label subtitle = new Label("Enter your university credentials to continue");
+        Label subtitle = new Label(I18n.t("enter_credentials"));
         subtitle.getStyleClass().add("login-subheading");
 
         VBox titleBlock = new VBox(8, heading, subtitle);
 
-        Label userLabel = new Label("University ID / Username");
+        Label userLabel = new Label(I18n.t("university_id"));
         userLabel.getStyleClass().add("login-field-label");
-        usernameField.setPromptText("e.g. 2023211000");
+        usernameField.setPromptText(I18n.t("eg_2023211000"));
         usernameField.getStyleClass().add("login-input-field");
         HBox usernameInput = buildInputShell(
                 IconFactory.glyph(IconFactory.IconType.USER, 13, Color.web("#94a3b8")),
@@ -167,10 +169,10 @@ public class LoginController {
         );
         VBox usernameBlock = new VBox(8, userLabel, usernameInput);
 
-        Label passLabel = new Label("Password");
+        Label passLabel = new Label(I18n.t("current_password"));
         passLabel.getStyleClass().add("login-field-label");
 
-        Button forgotButton = new Button("Forgot password?");
+        Button forgotButton = new Button(I18n.t("forgot_password"));
         forgotButton.getStyleClass().add("login-forgot-link");
         forgotButton.setFocusTraversable(false);
         forgotButton.setStyle("-fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 0;");
@@ -203,13 +205,13 @@ public class LoginController {
 
         VBox fieldsBlock = new VBox(20, usernameBlock, passwordBlock);
 
-        Button loginButton = new Button("LOGIN TO PORTAL");
+        Button loginButton = new Button(I18n.t("login_to_portal"));
         loginButton.getStyleClass().add("login-primary-button");
         loginButton.setPrefHeight(44);
         loginButton.setMaxWidth(Double.MAX_VALUE);
         loginButton.setOnAction(event -> doLogin());
 
-        Button resetButton = new Button("Reset");
+        Button resetButton = new Button(I18n.t("reset"));
         resetButton.getStyleClass().add("login-secondary-button");
         resetButton.setPrefHeight(44);
         resetButton.setPrefWidth(96);
@@ -233,13 +235,13 @@ public class LoginController {
         footerLinks.setAlignment(Pos.CENTER_LEFT);
         footerLinks.setMaxWidth(Double.MAX_VALUE);
 
-        Button registerLink = footerLink("REGISTER");
+        Button registerLink = footerLink(I18n.t("register"));
         registerLink.setOnAction(event -> showRegistrationDialog());
 
-        Button support = footerLink("HELP CENTER");
+        Button support = footerLink(I18n.t("help_center_link"));
         support.setOnAction(event -> showDocument("Help Center", Path.of("docs", "User-Manual.md"), defaultHelpDocument()));
 
-        Button privacy = footerLink("PRIVACY");
+        Button privacy = footerLink(I18n.t("privacy_link"));
         privacy.setOnAction(event -> showDocument("Privacy", Path.of("docs", "Privacy.md"), defaultPrivacyDocument()));
 
         HBox footerSpacer = new HBox();
@@ -343,7 +345,7 @@ public class LoginController {
         document.setPrefHeight(460);
         document.setStyle("-fx-font-size: 14px; -fx-text-fill: #0f172a;");
 
-        Button close = new Button("OK");
+        Button close = new Button(I18n.t("ok"));
         close.getStyleClass().add("login-primary-button");
         close.setPrefWidth(110);
 
@@ -376,7 +378,6 @@ public class LoginController {
                 return Files.readString(path, StandardCharsets.UTF_8);
             }
         } catch (IOException ignored) {
-            // Fall back to the bundled summary below when the local document is unavailable.
         }
         return fallbackContent;
     }
@@ -396,27 +397,27 @@ public class LoginController {
     }
 
     private void showResetPasswordDialog() {
-        TextField resetUsername = registrationField("Username");
+        TextField resetUsername = registrationField(I18n.t("university_id"));
         resetUsername.setText(usernameField.getText());
-        TextField verificationCode = registrationField("Verification code");
-        PasswordField newPassword = registrationPasswordField("New password");
-        PasswordField confirmPassword = registrationPasswordField("Confirm password");
+        TextField verificationCode = registrationField(I18n.t("verification_code"));
+        PasswordField newPassword = registrationPasswordField(I18n.t("new_password"));
+        PasswordField confirmPassword = registrationPasswordField(I18n.t("confirm_password"));
 
         VBox fields = new VBox(14,
-                requiredLabeledControl("Username", buildInputShell(null, resetUsername, null)),
-                requiredLabeledControl("Verification Code", buildInputShell(null, verificationCode, null)),
-                requiredLabeledControl("New Password", buildInputShell(null, newPassword, null)),
-                requiredLabeledControl("Confirm Password", buildInputShell(null, confirmPassword, null))
+                requiredLabeledControl(I18n.t("university_id"), buildInputShell(null, resetUsername, null)),
+                requiredLabeledControl(I18n.t("verification_code"), buildInputShell(null, verificationCode, null)),
+                requiredLabeledControl(I18n.t("new_password"), buildInputShell(null, newPassword, null)),
+                requiredLabeledControl(I18n.t("confirm_password"), buildInputShell(null, confirmPassword, null))
         );
 
-        Label heading = new Label("Reset Password");
+        Label heading = new Label(I18n.t("reset_password_title"));
         heading.setStyle("-fx-font-size: 22px; -fx-font-weight: 800; -fx-text-fill: #0f172a;");
 
-        Button cancel = new Button("Cancel");
+        Button cancel = new Button(I18n.t("cancel"));
         cancel.getStyleClass().add("login-secondary-button");
         cancel.setPrefWidth(110);
 
-        Button reset = new Button("Reset");
+        Button reset = new Button(I18n.t("reset"));
         reset.getStyleClass().add("login-primary-button");
         reset.setPrefWidth(130);
 
@@ -428,7 +429,7 @@ public class LoginController {
         root.setStyle("-fx-background-color: #ffffff;");
 
         Stage dialog = new Stage();
-        dialog.setTitle("Reset Password");
+        dialog.setTitle(I18n.t("reset_password_title"));
         dialog.initModality(Modality.APPLICATION_MODAL);
         if (view.getScene() != null && view.getScene().getWindow() != null) {
             dialog.initOwner(view.getScene().getWindow());
@@ -455,24 +456,24 @@ public class LoginController {
         String confirm = trim(confirmPassword.getText());
 
         if (username.isBlank()) {
-            DialogControllerFactory.validationError("Username is required.", dialog);
+            DialogControllerFactory.validationError(I18n.t("username_required_msg"), dialog);
             return;
         }
         User user = services.userRepository().findByUsername(username).orElse(null);
         if (user == null) {
-            DialogControllerFactory.validationError("Username does not exist.", dialog);
+            DialogControllerFactory.validationError(I18n.t("username_not_found"), dialog);
             return;
         }
         if (code.isBlank()) {
-            DialogControllerFactory.validationError("Verification code is required.", dialog);
+            DialogControllerFactory.validationError(I18n.t("verification_required"), dialog);
             return;
         }
         if (!RESET_VERIFICATION_CODE.equals(code)) {
-            DialogControllerFactory.validationError("Verification code is incorrect.", dialog);
+            DialogControllerFactory.validationError(I18n.t("verification_incorrect"), dialog);
             return;
         }
         if (password.isBlank()) {
-            DialogControllerFactory.validationError("New password is required.", dialog);
+            DialogControllerFactory.validationError(I18n.t("new_password_required"), dialog);
             return;
         }
         String passwordError = validatePasswordStrength(password);
@@ -481,7 +482,7 @@ public class LoginController {
             return;
         }
         if (!password.equals(confirm)) {
-            DialogControllerFactory.validationError("Password and confirmation do not match.", dialog);
+            DialogControllerFactory.validationError(I18n.t("password_mismatch_msg"), dialog);
             return;
         }
 
@@ -491,33 +492,33 @@ public class LoginController {
         passwordField.clear();
         dialog.close();
         DialogControllerFactory.success(
-                "Password Reset",
-                "Password has been updated. Please log in with the new password.",
+                I18n.t("reset_password_title"),
+                I18n.t("password_reset_success"),
                 view.getScene() == null ? null : view.getScene().getWindow()
         );
     }
 
     private void showRegistrationDialog() {
-        TextField registerUsername = registrationField("Username");
-        PasswordField registerPassword = registrationPasswordField("Password");
-        PasswordField confirmPassword = registrationPasswordField("Confirm password");
-        TextField displayName = registrationField("Full name");
-        TextField studentId = registrationField("Student ID");
-        TextField programme = registrationField("Major / programme");
-        TextField email = registrationField("Email address");
-        TextField phone = registrationField("Phone number");
+        TextField registerUsername = registrationField(I18n.t("university_id"));
+        PasswordField registerPassword = registrationPasswordField(I18n.t("current_password"));
+        PasswordField confirmPassword = registrationPasswordField(I18n.t("confirm_password"));
+        TextField displayName = registrationField(I18n.t("full_name"));
+        TextField studentId = registrationField(I18n.t("student_id"));
+        TextField programme = registrationField(I18n.t("major_programme"));
+        TextField email = registrationField(I18n.t("email_address"));
+        TextField phone = registrationField(I18n.t("phone_number"));
         ComboBox<String> campus = new ComboBox<>();
         campus.getItems().setAll(Job.ALLOWED_CAMPUSES);
-        campus.setPromptText("Select campus");
+        campus.setPromptText(I18n.t("select_campus"));
         campus.setMaxWidth(Double.MAX_VALUE);
         ComboBox<Integer> academicYear = new ComboBox<>();
         academicYear.getItems().setAll(1, 2, 3, 4, 5, 6, 7, 8);
-        academicYear.setPromptText("Select academic year");
+        academicYear.setPromptText(I18n.t("select_academic_year"));
         academicYear.setMaxWidth(Double.MAX_VALUE);
 
-        TextField title = registrationField("Title");
-        TextField department = registrationField("Department");
-        TextField contactEmail = registrationField("Contact email");
+        TextField title = registrationField(I18n.t("title_label"));
+        TextField department = registrationField(I18n.t("department_label"));
+        TextField contactEmail = registrationField(I18n.t("contact_email"));
 
         ChoiceBox<Role> roleChoice = new ChoiceBox<>();
         roleChoice.getItems().setAll(Role.TA, Role.MO);
@@ -526,18 +527,18 @@ public class LoginController {
         roleChoice.setMaxWidth(Double.MAX_VALUE);
 
         VBox taFields = new VBox(14,
-                requiredLabeledControl("Student ID", buildInputShell(null, studentId, null)),
-                requiredLabeledControl("Email Address", buildInputShell(null, email, null)),
-                requiredLabeledControl("Academic Year", academicYear),
-                requiredLabeledControl("Major", buildInputShell(null, programme, null)),
-                requiredLabeledControl("Campus", campus),
-                labeledControl("Phone Number", buildInputShell(null, phone, null))
+                requiredLabeledControl(I18n.t("student_id"), buildInputShell(null, studentId, null)),
+                requiredLabeledControl(I18n.t("email_address"), buildInputShell(null, email, null)),
+                requiredLabeledControl(I18n.t("select_academic_year"), academicYear),
+                requiredLabeledControl(I18n.t("major_programme"), buildInputShell(null, programme, null)),
+                requiredLabeledControl(I18n.t("select_campus"), campus),
+                labeledControl(I18n.t("phone_number"), buildInputShell(null, phone, null))
         );
 
         VBox moFields = new VBox(14,
-                requiredLabeledControl("Title", buildInputShell(null, title, null)),
-                requiredLabeledControl("Department", buildInputShell(null, department, null)),
-                requiredLabeledControl("Contact Email", buildInputShell(null, contactEmail, null))
+                requiredLabeledControl(I18n.t("title_label"), buildInputShell(null, title, null)),
+                requiredLabeledControl(I18n.t("department_label"), buildInputShell(null, department, null)),
+                requiredLabeledControl(I18n.t("contact_email"), buildInputShell(null, contactEmail, null))
         );
         moFields.setVisible(false);
         moFields.setManaged(false);
@@ -550,23 +551,23 @@ public class LoginController {
         });
 
         VBox fields = new VBox(14,
-                requiredLabeledControl("Username", buildInputShell(null, registerUsername, null)),
-                requiredLabeledControl("Password", buildInputShell(null, registerPassword, null)),
-                requiredLabeledControl("Confirm Password", buildInputShell(null, confirmPassword, null)),
-                requiredLabeledControl("Full Name", buildInputShell(null, displayName, null)),
-                requiredLabeledControl("Role", roleChoice),
+                requiredLabeledControl(I18n.t("university_id"), buildInputShell(null, registerUsername, null)),
+                requiredLabeledControl(I18n.t("current_password"), buildInputShell(null, registerPassword, null)),
+                requiredLabeledControl(I18n.t("confirm_password"), buildInputShell(null, confirmPassword, null)),
+                requiredLabeledControl(I18n.t("full_name"), buildInputShell(null, displayName, null)),
+                requiredLabeledControl(I18n.t("select_role"), roleChoice),
                 taFields,
                 moFields
         );
 
-        Label heading = new Label("Create Account");
+        Label heading = new Label(I18n.t("create_account_title"));
         heading.setStyle("-fx-font-size: 22px; -fx-font-weight: 800; -fx-text-fill: #0f172a;");
 
-        Button cancel = new Button("Cancel");
+        Button cancel = new Button(I18n.t("cancel"));
         cancel.getStyleClass().add("login-secondary-button");
         cancel.setPrefWidth(110);
 
-        Button create = new Button("Register");
+        Button create = new Button(I18n.t("register"));
         create.getStyleClass().add("login-primary-button");
         create.setPrefWidth(130);
 
@@ -583,7 +584,7 @@ public class LoginController {
         root.setStyle("-fx-background-color: #ffffff;");
 
         Stage dialog = new Stage();
-        dialog.setTitle("Register");
+        dialog.setTitle(I18n.t("register"));
         dialog.initModality(Modality.APPLICATION_MODAL);
         if (view.getScene() != null && view.getScene().getWindow() != null) {
             dialog.initOwner(view.getScene().getWindow());
@@ -724,8 +725,8 @@ public class LoginController {
         passwordField.clear();
         dialog.close();
         DialogControllerFactory.success(
-                "Registration Successful",
-                "Account created. Please log in with your new credentials.",
+                I18n.t("registration_success"),
+                I18n.t("registration_success_msg"),
                 view.getScene() == null ? null : view.getScene().getWindow()
         );
     }
@@ -745,35 +746,35 @@ public class LoginController {
                                         TextField department,
                                         TextField contactEmail) {
         if (username.isBlank()) {
-            return "Username is required.";
+            return I18n.t("username_required_v");
         }
         if (!username.matches("^[A-Za-z0-9_]{3,30}$")) {
-            return "Username must be 3-30 characters and contain only letters, numbers, or underscores.";
+            return I18n.t("username_format");
         }
         if (services.userRepository().findByUsername(username).isPresent()) {
-            return "Username already exists.";
+            return I18n.t("username_exists");
         }
         if (password.isBlank()) {
-            return "Password is required.";
+            return I18n.t("password_required_v");
         }
         String passwordError = validatePasswordStrength(password);
         if (passwordError != null) {
             return passwordError;
         }
         if (!password.equals(confirm)) {
-            return "Password and confirmation do not match.";
+            return I18n.t("password_mismatch_msg");
         }
         if (displayName.isBlank()) {
-            return "Full name is required.";
+            return I18n.t("fullname_required");
         }
         if (displayName.length() < 2 || displayName.length() > 60) {
-            return "Full name must be 2-60 characters.";
+            return I18n.t("fullname_format");
         }
         if (!displayName.matches("^[A-Za-z\\p{IsHan} .'-]{2,60}$")) {
-            return "Full name can contain only letters, Chinese characters, spaces, dots, hyphens, or apostrophes.";
+            return I18n.t("fullname_format");
         }
         if (role != Role.TA && role != Role.MO) {
-            return "Please select TA or MO.";
+            return I18n.t("select_role");
         }
         if (role == Role.TA) {
             String studentIdValue = trim(studentId.getText());
@@ -781,37 +782,37 @@ public class LoginController {
             String programmeValue = trim(programme.getText());
             String phoneValue = trim(phone.getText());
             if (studentIdValue.isBlank()) {
-                return "Student ID is required.";
+                return I18n.t("studentid_required");
             }
             if (!studentIdValue.matches("^\\d{6,20}$")) {
-                return "Student ID must contain only digits and be 6-20 characters.";
+                return I18n.t("studentid_format");
             }
             if (isStudentIdTaken(studentIdValue)) {
-                return "Student ID already exists.";
+                return I18n.t("studentid_required");
             }
             if (emailValue.isBlank()) {
-                return "Email address is required.";
+                return I18n.t("email_required");
             }
             if (!isValidEmail(emailValue)) {
-                return "Email format is invalid.";
+                return I18n.t("email_invalid");
             }
             if (isEmailTaken(emailValue)) {
-                return "Email address already exists.";
+                return I18n.t("email_required");
             }
             if (academicYear.getValue() == null) {
-                return "Academic year is required.";
+                return I18n.t("academic_year_required");
             }
             if (programmeValue.isBlank()) {
-                return "Major is required.";
+                return I18n.t("major_required");
             }
             if (programmeValue.length() < 2 || programmeValue.length() > 80) {
-                return "Major must be 2-80 characters.";
+                return I18n.t("major_required");
             }
             if (campus.getValue() == null || campus.getValue().isBlank()) {
-                return "Campus is required.";
+                return I18n.t("campus_required");
             }
             if (!phoneValue.isBlank() && !phoneValue.matches("^[0-9+\\-]{6,20}$")) {
-                return "Phone number must be 6-20 characters and contain only digits, +, or -.";
+                return I18n.t("phone_number");
             }
         }
         if (role == Role.MO) {
@@ -819,25 +820,25 @@ public class LoginController {
             String departmentValue = trim(department.getText());
             String contactEmailValue = trim(contactEmail.getText());
             if (titleValue.isBlank()) {
-                return "Title is required.";
+                return I18n.t("title_required");
             }
             if (titleValue.length() < 2 || titleValue.length() > 60) {
-                return "Title must be 2-60 characters.";
+                return I18n.t("title_required");
             }
             if (departmentValue.isBlank()) {
-                return "Department is required.";
+                return I18n.t("dept_required");
             }
             if (departmentValue.length() < 2 || departmentValue.length() > 80) {
-                return "Department must be 2-80 characters.";
+                return I18n.t("dept_required");
             }
             if (contactEmailValue.isBlank()) {
-                return "Contact email is required.";
+                return I18n.t("contact_email_required");
             }
             if (!isValidEmail(contactEmailValue)) {
-                return "Contact email format is invalid.";
+                return I18n.t("email_invalid");
             }
             if (isEmailTaken(contactEmailValue)) {
-                return "Contact email already exists.";
+                return I18n.t("contact_email_required");
             }
         }
         return null;
@@ -865,19 +866,19 @@ public class LoginController {
 
     private String validatePasswordStrength(String password) {
         if (password == null || password.length() < 8) {
-            return "Password must be at least 8 characters.";
+            return I18n.t("password_length");
         }
         if (!password.matches(".*[A-Z].*")) {
-            return "Password must contain at least one uppercase letter.";
+            return I18n.t("password_uppercase");
         }
         if (!password.matches(".*[a-z].*")) {
-            return "Password must contain at least one lowercase letter.";
+            return I18n.t("password_lowercase");
         }
         if (!password.matches(".*\\d.*")) {
-            return "Password must contain at least one number.";
+            return I18n.t("password_number");
         }
         if (!password.matches(".*[^A-Za-z0-9].*")) {
-            return "Password must contain at least one special character.";
+            return I18n.t("password_special");
         }
         return null;
     }
@@ -947,7 +948,7 @@ public class LoginController {
     private void doLogin() {
         LoginResult result = services.authenticationService().login(usernameField.getText(), passwordField.getText());
         if (!result.success()) {
-            DialogControllerFactory.operationFailed("Login Failed", result.message(), view.getScene() == null
+            DialogControllerFactory.operationFailed(I18n.t("login_to_portal"), result.message(), view.getScene() == null
                     ? null : view.getScene().getWindow());
             return;
         }

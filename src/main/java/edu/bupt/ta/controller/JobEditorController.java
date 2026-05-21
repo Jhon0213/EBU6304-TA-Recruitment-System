@@ -5,6 +5,7 @@ import edu.bupt.ta.enums.JobType;
 import edu.bupt.ta.model.Job;
 import edu.bupt.ta.model.User;
 import edu.bupt.ta.ui.IconFactory;
+import edu.bupt.ta.util.I18n;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -68,7 +69,7 @@ public class JobEditorController {
         if (owner != null) {
             stage.initOwner(owner);
         }
-        stage.setTitle(source == null ? "Create Job Post" : "Edit Job Post");
+        stage.setTitle(source == null ? I18n.t("create_job_post") : I18n.t("edit_job_post"));
 
         BorderPane root = new BorderPane();
         root.getStyleClass().add("app-surface");
@@ -108,21 +109,21 @@ public class JobEditorController {
         header.setAlignment(Pos.CENTER_LEFT);
         header.setStyle("-fx-background-color: white; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 1 0;");
 
-        Label title = new Label(source == null ? "Create Job Post" : "Edit Job Post");
+        Label title = new Label(source == null ? I18n.t("create_job_post") : I18n.t("edit_job_post"));
         title.setStyle("-fx-font-size: 26px; -fx-font-weight: 900; -fx-text-fill: #0f172a;");
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Button cancel = new Button("Cancel");
+        Button cancel = new Button(I18n.t("cancel"));
         cancel.getStyleClass().add("secondary-button");
         cancel.setOnAction(event -> stage.close());
 
-        Button saveDraft = new Button("Save Draft");
+        Button saveDraft = new Button(I18n.t("save_draft"));
         saveDraft.getStyleClass().add("secondary-button");
         saveDraft.setOnAction(event -> submitWithStatus(fields, source, JobStatus.DRAFT, stage, result));
 
-        Button update = new Button(source == null ? "Publish Job" : "Update Job");
+        Button update = new Button(source == null ? I18n.t("publish_job") : I18n.t("update_job"));
         update.getStyleClass().add("primary-button");
         update.setOnAction(event -> submitWithStatus(fields, source, fields.status.getValue(), stage, result));
 
@@ -151,48 +152,48 @@ public class JobEditorController {
         rightColumn.setHgrow(Priority.ALWAYS);
         rightColumn.setFillWidth(true);
         basicGrid.getColumnConstraints().setAll(leftColumn, rightColumn);
-        basicGrid.add(field("Job Title", fields.title, true), 0, 0);
-        basicGrid.add(field("Module Code", fields.moduleCode, true), 1, 0);
-        basicGrid.add(field("Module Name", fields.moduleName, true), 0, 1);
-        basicGrid.add(field("Job Type", fields.type), 1, 1);
-        basicGrid.add(field("Semester", fields.semester, true), 0, 2);
-        basicGrid.add(field("Positions", fields.positions, true), 1, 2);
-        basicGrid.add(field("Campus", campusField(fields), true), 0, 3, 2, 1);
+        basicGrid.add(field(I18n.t("job_title_label"), fields.title, true), 0, 0);
+        basicGrid.add(field(I18n.t("module_code"), fields.moduleCode, true), 1, 0);
+        basicGrid.add(field(I18n.t("module_name"), fields.moduleName, true), 0, 1);
+        basicGrid.add(field(I18n.t("job_type"), fields.type), 1, 1);
+        basicGrid.add(field(I18n.t("semester_label"), fields.semester, true), 0, 2);
+        basicGrid.add(field(I18n.t("positions_label"), fields.positions, true), 1, 2);
+        basicGrid.add(field(I18n.t("campus_label"), campusField(fields), true), 0, 3, 2, 1);
         basicGrid.add(deadlineCompositeField(fields), 0, 4, 2, 1);
         int descriptionRow = 5;
         if (showOrganiserField) {
-            basicGrid.add(field("Organiser", fields.organiser, true), 0, 5, 2, 1);
+            basicGrid.add(field(I18n.t("organiser"), fields.organiser, true), 0, 5, 2, 1);
             descriptionRow = 6;
         }
-        basicGrid.add(areaField("Job Description / Key Responsibilities", fields.description, 6), 0, descriptionRow, 2, 1);
+        basicGrid.add(areaField(I18n.t("job_description_responsibilities"), fields.description, 6), 0, descriptionRow, 2, 1);
 
         GridPane skillsGrid = new GridPane();
         skillsGrid.setHgap(16);
         skillsGrid.setVgap(14);
-        skillsGrid.add(areaField("Required Skills (comma separated)", fields.requiredSkills, 2), 0, 0);
-        skillsGrid.add(areaField("Preferred Skills (comma separated)", fields.preferredSkills, 2), 1, 0);
+        skillsGrid.add(areaField(I18n.t("required_skills_comma"), fields.requiredSkills, 2), 0, 0);
+        skillsGrid.add(areaField(I18n.t("preferred_skills_comma"), fields.preferredSkills, 2), 1, 0);
 
-        Label essentialTitle = new Label("Essential Technical Skills");
+        Label essentialTitle = new Label(I18n.t("essential_technical_skills"));
         essentialTitle.setStyle("-fx-font-size: 14px; -fx-font-weight: 900; -fx-text-fill: #334155;");
 
-        Label gradeTitle = new Label("Minimum Academic Grade");
+        Label gradeTitle = new Label(I18n.t("minimum_academic_grade"));
         gradeTitle.setStyle("-fx-font-size: 14px; -fx-font-weight: 900; -fx-text-fill: #334155;");
 
         HBox gradeRow = new HBox(18, fields.gradeA, fields.gradeB);
         gradeRow.setAlignment(Pos.CENTER_LEFT);
 
-        Label note = new Label("Tip: Include at least one required skill and set the semester clearly.");
+        Label note = new Label(I18n.t("tip_required_skill"));
         note.getStyleClass().add("body-muted");
 
         VBox basicSection = new VBox(18);
         basicSection.getStyleClass().add("panel-card");
         basicSection.setPadding(new Insets(22));
-        basicSection.getChildren().addAll(buildSectionTitle("Basic Job Information"), basicGrid);
+        basicSection.getChildren().addAll(buildSectionTitle(I18n.t("basic_job_information")), basicGrid);
 
         VBox skillSection = new VBox(18);
         skillSection.getStyleClass().add("panel-card");
         skillSection.setPadding(new Insets(22));
-        skillSection.getChildren().addAll(buildSectionTitle("Skills & Requirements"), essentialTitle, fields.requiredSkillChips, gradeTitle, gradeRow, skillsGrid, note);
+        skillSection.getChildren().addAll(buildSectionTitle(I18n.t("skills_requirements")), essentialTitle, fields.requiredSkillChips, gradeTitle, gradeRow, skillsGrid, note);
 
         wrapper.getChildren().addAll(basicSection, skillSection);
         return wrapper;
@@ -202,8 +203,8 @@ public class JobEditorController {
         VBox wrapper = new VBox(8);
         fields.deadlineHour.getItems().setAll(buildHourOptions());
         fields.deadlineMinute.getItems().setAll(buildMinuteOptions());
-        fields.deadlineHour.setPromptText("Hour");
-        fields.deadlineMinute.setPromptText("Minute");
+        fields.deadlineHour.setPromptText(I18n.t("hour"));
+        fields.deadlineMinute.setPromptText(I18n.t("minute"));
 
         GridPane labels = new GridPane();
         labels.setHgap(16);
@@ -232,19 +233,19 @@ public class JobEditorController {
 
         HBox deadlineLabelRow = new HBox(4);
         deadlineLabelRow.setAlignment(Pos.CENTER_LEFT);
-        Label deadlineLabel = new Label("Deadline");
+        Label deadlineLabel = new Label(I18n.t("deadline_label"));
         deadlineLabel.getStyleClass().add("field-label");
         Label requiredMark = new Label("*");
         requiredMark.getStyleClass().add("required-asterisk");
         deadlineLabelRow.getChildren().addAll(deadlineLabel, requiredMark);
 
-        Label hourLabel = new Label("Hour");
+        Label hourLabel = new Label(I18n.t("hour"));
         hourLabel.setStyle("-fx-font-size: 13px; -fx-font-weight: 500; -fx-text-fill: #94a3b8;");
-        Label minuteLabel = new Label("Minute");
+        Label minuteLabel = new Label(I18n.t("minute"));
         minuteLabel.setStyle("-fx-font-size: 13px; -fx-font-weight: 500; -fx-text-fill: #94a3b8;");
         HBox statusLabelRow = new HBox(4);
         statusLabelRow.setAlignment(Pos.CENTER_LEFT);
-        Label statusLabel = new Label("Publication Status");
+        Label statusLabel = new Label(I18n.t("publication_status"));
         statusLabel.getStyleClass().add("field-label");
         Label statusRequiredMark = new Label("*");
         statusRequiredMark.getStyleClass().add("required-asterisk");
@@ -283,7 +284,7 @@ public class JobEditorController {
         preview.setMinWidth(500);
         preview.setStyle("-fx-background-color: #ffffff; -fx-border-color: #e2e8f0; -fx-border-width: 0 0 0 1;");
 
-        Label heading = new Label("Live Preview Summary");
+        Label heading = new Label(I18n.t("live_preview_summary"));
         heading.setStyle("-fx-font-size: 16px; -fx-font-weight: 900; -fx-text-fill: #0f172a;");
 
         PreviewNodes nodes = new PreviewNodes();
@@ -314,12 +315,12 @@ public class JobEditorController {
         VBox headerPreview = new VBox(14, cardHeader, nodes.cardMeta, organiserRow);
 
         HBox metrics = new HBox(12,
-                previewMetricCard("AVAILABLE", "SEATS", nodes.seatsMetric, IconFactory.IconType.USERS),
-                previewMetricCard("APPLICATION", "DEADLINE", nodes.deadlineMetric, IconFactory.IconType.CALENDAR)
+                previewMetricCard(I18n.t("available_seats"), I18n.t("seats"), nodes.seatsMetric, IconFactory.IconType.USERS),
+                previewMetricCard(I18n.t("application_deadline"), I18n.t("deadline_upper"), nodes.deadlineMetric, IconFactory.IconType.CALENDAR)
         );
 
-        VBox descriptionCard = previewSectionCard("JOB DESCRIPTION", nodes.description);
-        VBox responsibilitiesCard = previewSectionCard("KEY RESPONSIBILITIES", nodes.responsibilities);
+        VBox descriptionCard = previewSectionCard(I18n.t("job_description_upper"), nodes.description);
+        VBox responsibilitiesCard = previewSectionCard(I18n.t("key_responsibilities_upper"), nodes.responsibilities);
 
         GridPane infoGrid = new GridPane();
         infoGrid.setHgap(18);
@@ -331,15 +332,15 @@ public class JobEditorController {
         c2.setPercentWidth(50);
         c2.setHgrow(Priority.ALWAYS);
         infoGrid.getColumnConstraints().setAll(c1, c2);
-        infoGrid.add(previewInfoCell("Code", nodes.codeValue), 0, 0);
-        infoGrid.add(previewInfoCell("Professor", nodes.organiserValue), 1, 0);
-        infoGrid.add(previewInfoCell("Campus", nodes.campusValue), 0, 1);
-        infoGrid.add(previewInfoCell("Term", nodes.termValue), 1, 1);
+        infoGrid.add(previewInfoCell(I18n.t("code"), nodes.codeValue), 0, 0);
+        infoGrid.add(previewInfoCell(I18n.t("professor"), nodes.organiserValue), 1, 0);
+        infoGrid.add(previewInfoCell(I18n.t("campus_label"), nodes.campusValue), 0, 1);
+        infoGrid.add(previewInfoCell(I18n.t("term"), nodes.termValue), 1, 1);
 
         VBox moduleCardBody = new VBox(infoGrid);
         moduleCardBody.getStyleClass().add("position-section-card");
         moduleCardBody.setPadding(new Insets(16));
-        VBox moduleCard = previewSection("MODULE INFO", moduleCardBody);
+        VBox moduleCard = previewSection(I18n.t("module_info_label"), moduleCardBody);
 
         preview.getChildren().addAll(heading, headerPreview, metrics, descriptionCard, responsibilitiesCard, moduleCard);
 
@@ -352,9 +353,9 @@ public class JobEditorController {
     }
 
     private VBox previewMetricCard(String topLabel,
-                                   String bottomLabel,
-                                   Label valueLabel,
-                                   IconFactory.IconType iconType) {
+                                  String bottomLabel,
+                                  Label valueLabel,
+                                  IconFactory.IconType iconType) {
         Label top = new Label(topLabel);
         top.getStyleClass().add("position-metric-kicker");
         Label bottom = new Label(bottomLabel);
@@ -445,9 +446,9 @@ public class JobEditorController {
 
     private void promptAddSkill(EditorFields fields) {
         TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Add Skill");
-        dialog.setHeaderText("Add one required skill");
-        dialog.setContentText("Skill name:");
+        dialog.setTitle(I18n.t("add_skill"));
+        dialog.setHeaderText(I18n.t("add_one_required_skill"));
+        dialog.setContentText(I18n.t("skill_name_colon"));
         dialog.getDialogPane().getStyleClass().add("ta-dialog");
         if (fields.addSkillButton.getScene() != null && fields.addSkillButton.getScene().getWindow() != null) {
             dialog.initOwner(fields.addSkillButton.getScene().getWindow());
@@ -546,7 +547,7 @@ public class JobEditorController {
         combo.setVisibleRowCount(10);
     }
 
-  
+
 
     private void populateForm(EditorFields fields, Job source, String organiserId, List<User> organisers) {
         fields.type.getItems().setAll(JobType.values());
@@ -564,8 +565,8 @@ public class JobEditorController {
             fields.deadline.setValue(defaultDeadline.toLocalDate());
             fields.deadlineHour.setValue(String.format("%02d", defaultDeadline.getHour()));
             fields.deadlineMinute.setValue(String.format("%02d", defaultDeadline.getMinute()));
-            fields.semester.setText("Spring Semester 2026");
-           
+            fields.semester.setText(I18n.t("spring_semester") + " 2026");
+
             selectOrganiser(fields.organiser, organiserId);
             fields.campusHaidian.setSelected(false);
             fields.campusShahe.setSelected(false);
@@ -607,7 +608,13 @@ public class JobEditorController {
         statusBox.setConverter(new javafx.util.StringConverter<>() {
             @Override
             public String toString(JobStatus object) {
-                return object == null ? "" : object.name();
+                if (object == null) return "";
+                return switch (object) {
+                    case OPEN -> I18n.t("open");
+                    case CLOSED -> I18n.t("closed");
+                    case DRAFT -> I18n.t("draft");
+                    case EXPIRED -> I18n.t("expired");
+                };
             }
 
             @Override
@@ -635,7 +642,7 @@ public class JobEditorController {
     }
 
     private void configureOrganiserSelector(ComboBox<User> organiserBox) {
-        organiserBox.setPromptText("Select organiser");
+        organiserBox.setPromptText(I18n.t("select_organiser"));
         organiserBox.setCellFactory(listView -> new ListCell<>() {
             @Override
             protected void updateItem(User item, boolean empty) {
@@ -670,40 +677,40 @@ public class JobEditorController {
     private List<String> validate(EditorFields fields, JobStatus targetStatus) {
         List<String> errors = new ArrayList<>();
         if (fields.title.getText() == null || fields.title.getText().isBlank()) {
-            errors.add("Title is required.");
+            errors.add(I18n.t("title_is_required"));
         }
         if (fields.moduleCode.getText() == null || fields.moduleCode.getText().isBlank()) {
-            errors.add("Module code is required.");
+            errors.add(I18n.t("module_code_is_required"));
         }
         if (fields.moduleName.getText() == null || fields.moduleName.getText().isBlank()) {
-            errors.add("Module name is required.");
+            errors.add(I18n.t("module_name_is_required"));
         }
         if (fields.semester.getText() == null || fields.semester.getText().isBlank()) {
-            errors.add("Semester is required.");
+            errors.add(I18n.t("semester_is_required"));
         }
         if (parseInt(fields.positions.getText()) <= 0) {
-            errors.add("Positions must be greater than 0.");
+            errors.add(I18n.t("positions_must_be_positive"));
         }
         if (fields.deadline.getValue() == null) {
-            errors.add("Deadline is required.");
+            errors.add(I18n.t("deadline_is_required"));
         }
         LocalTime deadlineTime = parseTime(fields.deadlineHour.getValue(), fields.deadlineMinute.getValue());
         if (deadlineTime == null) {
-            errors.add("Please select both deadline hour and minute.");
+            errors.add(I18n.t("select_both_hour_minute"));
         }
         if (targetStatus == JobStatus.OPEN
                && fields.deadline.getValue() != null
                && deadlineTime != null
                && LocalDateTime.of(fields.deadline.getValue(), deadlineTime).isBefore(LocalDateTime.now())) {
-            
-            errors.add("An OPEN job must have a deadline in the future.");
+
+            errors.add(I18n.t("open_job_future_deadline"));
         }
         String organiserId = resolveOrganiserId(fields);
         if (organiserId == null || organiserId.isBlank()) {
-            errors.add("Organiser ID is required.");
+            errors.add(I18n.t("organiser_id_required"));
         }
         if (!fields.campusHaidian.isSelected() && !fields.campusShahe.isSelected()) {
-            errors.add("Select at least one campus (Haidian / Shahe).");
+            errors.add(I18n.t("select_at_least_one_campus"));
         }
         return errors;
     }
@@ -763,30 +770,35 @@ public class JobEditorController {
     }
 
     private void updatePreview(EditorFields fields, PreviewNodes nodes) {
-        nodes.cardTitle.setText(fallback(fields.title.getText(), "Untitled Job"));
-        String module = fallback(fields.moduleCode.getText(), "TBD");
-        String moduleName = fallback(fields.moduleName.getText(), "Module Name");
+        nodes.cardTitle.setText(fallback(fields.title.getText(), I18n.t("untitled_job")));
+        String module = fallback(fields.moduleCode.getText(), I18n.t("tbd"));
+        String moduleName = fallback(fields.moduleName.getText(), I18n.t("module_name"));
         nodes.cardMeta.setText(moduleName.toUpperCase() + " - " + fallback(fields.semester.getText(), "-").toUpperCase());
 
         JobStatus status = fields.status.getValue();
-        nodes.statusChip.setText(status == null ? "DRAFT" : status.name());
+        nodes.statusChip.setText(status == null ? I18n.t("draft") : switch (status) {
+            case OPEN -> I18n.t("open");
+            case CLOSED -> I18n.t("closed");
+            case DRAFT -> I18n.t("draft");
+            case EXPIRED -> I18n.t("expired");
+        });
         nodes.statusChip.setStyle(previewStatusStyle(status));
 
         List<String> requiredSkills = parseSkills(fields.requiredSkills.getText());
         List<String> preferredSkills = parseSkills(fields.preferredSkills.getText());
 
         int positionCount = parseInt(fields.positions.getText());
-        String postText = positionCount == 1 ? "1 Post" : Math.max(positionCount, 0) + " Posts";
+        String postText = positionCount == 1 ? "1 " + I18n.t("seats") : Math.max(positionCount, 0) + " " + I18n.t("seats");
         String formattedDeadline = formatDeadline(fields.deadline.getValue(), parseTime(fields.deadlineHour.getValue(), fields.deadlineMinute.getValue()));
         nodes.seatsMetric.setText(postText);
         nodes.deadlineMetric.setText(formattedDeadline);
 
-        String description = fallback(fields.description.getText(), "No job description provided.");
+        String description = fallback(fields.description.getText(), I18n.t("no_job_description_provided"));
         nodes.description.setText(description);
         nodes.responsibilities.setText(description);
 
         nodes.organiserName.setText(fallback(selectedOrganiserName(fields), "-"));
-        nodes.organiserDept.setText(moduleName + " Department");
+        nodes.organiserDept.setText(moduleName + " " + I18n.t("department_label3"));
         nodes.organiserAvatar.setText(initials(nodes.organiserName.getText()));
         nodes.codeValue.setText(module + "-" + resolvePreviewYear(fields));
         nodes.campusValue.setText(formatCampusPreview(fields));
@@ -1002,10 +1014,10 @@ public class JobEditorController {
         private final TextArea preferredSkills = new TextArea();
         private final ComboBox<User> organiser = new ComboBox<>();
         private final FlowPane requiredSkillChips = new FlowPane();
-        private final Button addSkillButton = new Button("+ Add Skill");
+        private final Button addSkillButton = new Button(I18n.t("add_skill"));
         private final ToggleGroup minimumGradeGroup = new ToggleGroup();
-        private final RadioButton gradeA = new RadioButton("A / 90+");
-        private final RadioButton gradeB = new RadioButton("B+ / 85+");
+        private final RadioButton gradeA = new RadioButton(I18n.t("a_90_plus"));
+        private final RadioButton gradeB = new RadioButton(I18n.t("b_plus_85_plus"));
         private final CheckBox campusHaidian = new CheckBox(Job.CAMPUS_HAIDIAN);
         private final CheckBox campusShahe = new CheckBox(Job.CAMPUS_SHAHE);
         private String defaultOrganiserId;

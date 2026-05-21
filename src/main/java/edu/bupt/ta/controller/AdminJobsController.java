@@ -9,6 +9,7 @@ import edu.bupt.ta.model.Application;
 import edu.bupt.ta.model.Job;
 import edu.bupt.ta.model.User;
 import edu.bupt.ta.service.ServiceRegistry;
+import edu.bupt.ta.util.I18n;
 import edu.bupt.ta.util.ValidationResult;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -56,7 +57,7 @@ public class AdminJobsController {
     private final Label totalApplicantsValue = new Label("0");
     private final Label activeJobsValue = new Label("0");
 
-    private final Label detailTitle = new Label("Select a Job");
+    private final Label detailTitle = new Label();
     private final Label detailSubline = new Label("-");
     private final Label detailModuleTitle = new Label("-");
     private final Label detailModuleMeta = new Label("-");
@@ -74,11 +75,11 @@ public class AdminJobsController {
     private final HBox applicantAvatarStrip = new HBox(6);
     private final VBox activityLogBox = new VBox(10);
 
-    private final Button editButton = new Button("Edit Job");
-    private final Button closeButton = new Button("Close Job");
-    private final Button viewApplicationsButton = new Button("View All Applications");
-    private final Button detailEditButton = new Button("Edit Job Details");
-    private final Button detailCloseButton = new Button("Close Job");
+    private final Button editButton = new Button();
+    private final Button closeButton = new Button();
+    private final Button viewApplicationsButton = new Button();
+    private final Button detailEditButton = new Button();
+    private final Button detailCloseButton = new Button();
 
     private List<AdminJobRowDTO> allJobs = List.of();
 
@@ -105,41 +106,43 @@ public class AdminJobsController {
     }
 
     private VBox buildHeader() {
-        Label title = new Label("Jobs");
+        Label title = new Label(I18n.t("jobs_admin"));
         title.getStyleClass().add("page-title");
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Button filterButton = new Button("Filter");
+        Button filterButton = new Button(I18n.t("filter"));
         filterButton.getStyleClass().add("secondary-button");
         filterButton.setOnAction(event -> statusFilter.show());
 
-        Button refreshButton = new Button("Refresh");
+        Button refreshButton = new Button(I18n.t("refresh"));
         refreshButton.getStyleClass().add("secondary-button");
         refreshButton.setOnAction(event -> refresh());
 
-        Button createButton = new Button("+ Create New Job");
+        Button createButton = new Button("+ " + I18n.t("create_new_job"));
         createButton.getStyleClass().add("primary-button");
         createButton.setOnAction(event -> onCreate());
 
         HBox topRow = new HBox(10, title, spacer, filterButton, refreshButton, createButton);
         topRow.setAlignment(Pos.CENTER_LEFT);
 
-        searchField.setPromptText("Search by title, job ID, module, organiser...");
+        searchField.setPromptText(I18n.t("search_title_id_module"));
         searchField.setPrefWidth(360);
 
-        statusFilter.getItems().setAll("ALL STATUS", "OPEN", "CLOSED", "EXPIRED", "DRAFT");
-        statusFilter.setValue("ALL STATUS");
+        statusFilter.getItems().setAll(I18n.t("all_status"), I18n.t("open"), I18n.t("closed"), I18n.t("expired"), I18n.t("draft"));
+        statusFilter.setValue(I18n.t("all_status"));
         statusFilter.setPrefWidth(150);
 
-        typeFilter.getItems().setAll("ALL TYPES", "MODULE_TA", "INVIGILATION", "ACTIVITY_SUPPORT", "OTHER");
-        typeFilter.setValue("ALL TYPES");
+        typeFilter.getItems().setAll(I18n.t("all_types"), I18n.t("module_ta"), I18n.t("invigilation"), I18n.t("activity_support"), I18n.t("other"));
+        typeFilter.setValue(I18n.t("all_types"));
         typeFilter.setPrefWidth(170);
 
+        editButton.setText(I18n.t("edit_job"));
         editButton.getStyleClass().add("secondary-button");
         editButton.setOnAction(event -> onEdit());
 
+        closeButton.setText(I18n.t("close_job"));
         closeButton.getStyleClass().add("secondary-button");
         closeButton.setOnAction(event -> onClose());
 
@@ -151,9 +154,9 @@ public class AdminJobsController {
 
     private HBox buildKpiRow() {
         return new HBox(16,
-                kpiCard("Total Openings", totalJobsValue, "Across all organisers"),
-                kpiCard("Total Applicants", totalApplicantsValue, "Applications linked to current postings"),
-                kpiCard("Active Jobs", activeJobsValue, "OPEN jobs currently receiving candidates")
+                kpiCard(I18n.t("total_openings"), totalJobsValue, I18n.t("active_jobs") + " - " + I18n.t("total_openings")),
+                kpiCard(I18n.t("total_applicants_admin"), totalApplicantsValue, I18n.t("total_applicants_admin")),
+                kpiCard(I18n.t("active_jobs"), activeJobsValue, I18n.t("active_jobs"))
         );
     }
 
@@ -182,7 +185,7 @@ public class AdminJobsController {
         listPanel.getStyleClass().add("panel-card");
         listPanel.setPadding(new Insets(18));
 
-        TableColumn<AdminJobRowDTO, String> titleCol = new TableColumn<>("JOB TITLE & ID");
+        TableColumn<AdminJobRowDTO, String> titleCol = new TableColumn<>(I18n.t("job_title_id"));
         titleCol.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().title()));
         titleCol.setCellFactory(column -> new TableCell<>() {
             @Override
@@ -217,7 +220,7 @@ public class AdminJobsController {
             }
         });
 
-        TableColumn<AdminJobRowDTO, String> departmentCol = new TableColumn<>("DEPARTMENT");
+        TableColumn<AdminJobRowDTO, String> departmentCol = new TableColumn<>(I18n.t("department_admin"));
         departmentCol.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().moduleName()));
         departmentCol.setCellFactory(column -> new TableCell<>() {
             @Override
@@ -252,7 +255,7 @@ public class AdminJobsController {
             }
         });
 
-        TableColumn<AdminJobRowDTO, Number> applicantsCol = new TableColumn<>("APPLICANTS");
+        TableColumn<AdminJobRowDTO, Number> applicantsCol = new TableColumn<>(I18n.t("applicants_count"));
         applicantsCol.setCellValueFactory(cell -> new SimpleIntegerProperty(cell.getValue().applicantCount()));
         applicantsCol.setCellFactory(column -> new TableCell<>() {
             @Override
@@ -271,7 +274,7 @@ public class AdminJobsController {
             }
         });
 
-        TableColumn<AdminJobRowDTO, String> statusCol = new TableColumn<>("STATUS");
+        TableColumn<AdminJobRowDTO, String> statusCol = new TableColumn<>(I18n.t("status_upper"));
         statusCol.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().statusLabel()));
         statusCol.setCellFactory(column -> new TableCell<>() {
             @Override
@@ -290,14 +293,14 @@ public class AdminJobsController {
             }
         });
 
-        TableColumn<AdminJobRowDTO, String> createdCol = new TableColumn<>("CREATED");
+        TableColumn<AdminJobRowDTO, String> createdCol = new TableColumn<>(I18n.t("created_label"));
         createdCol.setCellValueFactory(cell -> new SimpleStringProperty(formatDate(cell.getValue().createdAt())));
         createdCol.setCellFactory(column -> mutedStringCell());
 
-        TableColumn<AdminJobRowDTO, String> actionCol = new TableColumn<>("DETAIL");
-        actionCol.setCellValueFactory(cell -> new SimpleStringProperty("Detail"));
+        TableColumn<AdminJobRowDTO, String> actionCol = new TableColumn<>(I18n.t("detail_upper"));
+        actionCol.setCellValueFactory(cell -> new SimpleStringProperty(I18n.t("detail_upper")));
         actionCol.setCellFactory(column -> new TableCell<>() {
-            private final Button detailButton = new Button("Detail");
+            private final Button detailButton = new Button(I18n.t("detail_upper"));
 
             {
                 detailButton.getStyleClass().add("secondary-button");
@@ -331,7 +334,7 @@ public class AdminJobsController {
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         table.setFixedCellSize(88);
         table.setPrefHeight(560);
-        table.setPlaceholder(new Label("No jobs match the current filters."));
+        table.setPlaceholder(new Label(I18n.t("no_jobs_match_filters")));
         table.getSelectionModel().selectedItemProperty().addListener((obs, oldJob, newJob) -> {
             updateActionButtons(newJob);
         });
@@ -363,8 +366,8 @@ public class AdminJobsController {
                         || contains(job.organiserId(), keyword)
                         || contains(job.jobId(), keyword)
                         || contains(job.description(), keyword))
-                .filter(job -> status == null || "ALL STATUS".equals(status) || status.equals(job.statusLabel()))
-                .filter(job -> type == null || "ALL TYPES".equals(type) || type.equals(job.typeLabel()))
+                .filter(job -> status == null || I18n.t("all_status").equals(status) || status.equals(job.statusLabel()))
+                .filter(job -> type == null || I18n.t("all_types").equals(type) || type.equals(job.typeLabel()))
                 .toList();
 
         table.setItems(FXCollections.observableArrayList(filtered));
@@ -389,7 +392,7 @@ public class AdminJobsController {
 
     private void updateDetail(AdminJobRowDTO job) {
         if (job == null) {
-            detailTitle.setText("Select a Job");
+            detailTitle.setText(I18n.t("select_a_job"));
             detailSubline.setText("-");
             detailModuleTitle.setText("-");
             detailModuleMeta.setText("-");
@@ -405,7 +408,7 @@ public class AdminJobsController {
             detailReviewCount.setText("0");
             detailAcceptedCount.setText("0");
             applicantAvatarStrip.getChildren().setAll(new Label("-"));
-            activityLogBox.getChildren().setAll(mutedText("No recent activity"));
+            activityLogBox.getChildren().setAll(mutedText(I18n.t("no_recent_activity")));
             return;
         }
 
@@ -443,7 +446,7 @@ public class AdminJobsController {
                 .toList();
 
         if (avatars.isEmpty()) {
-            applicantAvatarStrip.getChildren().add(mutedText("No applicants yet"));
+            applicantAvatarStrip.getChildren().add(mutedText(I18n.t("no_applicants_yet_job")));
             return;
         }
         applicantAvatarStrip.getChildren().addAll(avatars);
@@ -462,7 +465,7 @@ public class AdminJobsController {
 
         activityLogBox.getChildren().clear();
         if (logs.isEmpty()) {
-            activityLogBox.getChildren().add(mutedText("No recent activity"));
+            activityLogBox.getChildren().add(mutedText(I18n.t("no_recent_activity")));
             return;
         }
 
@@ -482,7 +485,7 @@ public class AdminJobsController {
     private void onCreate() {
         List<User> organisers = loadOrganisers();
         if (organisers.isEmpty()) {
-            showError("No active MO organiser accounts are available for assignment.");
+            showError(I18n.t("no_mo_available"));
             return;
         }
 
@@ -500,7 +503,7 @@ public class AdminJobsController {
     private void onEdit() {
         AdminJobRowDTO selectedRow = table.getSelectionModel().getSelectedItem();
         if (selectedRow == null) {
-            showError("Please select one job first.");
+            showError(I18n.t("please_select_job_first"));
             return;
         }
         onEdit(selectedRow);
@@ -509,7 +512,7 @@ public class AdminJobsController {
     private boolean onEdit(AdminJobRowDTO selectedRow) {
         Job source = services.jobService().getJob(selectedRow.jobId()).orElse(null);
         if (source == null) {
-            showError("The selected job could not be loaded.");
+            showError(I18n.t("job_could_not_be_loaded"));
             refresh();
             return false;
         }
@@ -531,7 +534,7 @@ public class AdminJobsController {
     private void onClose() {
         AdminJobRowDTO selectedRow = table.getSelectionModel().getSelectedItem();
         if (selectedRow == null) {
-            showError("Please select one job first.");
+            showError(I18n.t("please_select_job_first"));
             return;
         }
         onClose(selectedRow);
@@ -539,8 +542,8 @@ public class AdminJobsController {
 
     private boolean onClose(AdminJobRowDTO selectedRow) {
         boolean confirmed = DialogControllerFactory.confirmAction(
-                "Close Job",
-                "Close \"" + selectedRow.title() + "\" now? Closed jobs cannot receive new applications.",
+                I18n.t("close_job"),
+                I18n.t("close_job_question") + " \"" + selectedRow.title() + "\"",
                 view.getScene() == null ? null : view.getScene().getWindow());
         if (!confirmed) {
             return false;
@@ -553,7 +556,7 @@ public class AdminJobsController {
             return false;
         }
 
-        DialogControllerFactory.success("Job Closed", "The job was set to CLOSED successfully.",
+        DialogControllerFactory.success(I18n.t("job_closed"), I18n.t("job_closed_desc"),
                 view.getScene() == null ? null : view.getScene().getWindow());
         refresh();
         return true;
@@ -562,7 +565,7 @@ public class AdminJobsController {
     private void openApplicationsModal() {
         AdminJobRowDTO selectedRow = table.getSelectionModel().getSelectedItem();
         if (selectedRow == null) {
-            showError("Please select one job first.");
+            showError(I18n.t("please_select_job_first"));
             return;
         }
         openApplicationsModal(selectedRow.jobId());
@@ -574,7 +577,7 @@ public class AdminJobsController {
         if (view.getScene() != null) {
             stage.initOwner(view.getScene().getWindow());
         }
-        stage.setTitle("Applications for " + jobId);
+        stage.setTitle(I18n.t("applications_for_job") + " " + jobId);
 
         Parent content = new AdminApplicationsController(services, user, jobId).getView();
         Scene scene = new Scene(content, 1440, 900);
@@ -588,7 +591,7 @@ public class AdminJobsController {
 
     private void showJobDetailWindow(AdminJobRowDTO selectedRow) {
         if (selectedRow == null) {
-            showError("Please select one job first.");
+            showError(I18n.t("please_select_job_first"));
             return;
         }
 
@@ -601,7 +604,7 @@ public class AdminJobsController {
         if (view.getScene() != null) {
             stage.initOwner(view.getScene().getWindow());
         }
-        stage.setTitle("Job Details");
+        stage.setTitle(I18n.t("job_details_admin"));
 
         Parent content = buildDetailWindow(stage, selectedRow);
         Scene scene = new Scene(content, 780, 860);
@@ -617,7 +620,7 @@ public class AdminJobsController {
         VBox detailContent = new VBox(18);
         detailContent.setPadding(new Insets(18));
 
-        Label kicker = new Label("JOB DETAILS");
+        Label kicker = new Label(I18n.t("job_details_upper"));
         kicker.getStyleClass().add("section-kicker");
 
         detailTitle.setWrapText(true);
@@ -627,7 +630,7 @@ public class AdminJobsController {
         detailSubline.setStyle("-fx-font-size: 12px; -fx-text-fill: #64748b; -fx-font-weight: 600;");
 
         VBox moduleCard = new VBox(8,
-                sectionTitle("ASSOCIATED MODULE"),
+                sectionTitle(I18n.t("associated_module")),
                 detailModuleTitle,
                 detailModuleMeta,
                 detailModuleDescription);
@@ -638,27 +641,27 @@ public class AdminJobsController {
         detailModuleDescription.setStyle("-fx-font-size: 12px; -fx-text-fill: #64748b;");
 
         VBox recruitmentCard = new VBox(10,
-                sectionTitle("JOB SUMMARY"),
-                detailLine("Organiser", detailOrganiser),
-                detailLine("Weekly Hours", detailWeeklyHours),
-                detailLine("Positions", detailPositions),
-                detailLine("Deadline", detailDeadline),
-                detailLine("Created", detailCreated),
-                detailLine("Required Skills", detailRequiredSkills),
-                detailLine("Preferred Skills", detailPreferredSkills)
+                sectionTitle(I18n.t("job_summary")),
+                detailLine(I18n.t("module_organiser_label"), detailOrganiser),
+                detailLine(I18n.t("weekly_hours_summary"), detailWeeklyHours),
+                detailLine(I18n.t("positions_summary"), detailPositions),
+                detailLine(I18n.t("deadline_summary"), detailDeadline),
+                detailLine(I18n.t("created_summary"), detailCreated),
+                detailLine(I18n.t("required_skills_summary"), detailRequiredSkills),
+                detailLine(I18n.t("preferred_skills_summary"), detailPreferredSkills)
         );
         recruitmentCard.getStyleClass().add("surface-toolbar");
 
         VBox applicantStatusCard = new VBox(10,
-                sectionTitle("APPLICANT STATUS"),
-                statusRow("Applied", detailAppliedCount, "#2563eb"),
-                statusRow("In Review", detailReviewCount, "#8b5cf6"),
-                statusRow("Hired", detailAcceptedCount, "#10b981"),
+                sectionTitle(I18n.t("applicant_status_upper")),
+                statusRow(I18n.t("applied_count"), detailAppliedCount, "#2563eb"),
+                statusRow(I18n.t("in_review_count"), detailReviewCount, "#8b5cf6"),
+                statusRow(I18n.t("hired_count"), detailAcceptedCount, "#10b981"),
                 applicantAvatarStrip
         );
         applicantStatusCard.getStyleClass().add("surface-toolbar");
 
-        VBox activityCard = new VBox(10, sectionTitle("ACTIVITY LOG"), activityLogBox);
+        VBox activityCard = new VBox(10, sectionTitle(I18n.t("activity_log")), activityLogBox);
         activityCard.getStyleClass().add("surface-toolbar");
 
         detailContent.getChildren().addAll(kicker, detailTitle, detailSubline, moduleCard, recruitmentCard, applicantStatusCard, activityCard);
@@ -669,10 +672,12 @@ public class AdminJobsController {
         detailScroll.getStyleClass().add("detail-scroll");
         VBox.setVgrow(detailScroll, Priority.ALWAYS);
 
+        viewApplicationsButton.setText(I18n.t("view_all_applications"));
         viewApplicationsButton.getStyleClass().add("primary-button");
         viewApplicationsButton.setMaxWidth(Double.MAX_VALUE);
         viewApplicationsButton.setOnAction(event -> openApplicationsModal(selectedRow.jobId()));
 
+        detailEditButton.setText(I18n.t("edit_job_details"));
         detailEditButton.getStyleClass().add("secondary-button");
         detailEditButton.setMaxWidth(Double.MAX_VALUE);
         detailEditButton.setOnAction(event -> {
@@ -681,6 +686,7 @@ public class AdminJobsController {
             }
         });
 
+        detailCloseButton.setText(I18n.t("close_job"));
         detailCloseButton.getStyleClass().add("secondary-button");
         detailCloseButton.setMaxWidth(Double.MAX_VALUE);
         detailCloseButton.setDisable(!"OPEN".equals(selectedRow.statusLabel()));

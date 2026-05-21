@@ -1,5 +1,6 @@
 package edu.bupt.ta.controller;
 
+import edu.bupt.ta.util.I18n;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
@@ -11,22 +12,26 @@ public class DialogControllerFactory {
 
     private static final String STYLESHEET = "/styles/app.css";
 
+    static {
+        I18n.initTranslations();
+    }
+
     private DialogControllerFactory() {
     }
 
     public static void validationError(String message, Window owner) {
-        Alert alert = create(Alert.AlertType.ERROR, "Validation Error", "Please correct the input and try again.",
+        Alert alert = create(Alert.AlertType.ERROR, I18n.t("validation_error"), I18n.t("correct_input"),
                 message, owner, "ta-dialog-error");
         alert.showAndWait();
     }
 
     public static void operationFailed(String title, String message, Window owner) {
-        Alert alert = create(Alert.AlertType.ERROR, title, "Operation failed", message, owner, "ta-dialog-error");
+        Alert alert = create(Alert.AlertType.ERROR, title, I18n.t("operation_failed"), message, owner, "ta-dialog-error");
         alert.showAndWait();
     }
 
     public static void success(String title, String message, Window owner) {
-        Alert alert = create(Alert.AlertType.INFORMATION, title, "Operation completed", message, owner,
+        Alert alert = create(Alert.AlertType.INFORMATION, title, I18n.t("operation_completed_dlg"), message, owner,
                 "ta-dialog-success");
         alert.showAndWait();
     }
@@ -37,36 +42,36 @@ public class DialogControllerFactory {
     }
 
     public static void permissionDenied(String message, Window owner) {
-        Alert alert = create(Alert.AlertType.WARNING, "Permission Denied",
-                "You do not have permission for this action.", message, owner, "ta-dialog-warning");
+        Alert alert = create(Alert.AlertType.WARNING, I18n.t("permission_denied"),
+                I18n.t("no_permission_action"), message, owner, "ta-dialog-warning");
         alert.showAndWait();
     }
 
     public static void workloadWarning(String message, Window owner) {
-        Alert alert = create(Alert.AlertType.WARNING, "Workload Warning", "This action may exceed weekly limit.",
+        Alert alert = create(Alert.AlertType.WARNING, I18n.t("workload_warn_title"), I18n.t("workload_warn_msg"),
                 message, owner, "ta-dialog-warning");
         alert.showAndWait();
     }
 
     public static boolean confirmAction(String title, String message, Window owner) {
-        ButtonType confirm = new ButtonType("Confirm", ButtonBar.ButtonData.OK_DONE);
-        ButtonType cancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+        ButtonType confirm = new ButtonType(I18n.t("confirm"), ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancel = new ButtonType(I18n.t("cancel"), ButtonBar.ButtonData.CANCEL_CLOSE);
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION, message, confirm, cancel);
-        setup(alert, title, "Please confirm this action.", owner, "ta-dialog-info");
+        setup(alert, title, I18n.t("confirm_action"), owner, "ta-dialog-info");
         Optional<ButtonType> result = alert.showAndWait();
         return result.isPresent() && result.get() == confirm;
     }
 
     private static Alert create(Alert.AlertType type, String title, String header, String message, Window owner,
                                 String styleClass) {
-        ButtonType ok = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+        ButtonType ok = new ButtonType(I18n.t("ok"), ButtonBar.ButtonData.OK_DONE);
         Alert alert = new Alert(type, message, ok);
         setup(alert, title, header, owner, styleClass);
         return alert;
     }
 
     private static void setup(Alert alert, String title, String header, Window owner, String styleClass) {
-        alert.setTitle(title == null ? "Notification" : title);
+        alert.setTitle(title == null ? I18n.t("notification_title") : title);
         alert.setHeaderText(header);
         if (owner != null) {
             alert.initOwner(owner);

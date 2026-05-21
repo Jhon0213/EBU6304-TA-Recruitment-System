@@ -4,6 +4,7 @@ import edu.bupt.ta.controller.LoginController;
 import edu.bupt.ta.controller.MainShellController;
 import edu.bupt.ta.model.User;
 import edu.bupt.ta.service.ServiceRegistry;
+import edu.bupt.ta.util.I18n;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
@@ -28,9 +29,11 @@ public class AppBootstrap {
 
     public Scene createInitialScene() {
         loadBundledFonts();
+        loadUserSettings();
         showLogin();
         Scene scene = new Scene(root, LOGIN_WIDTH, LOGIN_HEIGHT);
         scene.getStylesheets().add(getClass().getResource("/styles/app.css").toExternalForm());
+        applyFontSize(scene);
         Platform.runLater(() -> resizeWindow(LOGIN_WIDTH, LOGIN_HEIGHT, LOGIN_MIN_WIDTH, LOGIN_MIN_HEIGHT));
         return scene;
     }
@@ -51,6 +54,24 @@ public class AppBootstrap {
         }
     }
 
+    private void loadUserSettings() {
+        I18n.initTranslations();
+        var settings = services.userSettingsRepository().getOrCreateGlobal();
+        String savedLang = settings.getLanguage();
+        if (I18n.ZH.equals(savedLang)) {
+            I18n.setLanguage(I18n.ZH);
+        } else {
+            I18n.setLanguage(I18n.EN);
+        }
+    }
+
+    private void applyFontSize(Scene scene) {
+        var settings = services.userSettingsRepository().getOrCreateGlobal();
+        if (settings.getFontSize() > 0) {
+            scene.getRoot().setStyle(String.format("-fx-font-size: %.0fpx;", settings.getFontSize()));
+        }
+    }
+
     private void showLogin() {
         LoginController loginController = new LoginController(services, this::showMainShell);
         root.getChildren().setAll(loginController.getView());
@@ -63,6 +84,9 @@ public class AppBootstrap {
             showLogin();
         });
         root.getChildren().setAll(shellController.getView());
+        if (root.getScene() != null) {
+            applyFontSize(root.getScene());
+        }
         resizeWindow(MAIN_WIDTH, MAIN_HEIGHT, MAIN_MIN_WIDTH, MAIN_MIN_HEIGHT);
     }
 

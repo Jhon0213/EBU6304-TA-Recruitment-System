@@ -4,6 +4,7 @@ import edu.bupt.ta.model.Job;
 import edu.bupt.ta.model.User;
 import edu.bupt.ta.service.ServiceRegistry;
 import edu.bupt.ta.ui.IconFactory;
+import edu.bupt.ta.util.I18n;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -48,9 +49,9 @@ public class MOProfileController {
     private final VBox cardBody = new VBox(20);
 
     // Header buttons
-    private final Button editBtn  = new Button("Edit");
-    private final Button resetBtn = new Button("Reset");
-    private final Button saveBtn  = new Button("Save Changes");
+    private final Button editBtn  = new Button();
+    private final Button resetBtn = new Button();
+    private final Button saveBtn  = new Button();
 
     private boolean editing = false;
 
@@ -91,10 +92,10 @@ public class MOProfileController {
     // ── Title block ──────────────────────────────────────────────────────────
 
     private VBox buildTitleBlock() {
-        Label heading = new Label("My Profile");
+        Label heading = new Label(I18n.t("my_profile"));
         heading.getStyleClass().add("page-title");
 
-        Label subtitle = new Label("Manage your personal information and course assignments.");
+        Label subtitle = new Label(I18n.t("manage_personal_info"));
         subtitle.getStyleClass().add("body-muted");
         subtitle.setStyle("-fx-font-size: 15px;");
 
@@ -116,20 +117,23 @@ public class MOProfileController {
     }
 
     private HBox buildCardHeader() {
-        Label cardTitle = new Label("Basic Information");
+        Label cardTitle = new Label(I18n.t("basic_information"));
         cardTitle.setStyle("-fx-font-size: 18px; -fx-font-weight: 800; -fx-text-fill: #0f172a;");
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
+        editBtn.setText(I18n.t("edit"));
         editBtn.getStyleClass().add("secondary-button");
         editBtn.setOnAction(e -> enterEditMode());
 
+        resetBtn.setText(I18n.t("reset"));
         resetBtn.getStyleClass().add("secondary-button");
         resetBtn.setOnAction(e -> {
             loadFields();          // restore to saved values
         });
 
+        saveBtn.setText(I18n.t("save"));
         saveBtn.getStyleClass().add("primary-button");
         saveBtn.setOnAction(e -> saveProfile());
 
@@ -145,10 +149,10 @@ public class MOProfileController {
                 + "-fx-min-width: 72; -fx-min-height: 72; -fx-pref-width: 72; -fx-pref-height: 72;"
                 + "-fx-alignment: center;");
 
-        Label nameLabel = new Label(safe(user.getDisplayName(), "Module Organiser"));
+        Label nameLabel = new Label(safe(user.getDisplayName(), I18n.t("module_organiser_label")));
         nameLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: 800; -fx-text-fill: #0f172a;");
 
-        Label roleLabel = new Label("Module Organiser  ·  " + safe(user.getTitle(), "No title set"));
+        Label roleLabel = new Label(I18n.t("module_organiser_label") + "  ·  " + safe(user.getTitle(), I18n.t("module_organiser_label")));
         roleLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #64748b;");
 
         VBox meta = new VBox(4, nameLabel, roleLabel);
@@ -167,10 +171,10 @@ public class MOProfileController {
         grid.setHgap(32);
         grid.setVgap(16);
 
-        grid.add(infoCell("Academic Title",  titleValue),        0, 0);
-        grid.add(infoCell("Full Name",        displayNameValue),  1, 0);
-        grid.add(infoCell("Department",       departmentValue),   0, 1);
-        grid.add(infoCell("Contact Email",    contactEmailValue), 1, 1);
+        grid.add(infoCell(I18n.t("academic_title_label"),  titleValue),        0, 0);
+        grid.add(infoCell(I18n.t("full_name_label"),        displayNameValue),  1, 0);
+        grid.add(infoCell(I18n.t("department_admin"),       departmentValue),   0, 1);
+        grid.add(infoCell(I18n.t("contact_email_label"),    contactEmailValue), 1, 1);
 
         cardBody.getChildren().setAll(grid);
 
@@ -193,10 +197,10 @@ public class MOProfileController {
         form.setHgap(16);
         form.setVgap(14);
 
-        form.add(formField("Academic Title",  titleField),        0, 0);
-        form.add(formField("Full Name",        displayNameField),  1, 0);
-        form.add(formField("Department",       departmentField),   0, 1);
-        form.add(formField("Contact Email",    contactEmailField), 1, 1);
+        form.add(formField(I18n.t("academic_title_label"),  titleField),        0, 0);
+        form.add(formField(I18n.t("full_name_label"),        displayNameField),  1, 0);
+        form.add(formField(I18n.t("department_admin"),       departmentField),   0, 1);
+        form.add(formField(I18n.t("contact_email_label"),    contactEmailField), 1, 1);
 
         cardBody.getChildren().setAll(form);
 
@@ -255,7 +259,7 @@ public class MOProfileController {
     private void saveProfile() {
         String name = displayNameField.getText().trim();
         if (name.isBlank()) {
-            DialogControllerFactory.validationError("Full name is required.",
+            DialogControllerFactory.validationError(I18n.t("full_name_required"),
                     view.getScene() == null ? null : view.getScene().getWindow());
             return;
         }
@@ -264,7 +268,7 @@ public class MOProfileController {
         user.setDepartment(departmentField.getText().trim());
         user.setContactEmail(contactEmailField.getText().trim());
         services.userRepository().save(user);
-        DialogControllerFactory.success("Profile Saved", "Your profile has been updated.",
+        DialogControllerFactory.success(I18n.t("profile_saved"), I18n.t("profile_saved_desc"),
                 view.getScene() == null ? null : view.getScene().getWindow());
         renderReadMode();
     }
@@ -278,11 +282,11 @@ public class MOProfileController {
         card.getStyleClass().add("panel-card");
         card.setPadding(new Insets(24));
 
-        Label cardTitle = new Label("Courses I Teach");
+        Label cardTitle = new Label(I18n.t("courses_i_teach"));
         cardTitle.setStyle("-fx-font-size: 18px; -fx-font-weight: 800; -fx-text-fill: #0f172a;");
 
         if (jobs.isEmpty()) {
-            Label empty = new Label("No courses found. Create a job post to associate a course with your profile.");
+            Label empty = new Label(I18n.t("no_courses_found"));
             empty.setWrapText(true);
             empty.setStyle("-fx-font-size: 13px; -fx-text-fill: #94a3b8;");
             card.getChildren().addAll(cardTitle, empty);
@@ -326,7 +330,7 @@ public class MOProfileController {
         Label code = new Label(safe(job.getModuleCode(), "-") + "  " + safe(job.getModuleName(), ""));
         code.setStyle("-fx-font-size: 14px; -fx-font-weight: 700; -fx-text-fill: #0f172a;");
 
-        Label detail = new Label(safe(job.getSemester(), "-") + "  ·  " + job.getPositions() + " TA position(s)");
+        Label detail = new Label(safe(job.getSemester(), "-") + "  ·  " + job.getPositions() + " " + I18n.t("ta_position_plural"));
         detail.setStyle("-fx-font-size: 12px; -fx-text-fill: #64748b;");
 
         meta.getChildren().addAll(code, detail);
@@ -339,7 +343,7 @@ public class MOProfileController {
             case OPEN -> "#16a34a"; case DRAFT -> "#2563eb";
             case CLOSED -> "#64748b"; case EXPIRED -> "#ea580c";
         };
-        Label chip = new Label(job.getStatus() == null ? "-" : job.getStatus().name());
+        Label chip = new Label(job.getStatus() == null ? "-" : I18n.t("job_status_" + job.getStatus().name().toLowerCase()));
         chip.setStyle("-fx-background-color: " + bg + "; -fx-text-fill: " + fg + ";"
                 + "-fx-font-size: 11px; -fx-font-weight: 700; -fx-background-radius: 999; -fx-padding: 4 10 4 10;");
 

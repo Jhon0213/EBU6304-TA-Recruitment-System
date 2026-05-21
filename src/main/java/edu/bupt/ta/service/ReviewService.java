@@ -30,6 +30,7 @@ public class ReviewService {
     private final WorkloadService workloadService;
     private final AuditLogRepository auditLogRepository;
     private final MatchingService matchingService;
+    private NotificationService notificationService;
 
     public ReviewService(ApplicationRepository applicationRepository,
                          JobRepository jobRepository,
@@ -48,6 +49,18 @@ public class ReviewService {
                          WorkloadService workloadService,
                          AuditLogRepository auditLogRepository,
                          MatchingService matchingService) {
+        this(applicationRepository, jobRepository, profileRepository, resumeInfoRepository,
+                workloadService, auditLogRepository, matchingService, null);
+    }
+
+    public ReviewService(ApplicationRepository applicationRepository,
+                         JobRepository jobRepository,
+                         ApplicantProfileRepository profileRepository,
+                         ResumeInfoRepository resumeInfoRepository,
+                         WorkloadService workloadService,
+                         AuditLogRepository auditLogRepository,
+                         MatchingService matchingService,
+                         NotificationService notificationService) {
         this.applicationRepository = applicationRepository;
         this.jobRepository = jobRepository;
         this.profileRepository = profileRepository;
@@ -55,6 +68,11 @@ public class ReviewService {
         this.workloadService = workloadService;
         this.auditLogRepository = auditLogRepository;
         this.matchingService = matchingService;
+        this.notificationService = notificationService;
+    }
+
+    public void setNotificationService(NotificationService notificationService) {
+        this.notificationService = notificationService;
     }
 
     public ValidationResult acceptApplication(String applicationId, String organiserId, String decisionNote) {
@@ -93,6 +111,11 @@ public class ReviewService {
         workloadService.refreshWorkloadForApplicant(application.getApplicantId());
         auditLogRepository.append(new AuditLogEntry(DateTimeUtils.now(), actorUserId,
                 "ACCEPT_APPLICATION", applicationId + " accepted"));
+
+        if (notificationService != null) {
+            String actorName = getActorName(actorUserId);
+            notificationService.notifyApplicationStatusChange(applicationId, true, actorName);
+        }
         return ValidationResult.ok();
     }
 
@@ -131,6 +154,11 @@ public class ReviewService {
 
         auditLogRepository.append(new AuditLogEntry(DateTimeUtils.now(), actorUserId,
                 "REJECT_APPLICATION", applicationId + " rejected"));
+
+        if (notificationService != null) {
+            String actorName = getActorName(actorUserId);
+            notificationService.notifyApplicationStatusChange(applicationId, false, actorName);
+        }
         return ValidationResult.ok();
     }
 
@@ -283,5 +311,11 @@ public class ReviewService {
 
     private <T> List<T> safeList(List<T> values) {
         return values == null ? List.of() : values;
+    }
+
+    private String getActorName(String userId) {
+        return profileRepository.findById(userId)
+                .map(profile -> profile.getFullName() != null ? profile.getFullName() : userId)
+                .orElse(userId);
     }
 }

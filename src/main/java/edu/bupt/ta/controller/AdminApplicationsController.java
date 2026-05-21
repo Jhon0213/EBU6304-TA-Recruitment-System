@@ -7,6 +7,7 @@ import edu.bupt.ta.model.ResumeInfo;
 import edu.bupt.ta.model.User;
 import edu.bupt.ta.service.ServiceRegistry;
 import edu.bupt.ta.util.DisplayPlaceholders;
+import edu.bupt.ta.util.I18n;
 import edu.bupt.ta.util.ValidationResult;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -56,9 +57,9 @@ public class AdminApplicationsController {
     private final Label acceptedValue = new Label("0");
     private final Label rejectedValue = new Label("0");
 
-    private final Label heroTitle = new Label("Select an Application");
+    private final Label heroTitle = new Label();
     private final Label heroSubtitle = new Label("-");
-    private final Label heroStatus = new Label("QUEUE VIEW");
+    private final Label heroStatus = new Label();
 
     private final Label fullNameValue = new Label("-");
     private final Label studentIdValue = new Label("-");
@@ -76,9 +77,9 @@ public class AdminApplicationsController {
     private final FlowPane missingSkillsPane = new FlowPane(8, 8);
 
     private final TextArea decisionNoteInput = new TextArea();
-    private final Button openReviewButton = new Button("Open Review Workspace");
-    private final Button acceptButton = new Button("Accept Candidate");
-    private final Button rejectButton = new Button("Reject Candidate");
+    private final Button openReviewButton = new Button();
+    private final Button acceptButton = new Button();
+    private final Button rejectButton = new Button();
 
     private List<AdminApplicationRowDTO> allApplications = List.of();
 
@@ -113,32 +114,32 @@ public class AdminApplicationsController {
     }
 
     private VBox buildHeader() {
-        Label title = new Label("Applications");
+        Label title = new Label(I18n.t("applications_admin"));
         title.getStyleClass().add("page-title");
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Button refreshButton = new Button("Refresh");
+        Button refreshButton = new Button(I18n.t("refresh"));
         refreshButton.getStyleClass().add("secondary-button");
         refreshButton.setOnAction(event -> refresh());
 
-        Button exportButton = new Button("Export Applications");
+        Button exportButton = new Button(I18n.t("export_applications"));
         exportButton.getStyleClass().add("secondary-button");
         exportButton.setOnAction(event -> exportApplications());
 
         HBox topRow = new HBox(10, title, spacer, refreshButton, exportButton);
         topRow.setAlignment(Pos.CENTER_LEFT);
 
-        searchField.setPromptText("Search by applicant, application ID, job, organiser, or student ID...");
+        searchField.setPromptText(I18n.t("search_applicant_id_job"));
         searchField.setPrefWidth(420);
 
-        statusFilter.getItems().setAll("ALL STATUS", "SUBMITTED", "UNDER_REVIEW", "ACCEPTED", "REJECTED");
-        statusFilter.setValue("ALL STATUS");
+        statusFilter.getItems().setAll(I18n.t("all_status"), I18n.t("submitted_upper2"), I18n.t("under_review_upper"), I18n.t("accepted_upper"), I18n.t("rejected_upper"));
+        statusFilter.setValue(I18n.t("all_status"));
         statusFilter.setPrefWidth(150);
 
-        riskFilter.getItems().setAll("ALL RISK", "HIGH", "MEDIUM", "LOW");
-        riskFilter.setValue("ALL RISK");
+        riskFilter.getItems().setAll(I18n.t("all_risk"), I18n.t("high_risk"), I18n.t("medium_risk"), I18n.t("low_risk"));
+        riskFilter.setValue(I18n.t("all_risk"));
         riskFilter.setPrefWidth(140);
 
         HBox toolbar = new HBox(12, searchField, statusFilter, riskFilter);
@@ -148,10 +149,10 @@ public class AdminApplicationsController {
 
     private HBox buildKpiRow() {
         return new HBox(16,
-                kpiCard("SUBMITTED", submittedValue, "#2563eb"),
-                kpiCard("UNDER REVIEW", underReviewValue, "#8b5cf6"),
-                kpiCard("ACCEPTED", acceptedValue, "#10b981"),
-                kpiCard("REJECTED", rejectedValue, "#ef4444")
+                kpiCard(I18n.t("submitted_upper2"), submittedValue, "#2563eb"),
+                kpiCard(I18n.t("under_review_upper"), underReviewValue, "#8b5cf6"),
+                kpiCard(I18n.t("accepted_upper"), acceptedValue, "#10b981"),
+                kpiCard(I18n.t("rejected_upper"), rejectedValue, "#ef4444")
         );
     }
 
@@ -176,13 +177,13 @@ public class AdminApplicationsController {
         queuePanel.getStyleClass().add("panel-card");
         queuePanel.setPadding(new Insets(18));
 
-        Label queueTitle = new Label("Application Queue");
+        Label queueTitle = new Label(I18n.t("application_queue"));
         queueTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: 900; -fx-text-fill: #1e293b;");
 
-        Label queueSubtitle = new Label("Filtered list of all candidate submissions");
+        Label queueSubtitle = new Label(I18n.t("filtered_list_candidates"));
         queueSubtitle.getStyleClass().add("body-muted");
 
-        TableColumn<AdminApplicationRowDTO, String> applicantCol = new TableColumn<>("APPLICANT");
+        TableColumn<AdminApplicationRowDTO, String> applicantCol = new TableColumn<>(I18n.t("applicant_upper"));
         applicantCol.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().applicantName()));
         applicantCol.setCellFactory(column -> new TableCell<>() {
             @Override
@@ -217,7 +218,7 @@ public class AdminApplicationsController {
             }
         });
 
-        TableColumn<AdminApplicationRowDTO, String> statusCol = new TableColumn<>("STATUS");
+        TableColumn<AdminApplicationRowDTO, String> statusCol = new TableColumn<>(I18n.t("status_upper"));
         statusCol.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().statusLabel()));
         statusCol.setCellFactory(column -> new TableCell<>() {
             @Override
@@ -236,7 +237,7 @@ public class AdminApplicationsController {
             }
         });
 
-        TableColumn<AdminApplicationRowDTO, Number> matchCol = new TableColumn<>("MATCH");
+        TableColumn<AdminApplicationRowDTO, Number> matchCol = new TableColumn<>(I18n.t("match_upper"));
         matchCol.setCellValueFactory(cell -> new SimpleIntegerProperty(cell.getValue().matchScore()));
         matchCol.setCellFactory(column -> new TableCell<>() {
             @Override
@@ -253,7 +254,7 @@ public class AdminApplicationsController {
             }
         });
 
-        TableColumn<AdminApplicationRowDTO, String> riskCol = new TableColumn<>("RISK");
+        TableColumn<AdminApplicationRowDTO, String> riskCol = new TableColumn<>(I18n.t("risk_upper"));
         riskCol.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().riskLevel()));
         riskCol.setCellFactory(column -> new TableCell<>() {
             @Override
@@ -272,10 +273,10 @@ public class AdminApplicationsController {
             }
         });
 
-        TableColumn<AdminApplicationRowDTO, String> detailCol = new TableColumn<>("DETAIL");
-        detailCol.setCellValueFactory(cell -> new SimpleStringProperty("Detail"));
+        TableColumn<AdminApplicationRowDTO, String> detailCol = new TableColumn<>(I18n.t("detail_upper"));
+        detailCol.setCellValueFactory(cell -> new SimpleStringProperty(I18n.t("detail_upper")));
         detailCol.setCellFactory(column -> new TableCell<>() {
-            private final Button detailButton = new Button("Detail");
+            private final Button detailButton = new Button(I18n.t("detail_upper"));
 
             {
                 detailButton.getStyleClass().add("secondary-button");
@@ -308,7 +309,7 @@ public class AdminApplicationsController {
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         table.setFixedCellSize(78);
         table.setPrefHeight(680);
-        table.setPlaceholder(new Label("No applications match the current filters."));
+        table.setPlaceholder(new Label(I18n.t("no_applications_match_filters")));
 
         queuePanel.getChildren().addAll(queueTitle, queueSubtitle, table);
         HBox.setHgrow(queuePanel, Priority.ALWAYS);
@@ -339,21 +340,21 @@ public class AdminApplicationsController {
         VBox basicInfoCard = new VBox(14);
         basicInfoCard.getStyleClass().add("surface-toolbar");
         basicInfoCard.getChildren().addAll(
-                sectionTitle("Basic Information"),
-                infoGridRow("Full Name", fullNameValue, "Student ID", studentIdValue, "Degree Program", programmeValue),
-                infoGridRow("Email", emailValue, "Match Score", matchScoreValue, "Phone", phoneValue),
-                infoGridRow("Workload", workloadValue, "Missing Skills", placeholderLabel("See below"), "Statement", placeholderLabel("See below"))
+                sectionTitle(I18n.t("basic_information_upper")),
+                infoGridRow(I18n.t("full_name_upper"), fullNameValue, I18n.t("student_id_upper"), studentIdValue, I18n.t("degree_program"), programmeValue),
+                infoGridRow(I18n.t("email_upper"), emailValue, I18n.t("match_score"), matchScoreValue, I18n.t("phone_upper"), phoneValue),
+                infoGridRow(I18n.t("workload_label"), workloadValue, I18n.t("missing_skills_label"), placeholderLabel(I18n.t("no_missing_skills_upper")), I18n.t("statement_upper"), placeholderLabel(I18n.t("statement_upper")))
         );
 
         VBox skillsCard = new VBox(12);
         skillsCard.getStyleClass().add("surface-toolbar");
-        skillsCard.getChildren().addAll(sectionTitle("Skills & Competencies"), skillsPane, sectionTitle("Availability"), availabilityPane, sectionTitle("Missing Skills"), missingSkillsPane);
+        skillsCard.getChildren().addAll(sectionTitle(I18n.t("skills_competencies")), skillsPane, sectionTitle(I18n.t("availability_upper")), availabilityPane, sectionTitle(I18n.t("missing_skills_upper")), missingSkillsPane);
 
         VBox attachmentCard = new VBox(12);
         attachmentCard.getStyleClass().add("surface-toolbar");
         attachmentCard.setPrefWidth(250);
         attachmentCard.getChildren().addAll(
-                sectionTitle("Attachments"),
+                sectionTitle(I18n.t("attachments_upper")),
                 attachmentNameValue,
                 attachmentMetaValue
         );
@@ -367,25 +368,28 @@ public class AdminApplicationsController {
 
         VBox statementCard = new VBox(12);
         statementCard.getStyleClass().add("surface-toolbar");
-        statementCard.getChildren().addAll(sectionTitle("Candidate Statement"), statementValue);
+        statementCard.getChildren().addAll(sectionTitle(I18n.t("candidate_statement")), statementValue);
         statementValue.setWrapText(true);
         statementValue.setStyle("-fx-font-size: 13px; -fx-text-fill: #475569;");
 
         VBox noteCard = new VBox(12);
         noteCard.getStyleClass().add("surface-toolbar");
-        Label noteLabel = new Label("Decision Note");
+        Label noteLabel = new Label(I18n.t("decision_note"));
         noteLabel.getStyleClass().add("field-label");
-        decisionNoteInput.setPromptText("Add observations or justification for the recruitment decision...");
+        decisionNoteInput.setPromptText(I18n.t("add_observations_justification"));
         decisionNoteInput.setPrefRowCount(4);
         noteCard.getChildren().addAll(noteLabel, decisionNoteInput);
 
+        openReviewButton.setText(I18n.t("open_review_workspace"));
         openReviewButton.getStyleClass().add("secondary-button");
         openReviewButton.setOnAction(event -> openReview());
 
+        acceptButton.setText(I18n.t("accept_candidate"));
         acceptButton.getStyleClass().add("primary-button");
         acceptButton.setStyle("-fx-background-color: #14c7b1; -fx-text-fill: white; -fx-font-weight: 900; -fx-background-radius: 10; -fx-padding: 12 24 12 24;");
         acceptButton.setOnAction(event -> quickAccept());
 
+        rejectButton.setText(I18n.t("reject_candidate"));
         rejectButton.getStyleClass().add("danger-outline");
         rejectButton.setStyle("-fx-background-color: white; -fx-border-color: #fca5a5; -fx-text-fill: #ef4444; -fx-font-weight: 900; -fx-background-radius: 10; -fx-border-radius: 10; -fx-padding: 12 24 12 24;");
         rejectButton.setOnAction(event -> quickReject());
@@ -422,8 +426,8 @@ public class AdminApplicationsController {
                         || contains(app.jobId(), keyword)
                         || contains(app.organiserName(), keyword)
                         || contains(app.organiserId(), keyword))
-                .filter(app -> status == null || "ALL STATUS".equals(status) || status.equals(app.statusLabel()))
-                .filter(app -> risk == null || "ALL RISK".equals(risk) || risk.equals(app.riskLevel()))
+                .filter(app -> status == null || I18n.t("all_status").equals(status) || status.equals(app.statusLabel()))
+                .filter(app -> risk == null || I18n.t("all_risk").equals(risk) || risk.equals(app.riskLevel()))
                 .toList();
 
         table.setItems(FXCollections.observableArrayList(filtered));
@@ -445,9 +449,9 @@ public class AdminApplicationsController {
 
     private void updateDetail(AdminApplicationRowDTO application) {
         if (application == null) {
-            heroTitle.setText("Select an Application");
+            heroTitle.setText(I18n.t("select_an_application"));
             heroSubtitle.setText("-");
-            heroStatus.setText("QUEUE VIEW");
+            heroStatus.setText(I18n.t("application_queue"));
             fullNameValue.setText("-");
             studentIdValue.setText("-");
             programmeValue.setText("-");
@@ -459,9 +463,9 @@ public class AdminApplicationsController {
             attachmentNameValue.setText("-");
             attachmentMetaValue.setText("-");
             decisionNoteInput.clear();
-            resetTagPane(skillsPane, List.of("No skills loaded"), true);
-            resetTagPane(availabilityPane, List.of("No availability loaded"), true);
-            resetTagPane(missingSkillsPane, List.of("No missing skills"), true);
+            resetTagPane(skillsPane, List.of(I18n.t("no_skills_loaded")), true);
+            resetTagPane(availabilityPane, List.of(I18n.t("no_availability_loaded")), true);
+            resetTagPane(missingSkillsPane, List.of(I18n.t("no_missing_skills_upper")), true);
             return;
         }
 
@@ -496,7 +500,7 @@ public class AdminApplicationsController {
         pane.getChildren().clear();
         List<String> safe = safeList(values);
         if (safe.isEmpty()) {
-            pane.getChildren().add(chip(mutedIfEmpty ? "Not provided" : "No data", true));
+            pane.getChildren().add(chip(mutedIfEmpty ? I18n.t("not_provided") : I18n.t("no_data"), true));
             return;
         }
         for (String value : safe) {
@@ -513,7 +517,7 @@ public class AdminApplicationsController {
     private void openReview() {
         AdminApplicationRowDTO selected = table.getSelectionModel().getSelectedItem();
         if (selected == null) {
-            showError("Please select one application first.");
+            showError(I18n.t("please_select_application_first"));
             return;
         }
         openReview(selected);
@@ -525,7 +529,7 @@ public class AdminApplicationsController {
         if (view.getScene() != null) {
             stage.initOwner(view.getScene().getWindow());
         }
-        stage.setTitle("Applicant Review");
+        stage.setTitle(I18n.t("applicant_review_admin"));
 
         Parent reviewView = new ApplicantReviewController(services, user, selected.applicationId()).getView();
         Scene scene = new Scene(reviewView, 920, 760);
@@ -540,7 +544,7 @@ public class AdminApplicationsController {
     private void quickAccept() {
         AdminApplicationRowDTO selected = table.getSelectionModel().getSelectedItem();
         if (selected == null) {
-            showError("Please select one application first.");
+            showError(I18n.t("please_select_application_first"));
             return;
         }
         quickAccept(selected, decisionNoteInput.getText(), null);
@@ -554,8 +558,8 @@ public class AdminApplicationsController {
         }
 
         boolean confirmed = DialogControllerFactory.confirmAction(
-                "Accept Candidate",
-                "Accept this applicant and update workload records?",
+                I18n.t("accept_candidate"),
+                I18n.t("accept_candidate_question"),
                 view.getScene() == null ? null : view.getScene().getWindow());
         if (!confirmed) {
             return false;
@@ -563,7 +567,7 @@ public class AdminApplicationsController {
 
         ValidationResult result = services.reviewService()
                 .acceptApplication(selected.applicationId(), user.getUserId(), decisionNote, true);
-        boolean success = showActionResult("Accept Application", result);
+        boolean success = showActionResult(I18n.t("accept_candidate"), result);
         if (success && detailStage != null) {
             detailStage.close();
         }
@@ -573,7 +577,7 @@ public class AdminApplicationsController {
     private void quickReject() {
         AdminApplicationRowDTO selected = table.getSelectionModel().getSelectedItem();
         if (selected == null) {
-            showError("Please select one application first.");
+            showError(I18n.t("please_select_application_first"));
             return;
         }
         quickReject(selected, decisionNoteInput.getText(), null);
@@ -581,8 +585,8 @@ public class AdminApplicationsController {
 
     private boolean quickReject(AdminApplicationRowDTO selected, String decisionNote, Stage detailStage) {
         boolean confirmed = DialogControllerFactory.confirmAction(
-                "Reject Candidate",
-                "Reject this applicant for the selected job?",
+                I18n.t("reject_candidate"),
+                I18n.t("reject_candidate_question"),
                 view.getScene() == null ? null : view.getScene().getWindow());
         if (!confirmed) {
             return false;
@@ -590,7 +594,7 @@ public class AdminApplicationsController {
 
         ValidationResult result = services.reviewService()
                 .rejectApplication(selected.applicationId(), user.getUserId(), decisionNote, true);
-        boolean success = showActionResult("Reject Application", result);
+        boolean success = showActionResult(I18n.t("reject_candidate"), result);
         if (success && detailStage != null) {
             detailStage.close();
         }
@@ -603,7 +607,7 @@ public class AdminApplicationsController {
                     view.getScene() == null ? null : view.getScene().getWindow());
             return false;
         }
-        DialogControllerFactory.success(header, "Operation completed.",
+        DialogControllerFactory.success(header, I18n.t("operation_completed"),
                 view.getScene() == null ? null : view.getScene().getWindow());
         refresh();
         return true;
@@ -654,15 +658,15 @@ public class AdminApplicationsController {
 
     private String heroStatusText(String status) {
         return switch (status == null ? "" : status) {
-            case "ACCEPTED" -> "ACCEPTED CANDIDATE";
-            case "REJECTED" -> "REJECTED CANDIDATE";
-            default -> "ACTIVE CANDIDATE";
+            case "ACCEPTED" -> I18n.t("accepted_candidate_chip");
+            case "REJECTED" -> I18n.t("rejected_candidate_chip");
+            default -> I18n.t("active_candidate_chip");
         };
     }
 
     private String buildAttachmentMeta(ResumeInfo resume) {
         if (resume.getCvFileName() == null || resume.getCvFileName().isBlank()) {
-            return "No CV uploaded";
+            return I18n.t("no_cv_uploaded");
         }
         String size = resume.getCvFileSizeBytes() > 0 ? formatBytes(resume.getCvFileSizeBytes()) : "size unavailable";
         String updated = resume.getCvUploadedAt() == null ? "" : "  |  Uploaded " + resume.getCvUploadedAt().format(TIME_FORMAT);
@@ -701,7 +705,7 @@ public class AdminApplicationsController {
 
     private void exportApplications() {
         Path path = services.exportService().exportApplicationReport();
-        DialogControllerFactory.info("Application CSV Generated", "Exported: " + path.toAbsolutePath(),
+        DialogControllerFactory.info(I18n.t("application_csv_generated"), I18n.t("exported_colon") + " " + path.toAbsolutePath(),
                 view.getScene() == null ? null : view.getScene().getWindow());
     }
 
@@ -724,7 +728,7 @@ public class AdminApplicationsController {
 
     private void showApplicationDetailWindow(AdminApplicationRowDTO application) {
         if (application == null) {
-            showError("Please select one application first.");
+            showError(I18n.t("please_select_application_first"));
             return;
         }
 
@@ -737,7 +741,7 @@ public class AdminApplicationsController {
         if (view.getScene() != null) {
             stage.initOwner(view.getScene().getWindow());
         }
-        stage.setTitle("Application Detail");
+        stage.setTitle(I18n.t("application_detail_admin"));
 
         VBox workspace = buildReviewWorkspace();
 

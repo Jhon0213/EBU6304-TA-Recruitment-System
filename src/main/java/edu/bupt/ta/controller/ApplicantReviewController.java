@@ -7,6 +7,7 @@ import edu.bupt.ta.model.ResumeInfo;
 import edu.bupt.ta.model.User;
 import edu.bupt.ta.service.ServiceRegistry;
 import edu.bupt.ta.ui.IconFactory;
+import edu.bupt.ta.util.I18n;
 import edu.bupt.ta.util.ValidationResult;
 import javafx.geometry.Pos;
 import javafx.geometry.Insets;
@@ -50,6 +51,7 @@ public class ApplicantReviewController {
         this.user = user;
         this.applicationId = applicationId;
         this.readOnly = readOnly;
+        I18n.initTranslations();
         initialize();
     }
 
@@ -66,7 +68,7 @@ public class ApplicantReviewController {
             view.setPadding(new Insets(32));
             view.getStyleClass().add("app-surface");
             view.setAlignment(javafx.geometry.Pos.CENTER);
-            Label msg = new Label("Unable to load application details.\n" + e.getMessage());
+            Label msg = new Label(I18n.t("unable_to_load") + "\n" + e.getMessage());
             msg.setWrapText(true);
             msg.setStyle("-fx-font-size: 14px; -fx-text-fill: #64748b; -fx-text-alignment: center;");
             view.getChildren().add(msg);
@@ -80,7 +82,7 @@ public class ApplicantReviewController {
         Label title = new Label(dto.applicantName());
         title.setStyle("-fx-font-size: 40px; -fx-font-weight: 900; -fx-text-fill: #0f172a;");
 
-        Label subtitle = new Label("Applicant ID: " + dto.applicantId());
+        Label subtitle = new Label(I18n.t("applicant_id_label", "Applicant ID: {id}").replace("{id}", dto.applicantId()));
         subtitle.setStyle("-fx-font-size: 14px; -fx-text-fill: #64748b;");
 
         VBox basicInfo = buildBasicInformation(dto);
@@ -89,14 +91,13 @@ public class ApplicantReviewController {
         VBox cvCard = buildCvCard(dto.applicantId());
 
         if (readOnly) {
-            // TA self-view: read-only decision note, no action buttons
             VBox noteCard = new VBox(8);
             noteCard.getStyleClass().add("panel-card");
             noteCard.setPadding(new Insets(14));
-            Label noteLabel = new Label("Decision Note");
+            Label noteLabel = new Label(I18n.t("decision_note"));
             noteLabel.getStyleClass().add("field-label");
             Label noteValue = new Label(dto.decisionNote() == null || dto.decisionNote().isBlank()
-                    ? "No decision note yet." : dto.decisionNote());
+                    ? I18n.t("no_decision_note") : dto.decisionNote());
             noteValue.setWrapText(true);
             noteValue.setStyle("-fx-font-size: 13px; -fx-text-fill: #334155;");
             noteCard.getChildren().addAll(noteLabel, noteValue);
@@ -105,19 +106,19 @@ public class ApplicantReviewController {
             VBox noteCard = new VBox(8);
             noteCard.getStyleClass().add("panel-card");
             noteCard.setPadding(new Insets(14));
-            Label noteLabel = new Label("Decision Note");
+            Label noteLabel = new Label(I18n.t("decision_note"));
             noteLabel.getStyleClass().add("field-label");
-            decisionNote.setPromptText("Add observation or justification for the recruitment decision...");
+            decisionNote.setPromptText(I18n.t("add_observation"));
             decisionNote.setPrefRowCount(4);
             decisionNote.setText(dto.decisionNote() == null ? "" : dto.decisionNote());
             noteCard.getChildren().addAll(noteLabel, decisionNote);
 
-            Button accept = new Button("Accept Candidate");
+            Button accept = new Button(I18n.t("accept_candidate"));
             accept.getStyleClass().add("primary-button");
             accept.setOnAction(event -> doAccept());
             accept.setMaxWidth(Double.MAX_VALUE);
 
-            Button reject = new Button("Reject Candidate");
+            Button reject = new Button(I18n.t("reject_candidate"));
             reject.getStyleClass().add("danger-outline");
             reject.setOnAction(event -> doReject());
             reject.setMaxWidth(Double.MAX_VALUE);
@@ -141,7 +142,7 @@ public class ApplicantReviewController {
         card.getStyleClass().add("panel-card");
         card.setPadding(new Insets(14));
 
-        Label header = new Label("Basic Information");
+        Label header = new Label(I18n.t("basic_information"));
         header.setStyle("-fx-font-size: 14px; -fx-font-weight: 900; -fx-text-fill: #0f172a;");
 
         VBox body = new VBox(24);
@@ -153,24 +154,24 @@ public class ApplicantReviewController {
         String phone = profile == null ? "-" : blankToDash(profile.getPhone());
         String campus = profile == null ? "-" : blankToDash(profile.getCampus());
         String acceptCross = profile == null ? "-" : (profile.isAcceptCrossCampus() ? "Yes" : "No");
-        String year = profile == null || profile.getYear() <= 0 ? "-" : ("Year " + profile.getYear());
+        String year = profile == null || profile.getYear() <= 0 ? "-" : I18n.t("year_label", "Year {n}").replace("{n}", String.valueOf(profile.getYear()));
 
         HBox row1 = new HBox(24,
-                infoCell("FULL NAME", fullName),
-                infoCell("STUDENT ID", studentId),
-                infoCell("DEGREE PROGRAM", programme)
+                infoCell(I18n.t("full_name_label"), fullName),
+                infoCell(I18n.t("student_id_label"), studentId),
+                infoCell(I18n.t("degree_program_label"), programme)
         );
 
         HBox row2 = new HBox(24,
-                infoCell("EMAIL", email),
-                infoCell("CV COMPLETION", resumeCompletion + "% complete"),
-                infoCell("PHONE", phone)
+                infoCell(I18n.t("email_label"), email),
+                infoCell(I18n.t("cv_completion_label"), I18n.t("cv_complete_percent", "{n}% complete").replace("{n}", String.valueOf(resumeCompletion))),
+                infoCell(I18n.t("phone_label"), phone)
         );
 
         HBox row3 = new HBox(24,
-                infoCell("CAMPUS", campus),
-                infoCell("ACCEPT CROSS-CAMPUS", acceptCross),
-                infoCell("ACADEMIC YEAR", year)
+                infoCell(I18n.t("campus_label_app"), campus),
+                infoCell(I18n.t("accept_cross_campus_label"), acceptCross),
+                infoCell(I18n.t("academic_year_label"), year)
         );
 
         body.getChildren().addAll(row1, row2, row3);
@@ -201,7 +202,7 @@ public class ApplicantReviewController {
         card.getStyleClass().add("panel-card");
         card.setPadding(new Insets(14));
 
-        Label header = new Label("Applicant Statement");
+        Label header = new Label(I18n.t("applicant_statement"));
         header.setStyle("-fx-font-size: 14px; -fx-font-weight: 900; -fx-text-fill: #0f172a;");
 
         Label statement = new Label(blankToDash(dto.statement()));
@@ -238,8 +239,8 @@ public class ApplicantReviewController {
                     "Projected hours: " + reviewData.projectedHours() + "h / Max " + reviewData.maxWeeklyHours() + "h.",
                     view.getScene() == null ? null : view.getScene().getWindow());
         }
-        boolean confirmed = DialogControllerFactory.confirmAction("Accept Candidate",
-                "Accept this applicant and update workload records?",
+        boolean confirmed = DialogControllerFactory.confirmAction(I18n.t("accept_candidate"),
+                I18n.t("accept_confirm_msg"),
                 view.getScene() == null ? null : view.getScene().getWindow());
         if (!confirmed) return;
         ValidationResult result = services.reviewService()
@@ -248,8 +249,8 @@ public class ApplicantReviewController {
     }
 
     private void doReject() {
-        boolean confirmed = DialogControllerFactory.confirmAction("Reject Candidate",
-                "Reject this applicant for the selected job?",
+        boolean confirmed = DialogControllerFactory.confirmAction(I18n.t("reject_candidate"),
+                I18n.t("reject_confirm_msg"),
                 view.getScene() == null ? null : view.getScene().getWindow());
         if (!confirmed) return;
         ValidationResult result = services.reviewService()
@@ -263,7 +264,7 @@ public class ApplicantReviewController {
                     view.getScene() == null ? null : view.getScene().getWindow());
             return;
         }
-        DialogControllerFactory.success(header, "Operation completed.",
+        DialogControllerFactory.success(header, I18n.t("operation_completed"),
                 view.getScene() == null ? null : view.getScene().getWindow());
         if (view.getScene() != null && view.getScene().getWindow() != null) {
             view.getScene().getWindow().hide();
@@ -277,7 +278,7 @@ public class ApplicantReviewController {
     private void openCvFile(String applicantId) {
         Optional<Path> filePath = services.resumeService().getCvFilePath(applicantId);
         if (filePath.isEmpty()) {
-            DialogControllerFactory.info("CV Not Found", "No uploaded CV file exists for this account.",
+            DialogControllerFactory.info("CV Not Found", I18n.t("no_cv_msg"),
                     view.getScene() == null ? null : view.getScene().getWindow());
             return;
         }
@@ -314,7 +315,7 @@ public class ApplicantReviewController {
         sectionHeader.setAlignment(Pos.CENTER_LEFT);
         sectionHeader.getChildren().addAll(
                 IconFactory.glyph(IconFactory.IconType.FILE, 13, Color.web("#354a5f")),
-                labelStyle("APPLICANT CV", "-fx-font-size: 11px; -fx-font-weight: 700; -fx-text-fill: #94a3b8;")
+                labelStyle(I18n.t("applicant_cv_label"), "-fx-font-size: 11px; -fx-font-weight: 700; -fx-text-fill: #94a3b8;")
         );
 
         HBox fileRow = new HBox(12);
@@ -332,7 +333,7 @@ public class ApplicantReviewController {
         fileMeta.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(fileMeta, Priority.ALWAYS);
 
-        Label fileName = labelStyle(hasCv ? resume.getCvFileName() : "No CV uploaded",
+        Label fileName = labelStyle(hasCv ? resume.getCvFileName() : I18n.t("no_cv_uploaded"),
                 "-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: " + (hasCv ? "#0f172a" : "#94a3b8") + ";");
         fileName.setMaxWidth(Double.MAX_VALUE);
 
@@ -341,16 +342,16 @@ public class ApplicantReviewController {
                   + (resume.getCvUploadedAt() != null
                         ? resume.getCvUploadedAt().format(DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm"))
                         : "Unknown date")
-                : "The applicant has not uploaded a CV file";
+                : I18n.t("no_cv_msg");
         Label fileSub = labelStyle(metaText, "-fx-font-size: 11px; -fx-text-fill: #64748b;");
         fileSub.setMaxWidth(Double.MAX_VALUE);
         fileMeta.getChildren().addAll(fileName, fileSub);
 
-        Button openBtn = new Button("Open");
+        Button openBtn = new Button(I18n.t("open_btn"));
         openBtn.getStyleClass().add("secondary-button");
         openBtn.setGraphic(IconFactory.glyph(IconFactory.IconType.EYE, 13, Color.web("#354a5f")));
         openBtn.setContentDisplay(ContentDisplay.LEFT);
-        openBtn.setTooltip(new Tooltip("Open CV file in system viewer"));
+        openBtn.setTooltip(new Tooltip(I18n.t("open_cv_system")));
         openBtn.setDisable(!hasCv);
         openBtn.setOnAction(e -> openCvFile(applicantId));
 

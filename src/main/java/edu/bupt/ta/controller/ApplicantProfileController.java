@@ -3,6 +3,7 @@ package edu.bupt.ta.controller;
 import edu.bupt.ta.model.ApplicantProfile;
 import edu.bupt.ta.model.User;
 import edu.bupt.ta.service.ServiceRegistry;
+import edu.bupt.ta.util.I18n;
 import edu.bupt.ta.util.ValidationResult;
 import javafx.geometry.Insets;
 import javafx.scene.Parent;
@@ -57,11 +58,11 @@ public class ApplicantProfileController {
         HBox spacer = new HBox();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Button reset = new Button("Reset");
+        Button reset = new Button(I18n.t("reset"));
         reset.getStyleClass().add("secondary-button");
         reset.setOnAction(event -> loadFromModel());
 
-        Button save = new Button("Save Changes");
+        Button save = new Button(I18n.t("save"));
         save.getStyleClass().add("primary-button");
         save.setOnAction(event -> saveProfile());
 
@@ -72,21 +73,21 @@ public class ApplicantProfileController {
         formCard.setPadding(new Insets(16));
         formCard.setFillWidth(true);
 
-        Label formTitle = new Label("Personal Information");
+        Label formTitle = new Label(I18n.t("personal_information"));
         formTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: 600; -fx-text-fill: #0f172a;");
 
         GridPane form = new GridPane();
         form.setHgap(16);
         form.setVgap(14);
 
-        form.add(field("Full Name", fullName), 0, 0);
-        form.add(field("Student ID", studentId), 1, 0);
-        form.add(field("Email Address", email), 0, 1);
-        form.add(yearField("Academic Year"), 1, 1);
-        form.add(field("Phone Number", phone), 0, 2);
-        form.add(field("Major", programme), 1, 2);
-        form.add(campusField("Campus"), 0, 3);
-        form.add(crossCampusField("Accept Cross-Campus"), 1, 3);
+        form.add(field(I18n.t("full_name_upper"), fullName), 0, 0);
+        form.add(field(I18n.t("student_id_upper"), studentId), 1, 0);
+        form.add(field(I18n.t("email_upper"), email), 0, 1);
+        form.add(yearField(I18n.t("academic_year_upper")), 1, 1);
+        form.add(field(I18n.t("phone_upper"), phone), 0, 2);
+        form.add(field(I18n.t("degree_program_upper"), programme), 1, 2);
+        form.add(campusField(I18n.t("select_campus")), 0, 3);
+        form.add(crossCampusField(I18n.t("accept_cross_campus_upper")), 1, 3);
 
         formCard.getChildren().addAll(formTitle, form);
 
@@ -94,10 +95,10 @@ public class ApplicantProfileController {
         tipCard.getStyleClass().add("soft-card");
         tipCard.setPadding(new Insets(12));
 
-        Label tipTitle = new Label("Pro Tip");
+        Label tipTitle = new Label(I18n.t("pro_tip"));
         tipTitle.setStyle("-fx-font-size: 14px; -fx-font-weight: 600; -fx-text-fill: #b45309;");
 
-        Label tipBody = new Label("Complete profile and resume to unlock all apply actions in the job browser.");
+        Label tipBody = new Label(I18n.t("complete_profile_unlock_apply"));
         tipBody.setWrapText(true);
         tipBody.setStyle("-fx-font-size: 12px; -fx-text-fill: #92400e;");
 
@@ -127,7 +128,7 @@ public class ApplicantProfileController {
         Label label = new Label(title);
         label.getStyleClass().add("field-label");
         year.getItems().setAll(1, 2, 3, 4, 5, 6, 7, 8);
-        year.setPromptText("Select Year");
+        year.setPromptText(I18n.t("select_year"));
         year.setMaxWidth(Double.MAX_VALUE);
         box.getChildren().addAll(label, year);
         return box;
@@ -139,8 +140,8 @@ public class ApplicantProfileController {
         GridPane.setHgrow(box, Priority.ALWAYS);
         Label label = new Label(title);
         label.getStyleClass().add("field-label");
-        campus.getItems().setAll("Haidian Campus", "Shahe Campus");
-        campus.setPromptText("Select Campus");
+        campus.getItems().setAll(I18n.t("haidian_campus"), I18n.t("shahe_campus_cvc"));
+        campus.setPromptText(I18n.t("select_campus"));
         campus.setMaxWidth(Double.MAX_VALUE);
         box.getChildren().addAll(label, campus);
         return box;
@@ -152,8 +153,8 @@ public class ApplicantProfileController {
         GridPane.setHgrow(box, Priority.ALWAYS);
         Label label = new Label(title);
         label.getStyleClass().add("field-label");
-        crossCampus.getItems().setAll("Yes", "No");
-        crossCampus.setPromptText("Select");
+        crossCampus.getItems().setAll(I18n.t("yes_option"), I18n.t("no_option"));
+        crossCampus.setPromptText(I18n.t("select"));
         crossCampus.setMaxWidth(Double.MAX_VALUE);
         box.getChildren().addAll(label, crossCampus);
         return box;
@@ -171,7 +172,7 @@ public class ApplicantProfileController {
         email.setText(nullToEmpty(profile.getEmail()));
         phone.setText(nullToEmpty(profile.getPhone()));
         campus.setValue(notBlank(profile.getCampus()) ? profile.getCampus() : null);
-        crossCampus.setValue(profile.isAcceptCrossCampus() ? "Yes" : "No");
+        crossCampus.setValue(profile.isAcceptCrossCampus() ? I18n.t("yes_option") : I18n.t("no_option"));
     }
 
     private void saveProfile() {
@@ -183,7 +184,7 @@ public class ApplicantProfileController {
         Integer selectedYear = year.getValue();
         profile.setYear(selectedYear == null ? 0 : selectedYear);
         profile.setCampus(campus.getValue());
-        profile.setAcceptCrossCampus("Yes".equals(crossCampus.getValue()));
+        profile.setAcceptCrossCampus(I18n.t("yes_option").equals(crossCampus.getValue()));
 
         ValidationResult result = services.applicantProfileService().saveProfile(profile);
         if (!result.isValid()) {
@@ -192,7 +193,7 @@ public class ApplicantProfileController {
             return;
         }
 
-        DialogControllerFactory.success("Profile Saved", "Profile saved successfully.",
+        DialogControllerFactory.success(I18n.t("profile_saved_label"), I18n.t("profile_saved_success"),
                 view.getScene() == null ? null : view.getScene().getWindow());
     }
 

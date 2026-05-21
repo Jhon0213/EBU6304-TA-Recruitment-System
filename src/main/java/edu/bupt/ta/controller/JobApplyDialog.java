@@ -3,6 +3,7 @@ package edu.bupt.ta.controller;
 import edu.bupt.ta.model.ApplicantProfile;
 import edu.bupt.ta.model.Job;
 import edu.bupt.ta.service.ResumeService;
+import edu.bupt.ta.util.I18n;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -33,6 +34,10 @@ public final class JobApplyDialog {
 
     private static final String STYLESHEET = "/styles/app.css";
 
+    static {
+        I18n.initTranslations();
+    }
+
     private JobApplyDialog() {
     }
 
@@ -46,9 +51,10 @@ public final class JobApplyDialog {
             stage.initOwner(owner);
         }
         stage.initModality(Modality.WINDOW_MODAL);
-        stage.setTitle("Apply for: " + (job != null && job.getTitle() != null ? job.getTitle() : ""));
+        String jobTitle = job != null && job.getTitle() != null ? job.getTitle() : "";
+        stage.setTitle(I18n.t("apply_for_job", "Apply for: " + jobTitle));
 
-        Label hint = new Label("If you want to modify the following content, please go to My CV to edit it.");
+        Label hint = new Label(I18n.t("modify_cv_hint"));
         hint.setWrapText(true);
         hint.setStyle("-fx-font-size: 12px; -fx-text-fill: #64748b;");
 
@@ -57,19 +63,19 @@ public final class JobApplyDialog {
         grid.setVgap(10);
 
         int row = 0;
-        grid.add(fieldLabel("Name"), 0, row);
+        grid.add(fieldLabel(I18n.t("name_label")), 0, row);
         grid.add(readOnlyField(safe(profile.getFullName())), 1, row++);
 
-        grid.add(fieldLabel("Student ID"), 0, row);
+        grid.add(fieldLabel(I18n.t("student_id_apply")), 0, row);
         grid.add(readOnlyField(safe(profile.getStudentId())), 1, row++);
 
-        grid.add(fieldLabel("Email address"), 0, row);
+        grid.add(fieldLabel(I18n.t("email_apply")), 0, row);
         grid.add(readOnlyField(safe(profile.getEmail())), 1, row++);
 
-        grid.add(fieldLabel("Phone number"), 0, row);
+        grid.add(fieldLabel(I18n.t("phone_apply")), 0, row);
         grid.add(readOnlyField(safe(profile.getPhone())), 1, row++);
 
-        grid.add(fieldLabel("Major"), 0, row);
+        grid.add(fieldLabel(I18n.t("major_apply")), 0, row);
         grid.add(readOnlyField(safe(profile.getProgramme())), 1, row++);
 
         ColumnConstraints c0 = new ColumnConstraints();
@@ -79,30 +85,30 @@ public final class JobApplyDialog {
         c1.setMinWidth(220);
         grid.getColumnConstraints().addAll(c0, c1);
 
-        Label stmtTitle = new Label("Application Statement");
+        Label stmtTitle = new Label(I18n.t("application_statement_title"));
         stmtTitle.setStyle("-fx-font-size: 12px; -fx-font-weight: 900; -fx-text-fill: #334155;");
 
-        Label stmtHint = new Label("Please explain your motivation and strengths for this role in English.");
+        Label stmtHint = new Label(I18n.t("explain_motivation"));
         stmtHint.setWrapText(true);
         stmtHint.setStyle("-fx-font-size: 11px; -fx-text-fill: #94a3b8;");
 
         TextArea statement = new TextArea();
-        statement.setPromptText("Please describe your application reasons and strengths.");
+        statement.setPromptText(I18n.t("describe_reasons"));
         statement.setWrapText(true);
         statement.setPrefRowCount(6);
 
         // CV preview button
-        Button previewBtn = new Button("Preview CV");
+        Button previewBtn = new Button(I18n.t("preview_cv"));
         previewBtn.setOnAction(e -> openCvFile(resumeService, applicantId, stage));
 
         final boolean[] submitted = {false};
         final String[] textOut = new String[1];
 
-        Button cancel = new Button("Cancel");
+        Button cancel = new Button(I18n.t("cancel"));
         cancel.setCancelButton(true);
         cancel.setOnAction(e -> stage.close());
 
-        Button submit = new Button("Submit");
+        Button submit = new Button(I18n.t("submit_btn"));
         submit.getStyleClass().add("primary-button");
         submit.setDefaultButton(true);
         submit.setOnAction(e -> {
@@ -146,20 +152,20 @@ public final class JobApplyDialog {
     private static void openCvFile(ResumeService resumeService, String applicantId, Window owner) {
         Optional<Path> filePath = resumeService.getCvFilePath(applicantId);
         if (filePath.isEmpty()) {
-            DialogControllerFactory.info("CV Not Found",
-                    "No uploaded CV file exists for this account.", owner);
+            DialogControllerFactory.info(I18n.t("cv_not_found"),
+                    I18n.t("no_uploaded_cv"), owner);
             return;
         }
         try {
             if (!Desktop.isDesktopSupported()) {
-                DialogControllerFactory.operationFailed("Open CV Failed",
-                        "Desktop open action is not supported in this environment.", owner);
+                DialogControllerFactory.operationFailed(I18n.t("open_cv_failed"),
+                        I18n.t("desktop_open_unsupported"), owner);
                 return;
             }
             Desktop.getDesktop().open(filePath.get().toFile());
         } catch (Exception ex) {
-            DialogControllerFactory.operationFailed("Open CV Failed",
-                    "Unable to open file: " + ex.getMessage(), owner);
+            DialogControllerFactory.operationFailed(I18n.t("open_cv_failed"),
+                    I18n.t("unable_to_open_file", "Unable to open file: " + ex.getMessage()), owner);
         }
     }
 

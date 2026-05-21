@@ -966,6 +966,13 @@
 
 .position-favorite-icon {
     -fx-font-size: 26px;
+}
+
+.position-favorite-icon:filled {
+    -fx-text-fill: #ef4444;
+}
+
+.position-favorite-icon:empty {
     -fx-text-fill: #94a3b8;
 }
 
@@ -2237,4 +2244,13 @@
 .cv-guideline-title {
     -fx-font-weight: 800;
     -fx-font-family: "Inter SemiBold", "Inter", "Noto Sans SC", "PingFang SC", sans-serif;
+}
+
+.settings-card {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+    -fx-padding: 24;
+    -fx-spacing: 12;
 }
