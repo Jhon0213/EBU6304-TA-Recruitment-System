@@ -82,4 +82,18 @@
   "cvFileSizeBytes" : 0,
   "cvUploadedAt" : null,
   "lastUpdated" : "2026-05-21T21:42:40.661541"
+}, {
+  "applicantId" : "A007",
+  "relevantModules" : [ ],
+  "technicalSkills" : [ ],
+  "languageSkills" : [ ],
+  "experienceText" : null,
+  "personalStatement" : null,
+  "availability" : [ ],
+  "maxWeeklyHours" : 8,
+  "cvFileName" : null,
+  "cvStoredPath" : null,
+  "cvFileSizeBytes" : 0,
+  "cvUploadedAt" : null,
+  "lastUpdated" : "2026-05-22T10:19:42.616554"
 } ]

@@ -54,13 +54,19 @@ public class ServiceRegistry {
             applicationRepository, workloadRepository, auditLogRepository, jobService, workloadService
     );
     private NotificationService notificationService;
+    private RiskChangeTracker riskChangeTracker;
 
     public ServiceRegistry() {
         this.notificationService = new NotificationService(
                 notificationRepository, jobRepository, applicationRepository, applicantProfileRepository
         );
+        this.riskChangeTracker = new RiskChangeTracker(notificationRepository, userRepository);
         applicationService.setNotificationService(notificationService);
         reviewService.setNotificationService(notificationService);
+    }
+
+    public RiskChangeTracker riskChangeTracker() {
+        return riskChangeTracker;
     }
 
     public UserRepository userRepository() {

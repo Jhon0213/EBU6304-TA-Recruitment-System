@@ -109,26 +109,11 @@ public class AdminJobsController {
         Label title = new Label(I18n.t("jobs_admin"));
         title.getStyleClass().add("page-title");
 
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-
-        Button filterButton = new Button(I18n.t("filter"));
-        filterButton.getStyleClass().add("secondary-button");
-        filterButton.setOnAction(event -> statusFilter.show());
-
-        Button refreshButton = new Button(I18n.t("refresh"));
-        refreshButton.getStyleClass().add("secondary-button");
-        refreshButton.setOnAction(event -> refresh());
-
-        Button createButton = new Button("+ " + I18n.t("create_new_job"));
-        createButton.getStyleClass().add("primary-button");
-        createButton.setOnAction(event -> onCreate());
-
-        HBox topRow = new HBox(10, title, spacer, filterButton, refreshButton, createButton);
+        HBox topRow = new HBox(10, title);
         topRow.setAlignment(Pos.CENTER_LEFT);
 
         searchField.setPromptText(I18n.t("search_title_id_module"));
-        searchField.setPrefWidth(360);
+        searchField.setPrefWidth(340);
 
         statusFilter.getItems().setAll(I18n.t("all_status"), I18n.t("open"), I18n.t("closed"), I18n.t("expired"), I18n.t("draft"));
         statusFilter.setValue(I18n.t("all_status"));
@@ -138,16 +123,16 @@ public class AdminJobsController {
         typeFilter.setValue(I18n.t("all_types"));
         typeFilter.setPrefWidth(170);
 
-        editButton.setText(I18n.t("edit_job"));
-        editButton.getStyleClass().add("secondary-button");
-        editButton.setOnAction(event -> onEdit());
+        Button refreshButton = new Button(I18n.t("refresh"));
+        refreshButton.getStyleClass().add("secondary-button");
+        refreshButton.setOnAction(event -> refresh());
 
-        closeButton.setText(I18n.t("close_job"));
-        closeButton.getStyleClass().add("secondary-button");
-        closeButton.setOnAction(event -> onClose());
+        Button createButton = new Button(I18n.t("create_new_job"));
+        createButton.getStyleClass().add("primary-button");
+        createButton.setOnAction(event -> onCreate());
 
-        HBox toolbar = new HBox(12, searchField, statusFilter, typeFilter, spacerNode(), editButton, closeButton);
-        toolbar.getStyleClass().add("surface-toolbar");
+        HBox toolbar = new HBox(12, searchField, statusFilter, typeFilter, spacerNode(), refreshButton, createButton);
+        toolbar.setAlignment(Pos.CENTER_LEFT);
 
         return new VBox(12, topRow, toolbar);
     }
@@ -354,8 +339,8 @@ public class AdminJobsController {
 
     private void applyFilters() {
         String keyword = normalize(searchField.getText());
-        String status = statusFilter.getValue();
-        String type = typeFilter.getValue();
+        String statusKey = mapStatusFilterToEnum(statusFilter.getValue());
+        String typeKey = mapTypeFilterToEnum(typeFilter.getValue());
 
         List<AdminJobRowDTO> filtered = allJobs.stream()
                 .filter(job -> keyword.isEmpty()
@@ -366,8 +351,8 @@ public class AdminJobsController {
                         || contains(job.organiserId(), keyword)
                         || contains(job.jobId(), keyword)
                         || contains(job.description(), keyword))
-                .filter(job -> status == null || I18n.t("all_status").equals(status) || status.equals(job.statusLabel()))
-                .filter(job -> type == null || I18n.t("all_types").equals(type) || type.equals(job.typeLabel()))
+                .filter(job -> statusKey == null || statusKey.equals(job.statusLabel()))
+                .filter(job -> typeKey == null || typeKey.equals(job.typeLabel()))
                 .toList();
 
         table.setItems(FXCollections.observableArrayList(filtered));
@@ -820,6 +805,28 @@ public class AdminJobsController {
 
     private boolean contains(String text, String keyword) {
         return text != null && text.toLowerCase(Locale.ROOT).contains(keyword);
+    }
+
+    private String mapStatusFilterToEnum(String selected) {
+        if (selected == null || I18n.t("all_status").equals(selected)) {
+            return null;
+        }
+        if (I18n.t("open").equals(selected)) return "OPEN";
+        if (I18n.t("closed").equals(selected)) return "CLOSED";
+        if (I18n.t("expired").equals(selected)) return "EXPIRED";
+        if (I18n.t("draft").equals(selected)) return "DRAFT";
+        return null;
+    }
+
+    private String mapTypeFilterToEnum(String selected) {
+        if (selected == null || I18n.t("all_types").equals(selected)) {
+            return null;
+        }
+        if (I18n.t("module_ta").equals(selected)) return "MODULE_TA";
+        if (I18n.t("invigilation").equals(selected)) return "INVIGILATION";
+        if (I18n.t("activity_support").equals(selected)) return "ACTIVITY_SUPPORT";
+        if (I18n.t("other").equals(selected)) return "OTHER";
+        return null;
     }
 
     private String blankToDash(String value) {

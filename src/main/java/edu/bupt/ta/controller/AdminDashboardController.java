@@ -110,27 +110,20 @@ public class AdminDashboardController {
 
     private HBox buildTopBar() {
         Label title = new Label(I18n.t("workload_monitoring"));
-        title.setStyle("-fx-font-size: 22px; -fx-font-weight: 900; -fx-text-fill: #1e293b;");
-
-        searchField.setPromptText(I18n.t("search_ta_name_id"));
-        searchField.setPrefWidth(340);
-
-        riskFilter.getItems().setAll(I18n.t("all_risk"), I18n.t("high_risk"), I18n.t("medium_risk"), I18n.t("low_risk"));
-        riskFilter.setValue(I18n.t("all_risk"));
-        riskFilter.setPrefWidth(146);
+        title.getStyleClass().add("page-title");
 
         Button refreshButton = new Button(I18n.t("refresh"));
         refreshButton.getStyleClass().add("secondary-button");
         refreshButton.setOnAction(event -> refresh());
 
         Button export = new Button(I18n.t("export"));
-        export.setStyle("-fx-background-color: #354a5f; -fx-text-fill: white; -fx-font-weight: 600; -fx-background-radius: 8; -fx-padding: 10 16 10 16;");
+        export.getStyleClass().add("primary-button");
         export.setOnAction(event -> exportWorkload());
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        HBox row = new HBox(14, title, searchField, riskFilter, spacer, refreshButton, export);
+        HBox row = new HBox(14, title, spacer, refreshButton, export);
         row.setAlignment(Pos.CENTER_LEFT);
         return row;
     }
@@ -177,9 +170,9 @@ public class AdminDashboardController {
         titleNode.setStyle("-fx-font-size: 11px; -fx-font-weight: 600; -fx-text-fill: #94a3b8;");
 
         valueLabel.getStyleClass().add("metric-value");
-        valueLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: 900; -fx-text-fill: #0f172a;");
+        valueLabel.setStyle("-fx-font-size: 36px; -fx-font-weight: 900; -fx-text-fill: #0f172a;");
         if (danger) {
-            valueLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: 900; -fx-text-fill: #e11d48;");
+            valueLabel.setStyle("-fx-font-size: 36px; -fx-font-weight: 900; -fx-text-fill: #e11d48;");
         }
 
         card.getChildren().addAll(top);
@@ -204,14 +197,17 @@ public class AdminDashboardController {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Button filterButton = new Button(I18n.t("filter"));
-        filterButton.getStyleClass().add("secondary-button");
-        filterButton.setOnAction(event -> riskFilter.show());
+        searchField.setPromptText(I18n.t("search_ta_name_id"));
+        searchField.setPrefWidth(280);
+
+        riskFilter.getItems().setAll(I18n.t("all_risk"), I18n.t("high_risk"), I18n.t("medium_risk"), I18n.t("low_risk"));
+        riskFilter.setValue(I18n.t("all_risk"));
+        riskFilter.setPrefWidth(150);
 
         sortButton.getStyleClass().add("secondary-button");
         sortButton.setOnAction(event -> toggleSortMode());
 
-        HBox header = new HBox(12, titleBlock, spacer, filterButton, sortButton);
+        HBox header = new HBox(12, titleBlock, spacer, searchField, riskFilter, sortButton);
         header.setAlignment(Pos.CENTER_LEFT);
 
         TableColumn<AdminWorkloadRowDTO, String> applicantCol = new TableColumn<>(I18n.t("ta_name"));
@@ -264,32 +260,18 @@ public class AdminDashboardController {
                     return;
                 }
                 AdminWorkloadRowDTO row = getTableView().getItems().get(getIndex());
-                HBox box = new HBox(10, buildHoursBar(row.currentWeeklyHours(), row.maxWeeklyHours(), row.riskLevel()),
-                        coloredValueLabel(row.currentWeeklyHours() + "h", riskTextColor(row.riskLevel())));
-                box.setAlignment(Pos.CENTER_LEFT);
+                String risk = riskFromAcceptedJobs(row.acceptedJobs());
+                HBox box = new HBox(10, buildHoursBar(row.currentWeeklyHours(), row.maxWeeklyHours(), risk),
+                        coloredValueLabel(row.currentWeeklyHours() + "h", riskTextColor(risk)));
+                box.setAlignment(Pos.CENTER);
+                setAlignment(Pos.CENTER);
                 setGraphic(box);
                 setText(null);
             }
         });
 
-        TableColumn<AdminWorkloadRowDTO, Number> maxCol = new TableColumn<>(I18n.t("max_limit_label"));
-        maxCol.setCellValueFactory(cell -> new SimpleIntegerProperty(cell.getValue().maxWeeklyHours()));
-        maxCol.setCellFactory(column -> new TableCell<>() {
-            @Override
-            protected void updateItem(Number item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty || item == null ? null : item.intValue() + "h");
-                if (!empty) {
-                    setStyle("-fx-text-fill: #94a3b8; -fx-font-weight: 600;");
-                } else {
-                    setStyle("");
-                }
-                setGraphic(null);
-            }
-        });
-
         TableColumn<AdminWorkloadRowDTO, String> riskCol = new TableColumn<>(I18n.t("risk_level_label"));
-        riskCol.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().riskLevel()));
+        riskCol.setCellValueFactory(cell -> new SimpleStringProperty(riskFromAcceptedJobs(cell.getValue().acceptedJobs())));
         riskCol.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(String item, boolean empty) {
@@ -301,13 +283,14 @@ public class AdminDashboardController {
                 }
                 Label chip = new Label(item);
                 chip.setStyle(riskChipStyle(item));
+                setAlignment(Pos.CENTER);
                 setGraphic(chip);
                 setText(null);
             }
         });
 
         TableColumn<AdminWorkloadRowDTO, String> noteCol = new TableColumn<>(I18n.t("notes_label"));
-        noteCol.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().note()));
+        noteCol.setCellValueFactory(cell -> new SimpleStringProperty(noteForRisk(riskFromAcceptedJobs(cell.getValue().acceptedJobs()))));
         noteCol.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(String item, boolean empty) {
@@ -319,14 +302,22 @@ public class AdminDashboardController {
                 }
                 Label note = new Label(item);
                 note.setWrapText(true);
+                note.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
                 note.setTextFill(Color.web(noteColor(item)));
                 note.setStyle("-fx-font-size: 12px; -fx-font-weight: 600;");
+                setAlignment(Pos.CENTER);
                 setGraphic(note);
                 setText(null);
             }
         });
 
-        workloadTable.getColumns().setAll(applicantCol, studentIdCol, acceptedJobsCol, hoursCol, maxCol, riskCol, noteCol);
+        studentIdCol.setStyle("-fx-alignment: CENTER;");
+        acceptedJobsCol.setStyle("-fx-alignment: CENTER;");
+        hoursCol.setStyle("-fx-alignment: CENTER;");
+        riskCol.setStyle("-fx-alignment: CENTER;");
+        noteCol.setStyle("-fx-alignment: CENTER;");
+
+        workloadTable.getColumns().setAll(applicantCol, studentIdCol, acceptedJobsCol, hoursCol, riskCol, noteCol);
         workloadTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         workloadTable.setFixedCellSize(74);
         workloadTable.setPrefHeight(390);
@@ -392,12 +383,18 @@ public class AdminDashboardController {
         totalJobsValue.setText(String.valueOf(summary.totalJobs()));
         totalApplicationsValue.setText(String.valueOf(summary.totalApplications()));
         acceptedValue.setText(String.valueOf(summary.acceptedApplications()));
-        highRiskValue.setText(String.valueOf(summary.highRiskApplicants()));
 
         String keyword = normalize(searchField.getText());
         String selectedRisk = riskFilter.getValue();
 
         List<AdminWorkloadRowDTO> allWorkloads = services.adminMonitoringService().getWorkloadRows();
+        long computedHighRisk = allWorkloads.stream()
+                .filter(workload -> "HIGH".equals(riskFromAcceptedJobs(workload.acceptedJobs())))
+                .count();
+        highRiskValue.setText(String.valueOf(computedHighRisk));
+
+        services.riskChangeTracker().detectAndNotifyChanges(allWorkloads);
+
         List<AdminWorkloadRowDTO> workloads = allWorkloads;
         if (!keyword.isEmpty()) {
             workloads = workloads.stream()
@@ -408,18 +405,21 @@ public class AdminDashboardController {
                     .toList();
         }
         if (selectedRisk != null && !I18n.t("all_risk").equals(selectedRisk)) {
-            RiskLevel targetRisk = RiskLevel.valueOf(selectedRisk.toUpperCase(Locale.ROOT));
-            workloads = workloads.stream()
-                    .filter(workload -> targetRisk.name().equals(workload.riskLevel()))
-                    .toList();
+            RiskLevel targetRisk = riskFilterToLevel(selectedRisk);
+            if (targetRisk != null) {
+                final String target = targetRisk.name();
+                workloads = workloads.stream()
+                        .filter(workload -> target.equals(riskFromAcceptedJobs(workload.acceptedJobs())))
+                        .toList();
+            }
         }
 
         Comparator<AdminWorkloadRowDTO> comparator = sortMode == SortMode.RISK_PRIORITY
-                ? Comparator.comparingInt((AdminWorkloadRowDTO row) -> riskPriority(row.riskLevel()))
+                ? Comparator.comparingInt((AdminWorkloadRowDTO row) -> riskPriority(riskFromAcceptedJobs(row.acceptedJobs())))
                 .thenComparing(AdminWorkloadRowDTO::currentWeeklyHours, Comparator.reverseOrder())
                 .thenComparing(AdminWorkloadRowDTO::applicantName)
                 : Comparator.comparing(AdminWorkloadRowDTO::currentWeeklyHours, Comparator.reverseOrder())
-                .thenComparingInt(row -> riskPriority(row.riskLevel()))
+                .thenComparingInt(row -> riskPriority(riskFromAcceptedJobs(row.acceptedJobs())))
                 .thenComparing(AdminWorkloadRowDTO::applicantName);
         workloads = workloads.stream().sorted(comparator).toList();
 
@@ -444,6 +444,34 @@ public class AdminDashboardController {
         refresh();
     }
 
+    private String riskFromAcceptedJobs(int acceptedJobs) {
+        if (acceptedJobs <= 0) {
+            return "LOW";
+        }
+        if (acceptedJobs >= 7) {
+            return "HIGH";
+        }
+        return "MEDIUM";
+    }
+
+    private String noteForRisk(String risk) {
+        return switch (risk == null ? "" : risk) {
+            case "HIGH" -> "Requires immediate review";
+            case "MEDIUM" -> "Close to policy limit";
+            default -> "Available for more tasks";
+        };
+    }
+
+    private RiskLevel riskFilterToLevel(String selectedRisk) {
+        if (selectedRisk == null) {
+            return null;
+        }
+        if (selectedRisk.equals(I18n.t("high_risk"))) return RiskLevel.HIGH;
+        if (selectedRisk.equals(I18n.t("medium_risk"))) return RiskLevel.MEDIUM;
+        if (selectedRisk.equals(I18n.t("low_risk"))) return RiskLevel.LOW;
+        return null;
+    }
+
     private <T> TableCell<T, String> mutedTextCell() {
         return new TableCell<>() {
             @Override
@@ -451,6 +479,7 @@ public class AdminDashboardController {
                 super.updateItem(item, empty);
                 setText(empty ? null : item);
                 if (!empty) {
+                    setAlignment(Pos.CENTER);
                     setStyle("-fx-text-fill: #94a3b8; -fx-font-weight: 400;");
                 } else {
                     setStyle("");
@@ -467,6 +496,7 @@ public class AdminDashboardController {
                 super.updateItem(item, empty);
                 setText(empty || item == null ? null : String.valueOf(item.intValue()));
                 if (!empty) {
+                    setAlignment(Pos.CENTER);
                     setStyle("-fx-font-weight: 600; -fx-text-fill: #1f2937;");
                 } else {
                     setStyle("");

@@ -117,6 +117,20 @@ public class AdminApplicationsController {
         Label title = new Label(I18n.t("applications_admin"));
         title.getStyleClass().add("page-title");
 
+        HBox topRow = new HBox(10, title);
+        topRow.setAlignment(Pos.CENTER_LEFT);
+
+        searchField.setPromptText(I18n.t("search_applicant_id_job"));
+        searchField.setPrefWidth(340);
+
+        statusFilter.getItems().setAll(I18n.t("all_status"), I18n.t("submitted_upper2"), I18n.t("under_review_upper"), I18n.t("accepted_upper"), I18n.t("rejected_upper"));
+        statusFilter.setValue(I18n.t("all_status"));
+        statusFilter.setPrefWidth(150);
+
+        riskFilter.getItems().setAll(I18n.t("all_risk"), I18n.t("high_risk"), I18n.t("medium_risk"), I18n.t("low_risk"));
+        riskFilter.setValue(I18n.t("all_risk"));
+        riskFilter.setPrefWidth(150);
+
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
@@ -125,25 +139,11 @@ public class AdminApplicationsController {
         refreshButton.setOnAction(event -> refresh());
 
         Button exportButton = new Button(I18n.t("export_applications"));
-        exportButton.getStyleClass().add("secondary-button");
+        exportButton.getStyleClass().add("primary-button");
         exportButton.setOnAction(event -> exportApplications());
 
-        HBox topRow = new HBox(10, title, spacer, refreshButton, exportButton);
-        topRow.setAlignment(Pos.CENTER_LEFT);
-
-        searchField.setPromptText(I18n.t("search_applicant_id_job"));
-        searchField.setPrefWidth(420);
-
-        statusFilter.getItems().setAll(I18n.t("all_status"), I18n.t("submitted_upper2"), I18n.t("under_review_upper"), I18n.t("accepted_upper"), I18n.t("rejected_upper"));
-        statusFilter.setValue(I18n.t("all_status"));
-        statusFilter.setPrefWidth(150);
-
-        riskFilter.getItems().setAll(I18n.t("all_risk"), I18n.t("high_risk"), I18n.t("medium_risk"), I18n.t("low_risk"));
-        riskFilter.setValue(I18n.t("all_risk"));
-        riskFilter.setPrefWidth(140);
-
-        HBox toolbar = new HBox(12, searchField, statusFilter, riskFilter);
-        toolbar.getStyleClass().add("surface-toolbar");
+        HBox toolbar = new HBox(12, searchField, statusFilter, riskFilter, spacer, refreshButton, exportButton);
+        toolbar.setAlignment(Pos.CENTER_LEFT);
         return new VBox(12, topRow, toolbar);
     }
 
@@ -413,8 +413,8 @@ public class AdminApplicationsController {
 
     private void applyFilters() {
         String keyword = normalize(searchField.getText());
-        String status = statusFilter.getValue();
-        String risk = riskFilter.getValue();
+        String statusKey = mapStatusFilterToEnum(statusFilter.getValue());
+        String riskKey = mapRiskFilterToEnum(riskFilter.getValue());
 
         List<AdminApplicationRowDTO> filtered = allApplications.stream()
                 .filter(app -> keyword.isEmpty()
@@ -426,8 +426,8 @@ public class AdminApplicationsController {
                         || contains(app.jobId(), keyword)
                         || contains(app.organiserName(), keyword)
                         || contains(app.organiserId(), keyword))
-                .filter(app -> status == null || I18n.t("all_status").equals(status) || status.equals(app.statusLabel()))
-                .filter(app -> risk == null || I18n.t("all_risk").equals(risk) || risk.equals(app.riskLevel()))
+                .filter(app -> statusKey == null || statusKey.equals(app.statusLabel()))
+                .filter(app -> riskKey == null || riskKey.equals(app.riskLevel()))
                 .toList();
 
         table.setItems(FXCollections.observableArrayList(filtered));
@@ -720,6 +720,27 @@ public class AdminApplicationsController {
 
     private boolean contains(String text, String keyword) {
         return text != null && text.toLowerCase(Locale.ROOT).contains(keyword);
+    }
+
+    private String mapStatusFilterToEnum(String selected) {
+        if (selected == null || I18n.t("all_status").equals(selected)) {
+            return null;
+        }
+        if (I18n.t("submitted_upper2").equals(selected)) return "SUBMITTED";
+        if (I18n.t("under_review_upper").equals(selected)) return "UNDER_REVIEW";
+        if (I18n.t("accepted_upper").equals(selected)) return "ACCEPTED";
+        if (I18n.t("rejected_upper").equals(selected)) return "REJECTED";
+        return null;
+    }
+
+    private String mapRiskFilterToEnum(String selected) {
+        if (selected == null || I18n.t("all_risk").equals(selected)) {
+            return null;
+        }
+        if (I18n.t("high_risk").equals(selected)) return "HIGH";
+        if (I18n.t("medium_risk").equals(selected)) return "MEDIUM";
+        if (I18n.t("low_risk").equals(selected)) return "LOW";
+        return null;
     }
 
     private String blankToDash(String value) {

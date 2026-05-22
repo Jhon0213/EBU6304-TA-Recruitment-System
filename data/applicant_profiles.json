@@ -70,4 +70,16 @@
   "campus" : null,
   "acceptCrossCampus" : false,
   "lastUpdated" : "2026-05-21T21:42:40.6369619"
+}, {
+  "applicantId" : "A007",
+  "userId" : "U900",
+  "fullName" : "System Admin",
+  "studentId" : null,
+  "programme" : null,
+  "year" : 1,
+  "email" : null,
+  "phone" : null,
+  "campus" : null,
+  "acceptCrossCampus" : false,
+  "lastUpdated" : "2026-05-22T10:19:42.600676"
 } ]
