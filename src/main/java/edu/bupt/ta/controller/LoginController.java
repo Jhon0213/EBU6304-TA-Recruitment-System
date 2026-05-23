@@ -65,17 +65,6 @@ public class LoginController {
         return view;
     }
 
-    public void prefillUsername(String username) {
-        usernameField.setText(username);
-        passwordField.requestFocus();
-    }
-
-    public void prefillAndLogin(String username, String password) {
-        usernameField.setText(username);
-        passwordField.setText(password);
-        doLogin();
-    }
-
     private void initialize() {
         view.getStyleClass().add("login-root");
 
@@ -963,8 +952,6 @@ public class LoginController {
                     ? null : view.getScene().getWindow());
             return;
         }
-        // Store credentials for language change reload
-        // Note: We can't directly access AppBootstrap here, so we rely on the callback mechanism
         onLoginSuccess.accept(result.user());
     }
 }
