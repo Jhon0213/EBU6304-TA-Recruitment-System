@@ -1,0 +1,840 @@
+package edu.bupt.ta.controller;
+
+import edu.bupt.ta.dto.AdminJobRowDTO;
+import edu.bupt.ta.dto.AuditLogItemDTO;
+import edu.bupt.ta.enums.ApplicationStatus;
+import edu.bupt.ta.enums.Role;
+import edu.bupt.ta.model.ApplicantProfile;
+import edu.bupt.ta.model.Application;
+import edu.bupt.ta.model.Job;
+import edu.bupt.ta.model.User;
+import edu.bupt.ta.service.ServiceRegistry;
+import edu.bupt.ta.util.I18n;
+import edu.bupt.ta.util.ValidationResult;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+
+public class AdminJobsController {
+
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH);
+    private static final DateTimeFormatter DETAIL_TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+    private final ServiceRegistry services;
+    private final User user;
+
+    private final VBox view = new VBox(16);
+    private final TextField searchField = new TextField();
+    private final ComboBox<String> statusFilter = new ComboBox<>();
+    private final ComboBox<String> typeFilter = new ComboBox<>();
+    private final TableView<AdminJobRowDTO> table = new TableView<>();
+
+    private final Label totalJobsValue = new Label("0");
+    private final Label totalApplicantsValue = new Label("0");
+    private final Label activeJobsValue = new Label("0");
+
+    private final Label detailTitle = new Label();
+    private final Label detailSubline = new Label("-");
+    private final Label detailModuleTitle = new Label("-");
+    private final Label detailModuleMeta = new Label("-");
+    private final Label detailModuleDescription = new Label("-");
+    private final Label detailOrganiser = new Label("-");
+    private final Label detailWeeklyHours = new Label("-");
+    private final Label detailPositions = new Label("-");
+    private final Label detailDeadline = new Label("-");
+    private final Label detailCreated = new Label("-");
+    private final Label detailRequiredSkills = new Label("-");
+    private final Label detailPreferredSkills = new Label("-");
+    private final Label detailAppliedCount = new Label("0");
+    private final Label detailReviewCount = new Label("0");
+    private final Label detailAcceptedCount = new Label("0");
+    private final HBox applicantAvatarStrip = new HBox(6);
+    private final VBox activityLogBox = new VBox(10);
+
+    private final Button editButton = new Button();
+    private final Button closeButton = new Button();
+    private final Button viewApplicationsButton = new Button();
+    private final Button detailEditButton = new Button();
+    private final Button detailCloseButton = new Button();
+
+    private List<AdminJobRowDTO> allJobs = List.of();
+
+    public AdminJobsController(ServiceRegistry services, User user) {
+        this.services = services;
+        this.user = user;
+        initialize();
+        refresh();
+    }
+
+    public Parent getView() {
+        return view;
+    }
+
+    private void initialize() {
+        view.getStyleClass().add("app-surface");
+        view.setPadding(new Insets(24));
+        view.getChildren().addAll(buildHeader(), buildKpiRow(), buildMainArea());
+
+        searchField.textProperty().addListener((obs, oldV, newV) -> applyFilters());
+        statusFilter.valueProperty().addListener((obs, oldV, newV) -> applyFilters());
+        typeFilter.valueProperty().addListener((obs, oldV, newV) -> applyFilters());
+        updateActionButtons(null);
+    }
+
+    private VBox buildHeader() {
+        Label title = new Label(I18n.t("jobs_admin"));
+        title.getStyleClass().add("page-title");
+
+        HBox topRow = new HBox(10, title);
+        topRow.setAlignment(Pos.CENTER_LEFT);
+
+        searchField.setPromptText(I18n.t("search_title_id_module"));
+        searchField.setPrefWidth(340);
+
+        statusFilter.getItems().setAll(I18n.t("all_status"), I18n.t("open"), I18n.t("closed"), I18n.t("expired"), I18n.t("draft"));
+        statusFilter.setValue(I18n.t("all_status"));
+        statusFilter.setPrefWidth(150);
+
+        typeFilter.getItems().setAll(I18n.t("all_types"), I18n.t("module_ta"), I18n.t("invigilation"), I18n.t("activity_support"), I18n.t("other"));
+        typeFilter.setValue(I18n.t("all_types"));
+        typeFilter.setPrefWidth(170);
+
+        Button refreshButton = new Button(I18n.t("refresh"));
+        refreshButton.getStyleClass().add("secondary-button");
+        refreshButton.setOnAction(event -> refresh());
+
+        Button createButton = new Button(I18n.t("create_new_job"));
+        createButton.getStyleClass().add("primary-button");
+        createButton.setOnAction(event -> onCreate());
+
+        HBox toolbar = new HBox(12, searchField, statusFilter, typeFilter, spacerNode(), refreshButton, createButton);
+        toolbar.setAlignment(Pos.CENTER_LEFT);
+
+        return new VBox(12, topRow, toolbar);
+    }
+
+    private HBox buildKpiRow() {
+        return new HBox(16,
+                kpiCard(I18n.t("total_openings"), totalJobsValue, I18n.t("active_jobs") + " - " + I18n.t("total_openings")),
+                kpiCard(I18n.t("total_applicants_admin"), totalApplicantsValue, I18n.t("total_applicants_admin")),
+                kpiCard(I18n.t("active_jobs"), activeJobsValue, I18n.t("active_jobs"))
+        );
+    }
+
+    private VBox kpiCard(String title, Label valueLabel, String note) {
+        VBox card = new VBox(6);
+        card.getStyleClass().add("metric-card");
+        card.setMinWidth(220);
+        HBox.setHgrow(card, Priority.ALWAYS);
+
+        Label titleNode = new Label(title);
+        titleNode.getStyleClass().add("metric-kicker");
+
+        valueLabel.getStyleClass().add("metric-value");
+        valueLabel.setStyle("-fx-font-size: 36px; -fx-font-weight: 900; -fx-text-fill: #0f172a;");
+
+        Label noteNode = new Label(note);
+        noteNode.setWrapText(true);
+        noteNode.setStyle("-fx-font-size: 12px; -fx-text-fill: #94a3b8;");
+
+        card.getChildren().addAll(titleNode, valueLabel, noteNode);
+        return card;
+    }
+
+    private HBox buildMainArea() {
+        VBox listPanel = new VBox(12);
+        listPanel.getStyleClass().add("panel-card");
+        listPanel.setPadding(new Insets(18));
+
+        TableColumn<AdminJobRowDTO, String> titleCol = new TableColumn<>(I18n.t("job_title_id"));
+        titleCol.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().title()));
+        titleCol.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
+                    setGraphic(null);
+                    setText(null);
+                    return;
+                }
+                AdminJobRowDTO row = getTableView().getItems().get(getIndex());
+
+                Label title = new Label(row.title());
+                title.setWrapText(true);
+                title.setMaxWidth(420);
+                title.setAlignment(Pos.CENTER);
+                title.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+                title.setStyle("-fx-font-size: 15px; -fx-font-weight: 900; -fx-text-fill: #334155;");
+
+                Label id = new Label("ID: " + row.jobId());
+                id.setWrapText(true);
+                id.setMaxWidth(420);
+                id.setAlignment(Pos.CENTER);
+                id.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+                id.setStyle("-fx-font-size: 11px; -fx-text-fill: #94a3b8; -fx-font-weight: 600;");
+
+                VBox box = new VBox(3, title, id);
+                box.setAlignment(Pos.CENTER);
+                setAlignment(Pos.CENTER);
+                setGraphic(box);
+                setText(null);
+            }
+        });
+
+        TableColumn<AdminJobRowDTO, String> departmentCol = new TableColumn<>(I18n.t("department_admin"));
+        departmentCol.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().moduleName()));
+        departmentCol.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
+                    setGraphic(null);
+                    setText(null);
+                    return;
+                }
+                AdminJobRowDTO row = getTableView().getItems().get(getIndex());
+
+                Label title = new Label(row.moduleName());
+                title.setWrapText(true);
+                title.setMaxWidth(340);
+                title.setAlignment(Pos.CENTER);
+                title.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+                title.setStyle("-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: #475569;");
+
+                Label meta = new Label(row.moduleCode());
+                meta.setWrapText(true);
+                meta.setMaxWidth(340);
+                meta.setAlignment(Pos.CENTER);
+                meta.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+                meta.setStyle("-fx-font-size: 11px; -fx-text-fill: #94a3b8;");
+
+                VBox box = new VBox(4, title, meta);
+                box.setAlignment(Pos.CENTER);
+                setAlignment(Pos.CENTER);
+                setGraphic(box);
+                setText(null);
+            }
+        });
+
+        TableColumn<AdminJobRowDTO, Number> applicantsCol = new TableColumn<>(I18n.t("applicants_count"));
+        applicantsCol.setCellValueFactory(cell -> new SimpleIntegerProperty(cell.getValue().applicantCount()));
+        applicantsCol.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(Number item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                    setText(null);
+                    return;
+                }
+                Label badge = new Label(String.valueOf(item.intValue()));
+                badge.setStyle("-fx-background-color: #eef2f7; -fx-text-fill: #475569; -fx-font-size: 11px; -fx-font-weight: 900; -fx-background-radius: 999; -fx-padding: 4 10 4 10;");
+                setAlignment(Pos.CENTER);
+                setGraphic(badge);
+                setText(null);
+            }
+        });
+
+        TableColumn<AdminJobRowDTO, String> statusCol = new TableColumn<>(I18n.t("status_upper"));
+        statusCol.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().statusLabel()));
+        statusCol.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                    setText(null);
+                    return;
+                }
+                Label chip = new Label(item);
+                chip.setStyle(statusChipStyle(item));
+                setAlignment(Pos.CENTER);
+                setGraphic(chip);
+                setText(null);
+            }
+        });
+
+        TableColumn<AdminJobRowDTO, String> createdCol = new TableColumn<>(I18n.t("created_label"));
+        createdCol.setCellValueFactory(cell -> new SimpleStringProperty(formatDate(cell.getValue().createdAt())));
+        createdCol.setCellFactory(column -> mutedStringCell());
+
+        TableColumn<AdminJobRowDTO, String> actionCol = new TableColumn<>(I18n.t("detail_upper"));
+        actionCol.setCellValueFactory(cell -> new SimpleStringProperty(I18n.t("detail_upper")));
+        actionCol.setCellFactory(column -> new TableCell<>() {
+            private final Button detailButton = new Button(I18n.t("detail_upper"));
+
+            {
+                detailButton.getStyleClass().add("secondary-button");
+            }
+
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
+                    setGraphic(null);
+                    setText(null);
+                    return;
+                }
+
+                AdminJobRowDTO row = getTableView().getItems().get(getIndex());
+                detailButton.setOnAction(event -> showJobDetailWindow(row));
+                setAlignment(Pos.CENTER);
+                setGraphic(detailButton);
+                setText(null);
+            }
+        });
+
+        titleCol.setPrefWidth(360);
+        departmentCol.setPrefWidth(290);
+        applicantsCol.setPrefWidth(100);
+        statusCol.setPrefWidth(120);
+        createdCol.setPrefWidth(130);
+        actionCol.setPrefWidth(120);
+        table.getColumns().setAll(titleCol, departmentCol, applicantsCol, statusCol, createdCol, actionCol);
+        table.getStyleClass().add("job-table-spaced");
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        table.setFixedCellSize(88);
+        table.setPrefHeight(560);
+        table.setPlaceholder(new Label(I18n.t("no_jobs_match_filters")));
+        table.getSelectionModel().selectedItemProperty().addListener((obs, oldJob, newJob) -> {
+            updateActionButtons(newJob);
+        });
+
+        listPanel.getChildren().add(table);
+        HBox.setHgrow(listPanel, Priority.ALWAYS);
+        return new HBox(listPanel);
+    }
+
+    private void refresh() {
+        allJobs = services.adminMonitoringService().getJobRows();
+        totalJobsValue.setText(String.valueOf(allJobs.size()));
+        totalApplicantsValue.setText(String.valueOf(allJobs.stream().mapToInt(AdminJobRowDTO::applicantCount).sum()));
+        activeJobsValue.setText(String.valueOf(allJobs.stream().filter(job -> "OPEN".equals(job.statusLabel())).count()));
+        applyFilters();
+    }
+
+    private void applyFilters() {
+        String keyword = normalize(searchField.getText());
+        String statusKey = mapStatusFilterToEnum(statusFilter.getValue());
+        String typeKey = mapTypeFilterToEnum(typeFilter.getValue());
+
+        List<AdminJobRowDTO> filtered = allJobs.stream()
+                .filter(job -> keyword.isEmpty()
+                        || contains(job.title(), keyword)
+                        || contains(job.moduleCode(), keyword)
+                        || contains(job.moduleName(), keyword)
+                        || contains(job.organiserName(), keyword)
+                        || contains(job.organiserId(), keyword)
+                        || contains(job.jobId(), keyword)
+                        || contains(job.description(), keyword))
+                .filter(job -> statusKey == null || statusKey.equals(job.statusLabel()))
+                .filter(job -> typeKey == null || typeKey.equals(job.typeLabel()))
+                .toList();
+
+        table.setItems(FXCollections.observableArrayList(filtered));
+        if (!filtered.isEmpty()) {
+            table.getSelectionModel().selectFirst();
+        } else {
+            updateActionButtons(null);
+            updateDetail(null);
+        }
+    }
+
+    private void updateActionButtons(AdminJobRowDTO job) {
+        boolean hasSelection = job != null;
+        boolean canClose = hasSelection && "OPEN".equals(job.statusLabel());
+
+        editButton.setDisable(!hasSelection);
+        detailEditButton.setDisable(!hasSelection);
+        closeButton.setDisable(!canClose);
+        detailCloseButton.setDisable(!canClose);
+        viewApplicationsButton.setDisable(!hasSelection);
+    }
+
+    private void updateDetail(AdminJobRowDTO job) {
+        if (job == null) {
+            detailTitle.setText(I18n.t("select_a_job"));
+            detailSubline.setText("-");
+            detailModuleTitle.setText("-");
+            detailModuleMeta.setText("-");
+            detailModuleDescription.setText("-");
+            detailOrganiser.setText("-");
+            detailWeeklyHours.setText("-");
+            detailPositions.setText("-");
+            detailDeadline.setText("-");
+            detailCreated.setText("-");
+            detailRequiredSkills.setText("-");
+            detailPreferredSkills.setText("-");
+            detailAppliedCount.setText("0");
+            detailReviewCount.setText("0");
+            detailAcceptedCount.setText("0");
+            applicantAvatarStrip.getChildren().setAll(new Label("-"));
+            activityLogBox.getChildren().setAll(mutedText(I18n.t("no_recent_activity")));
+            return;
+        }
+
+        detailTitle.setText(job.title());
+        detailSubline.setText(job.jobId() + "    " + job.statusLabel());
+        detailModuleTitle.setText(job.moduleName());
+        detailModuleMeta.setText(job.moduleCode() + "  |  " + job.typeLabel());
+        detailModuleDescription.setText(blankToDash(job.description()));
+        detailOrganiser.setText(job.organiserName() + " (" + job.organiserId() + ")");
+        detailWeeklyHours.setText(job.weeklyHours() + " h/week");
+        detailPositions.setText(String.valueOf(job.positions()));
+        detailDeadline.setText(formatDeadline(job.deadline()));
+        detailCreated.setText(formatDateTime(job.createdAt()));
+        detailRequiredSkills.setText(joinList(job.requiredSkills()));
+        detailPreferredSkills.setText(joinList(job.preferredSkills()));
+
+        List<Application> applications = services.applicationRepository().findByJobId(job.jobId());
+        long applied = applications.stream().filter(application -> application.getStatus() == ApplicationStatus.SUBMITTED).count();
+        long inReview = applications.stream().filter(application -> application.getStatus() == ApplicationStatus.UNDER_REVIEW).count();
+        long accepted = applications.stream().filter(application -> application.getStatus() == ApplicationStatus.ACCEPTED).count();
+        detailAppliedCount.setText(String.valueOf(applied));
+        detailReviewCount.setText(String.valueOf(inReview));
+        detailAcceptedCount.setText(String.valueOf(accepted));
+
+        updateAvatarStrip(applications);
+        updateActivityLog(job, applications);
+    }
+
+    private void updateAvatarStrip(List<Application> applications) {
+        applicantAvatarStrip.getChildren().clear();
+        List<Label> avatars = applications.stream()
+                .limit(4)
+                .map(application -> services.applicantProfileRepository().findById(application.getApplicantId()).orElse(null))
+                .map(profile -> buildAvatar(profile == null ? null : profile.getFullName()))
+                .toList();
+
+        if (avatars.isEmpty()) {
+            applicantAvatarStrip.getChildren().add(mutedText(I18n.t("no_applicants_yet_job")));
+            return;
+        }
+        applicantAvatarStrip.getChildren().addAll(avatars);
+        if (applications.size() > 4) {
+            applicantAvatarStrip.getChildren().add(buildAvatar("+" + (applications.size() - 4)));
+        }
+    }
+
+    private void updateActivityLog(AdminJobRowDTO job, List<Application> applications) {
+        List<String> applicationIds = applications.stream().map(Application::getApplicationId).toList();
+        List<AuditLogItemDTO> logs = services.adminMonitoringService().getAuditLogs().stream()
+                .filter(item -> contains(item.detail(), normalize(job.jobId()))
+                        || applicationIds.stream().anyMatch(appId -> contains(item.detail(), normalize(appId))))
+                .limit(4)
+                .toList();
+
+        activityLogBox.getChildren().clear();
+        if (logs.isEmpty()) {
+            activityLogBox.getChildren().add(mutedText(I18n.t("no_recent_activity")));
+            return;
+        }
+
+        for (AuditLogItemDTO log : logs) {
+            VBox row = new VBox(4);
+            Label detail = new Label(log.actorName() + " " + log.action().replace('_', ' ').toLowerCase(Locale.ROOT));
+            detail.setWrapText(true);
+            detail.setStyle("-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #334155;");
+
+            Label meta = new Label(formatDateTime(log.timestamp()));
+            meta.setStyle("-fx-font-size: 11px; -fx-text-fill: #94a3b8;");
+            row.getChildren().addAll(detail, meta);
+            activityLogBox.getChildren().add(row);
+        }
+    }
+
+    private void onCreate() {
+        List<User> organisers = loadOrganisers();
+        if (organisers.isEmpty()) {
+            showError(I18n.t("no_mo_available"));
+            return;
+        }
+
+        JobEditorController editor = new JobEditorController();
+        editor.show(null, user.getUserId(), organisers).ifPresent(job -> {
+            ValidationResult result = services.jobService().createJob(job, user.getUserId());
+            if (!result.isValid()) {
+                showError(String.join("\n", result.getErrors()));
+                return;
+            }
+            refresh();
+        });
+    }
+
+    private void onEdit() {
+        AdminJobRowDTO selectedRow = table.getSelectionModel().getSelectedItem();
+        if (selectedRow == null) {
+            showError(I18n.t("please_select_job_first"));
+            return;
+        }
+        onEdit(selectedRow);
+    }
+
+    private boolean onEdit(AdminJobRowDTO selectedRow) {
+        Job source = services.jobService().getJob(selectedRow.jobId()).orElse(null);
+        if (source == null) {
+            showError(I18n.t("job_could_not_be_loaded"));
+            refresh();
+            return false;
+        }
+
+        final boolean[] updated = {false};
+        JobEditorController editor = new JobEditorController();
+        editor.show(source, source.getOrganiserId(), loadOrganisers()).ifPresent(job -> {
+            ValidationResult result = services.jobService().updateJob(job, user.getUserId(), true);
+            if (!result.isValid()) {
+                showError(String.join("\n", result.getErrors()));
+                return;
+            }
+            updated[0] = true;
+            refresh();
+        });
+        return updated[0];
+    }
+
+    private void onClose() {
+        AdminJobRowDTO selectedRow = table.getSelectionModel().getSelectedItem();
+        if (selectedRow == null) {
+            showError(I18n.t("please_select_job_first"));
+            return;
+        }
+        onClose(selectedRow);
+    }
+
+    private boolean onClose(AdminJobRowDTO selectedRow) {
+        boolean confirmed = DialogControllerFactory.confirmAction(
+                I18n.t("close_job"),
+                I18n.t("close_job_question") + " \"" + selectedRow.title() + "\"",
+                view.getScene() == null ? null : view.getScene().getWindow());
+        if (!confirmed) {
+            return false;
+        }
+
+        ValidationResult result = services.jobService().closeJobWithValidation(selectedRow.jobId(), user.getUserId(), true);
+        if (!result.isValid()) {
+            showError(String.join("\n", result.getErrors()));
+            refresh();
+            return false;
+        }
+
+        DialogControllerFactory.success(I18n.t("job_closed"), I18n.t("job_closed_desc"),
+                view.getScene() == null ? null : view.getScene().getWindow());
+        refresh();
+        return true;
+    }
+
+    private void openApplicationsModal() {
+        AdminJobRowDTO selectedRow = table.getSelectionModel().getSelectedItem();
+        if (selectedRow == null) {
+            showError(I18n.t("please_select_job_first"));
+            return;
+        }
+        openApplicationsModal(selectedRow.jobId());
+    }
+
+    private void openApplicationsModal(String jobId) {
+        Stage stage = new Stage();
+        stage.initModality(Modality.APPLICATION_MODAL);
+        if (view.getScene() != null) {
+            stage.initOwner(view.getScene().getWindow());
+        }
+        stage.setTitle(I18n.t("applications_for_job") + " " + jobId);
+
+        Parent content = new AdminApplicationsController(services, user, jobId).getView();
+        Scene scene = new Scene(content, 1440, 900);
+        if (AdminJobsController.class.getResource("/styles/app.css") != null) {
+            scene.getStylesheets().add(AdminJobsController.class.getResource("/styles/app.css").toExternalForm());
+        }
+        stage.setScene(scene);
+        stage.showAndWait();
+        refresh();
+    }
+
+    private void showJobDetailWindow(AdminJobRowDTO selectedRow) {
+        if (selectedRow == null) {
+            showError(I18n.t("please_select_job_first"));
+            return;
+        }
+
+        table.getSelectionModel().select(selectedRow);
+        updateActionButtons(selectedRow);
+        updateDetail(selectedRow);
+
+        Stage stage = new Stage();
+        stage.initModality(Modality.APPLICATION_MODAL);
+        if (view.getScene() != null) {
+            stage.initOwner(view.getScene().getWindow());
+        }
+        stage.setTitle(I18n.t("job_details_admin"));
+
+        Parent content = buildDetailWindow(stage, selectedRow);
+        Scene scene = new Scene(content, 780, 860);
+        if (AdminJobsController.class.getResource("/styles/app.css") != null) {
+            scene.getStylesheets().add(AdminJobsController.class.getResource("/styles/app.css").toExternalForm());
+        }
+        stage.setScene(scene);
+        stage.showAndWait();
+        refresh();
+    }
+
+    private Parent buildDetailWindow(Stage stage, AdminJobRowDTO selectedRow) {
+        VBox detailContent = new VBox(18);
+        detailContent.setPadding(new Insets(18));
+
+        Label kicker = new Label(I18n.t("job_details_upper"));
+        kicker.getStyleClass().add("section-kicker");
+
+        detailTitle.setWrapText(true);
+        detailTitle.setStyle("-fx-font-size: 32px; -fx-font-weight: 900; -fx-text-fill: #1e293b;");
+
+        detailSubline.setWrapText(true);
+        detailSubline.setStyle("-fx-font-size: 12px; -fx-text-fill: #64748b; -fx-font-weight: 600;");
+
+        VBox moduleCard = new VBox(8,
+                sectionTitle(I18n.t("associated_module")),
+                detailModuleTitle,
+                detailModuleMeta,
+                detailModuleDescription);
+        moduleCard.getStyleClass().add("surface-toolbar");
+        detailModuleTitle.setStyle("-fx-font-size: 14px; -fx-font-weight: 900; -fx-text-fill: #334155;");
+        detailModuleMeta.setStyle("-fx-font-size: 12px; -fx-text-fill: #94a3b8;");
+        detailModuleDescription.setWrapText(true);
+        detailModuleDescription.setStyle("-fx-font-size: 12px; -fx-text-fill: #64748b;");
+
+        VBox recruitmentCard = new VBox(10,
+                sectionTitle(I18n.t("job_summary")),
+                detailLine(I18n.t("module_organiser_label"), detailOrganiser),
+                detailLine(I18n.t("weekly_hours_summary"), detailWeeklyHours),
+                detailLine(I18n.t("positions_summary"), detailPositions),
+                detailLine(I18n.t("deadline_summary"), detailDeadline),
+                detailLine(I18n.t("created_summary"), detailCreated),
+                detailLine(I18n.t("required_skills_summary"), detailRequiredSkills),
+                detailLine(I18n.t("preferred_skills_summary"), detailPreferredSkills)
+        );
+        recruitmentCard.getStyleClass().add("surface-toolbar");
+
+        VBox applicantStatusCard = new VBox(10,
+                sectionTitle(I18n.t("applicant_status_upper")),
+                statusRow(I18n.t("applied_count"), detailAppliedCount, "#2563eb"),
+                statusRow(I18n.t("in_review_count"), detailReviewCount, "#8b5cf6"),
+                statusRow(I18n.t("hired_count"), detailAcceptedCount, "#10b981"),
+                applicantAvatarStrip
+        );
+        applicantStatusCard.getStyleClass().add("surface-toolbar");
+
+        VBox activityCard = new VBox(10, sectionTitle(I18n.t("activity_log")), activityLogBox);
+        activityCard.getStyleClass().add("surface-toolbar");
+
+        detailContent.getChildren().addAll(kicker, detailTitle, detailSubline, moduleCard, recruitmentCard, applicantStatusCard, activityCard);
+
+        ScrollPane detailScroll = new ScrollPane(detailContent);
+        detailScroll.setFitToWidth(true);
+        detailScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        detailScroll.getStyleClass().add("detail-scroll");
+        VBox.setVgrow(detailScroll, Priority.ALWAYS);
+
+        viewApplicationsButton.setText(I18n.t("view_all_applications"));
+        viewApplicationsButton.getStyleClass().add("primary-button");
+        viewApplicationsButton.setMaxWidth(Double.MAX_VALUE);
+        viewApplicationsButton.setOnAction(event -> openApplicationsModal(selectedRow.jobId()));
+
+        detailEditButton.setText(I18n.t("edit_job_details"));
+        detailEditButton.getStyleClass().add("secondary-button");
+        detailEditButton.setMaxWidth(Double.MAX_VALUE);
+        detailEditButton.setOnAction(event -> {
+            if (onEdit(selectedRow)) {
+                stage.close();
+            }
+        });
+
+        detailCloseButton.setText(I18n.t("close_job"));
+        detailCloseButton.getStyleClass().add("secondary-button");
+        detailCloseButton.setMaxWidth(Double.MAX_VALUE);
+        detailCloseButton.setDisable(!"OPEN".equals(selectedRow.statusLabel()));
+        detailCloseButton.setOnAction(event -> {
+            if (onClose(selectedRow)) {
+                stage.close();
+            }
+        });
+
+        VBox detailPanel = new VBox(12, detailScroll, viewApplicationsButton, detailEditButton, detailCloseButton);
+        detailPanel.getStyleClass().addAll("app-surface", "panel-card");
+        detailPanel.setPadding(new Insets(16));
+        return detailPanel;
+    }
+
+    private List<User> loadOrganisers() {
+        return services.userRepository().findAll().stream()
+                .filter(candidate -> candidate.getRole() == Role.MO && candidate.isActive())
+                .sorted(Comparator.comparing(candidate -> normalize(candidate.getDisplayName())))
+                .toList();
+    }
+
+    private HBox detailLine(String label, Label value) {
+        Label labelNode = new Label(label);
+        labelNode.setStyle("-fx-font-size: 11px; -fx-font-weight: 900; -fx-text-fill: #94a3b8;");
+        value.setWrapText(true);
+        value.setStyle("-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: #334155;");
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox row = new HBox(12, labelNode, spacer, value);
+        row.setAlignment(Pos.CENTER_LEFT);
+        return row;
+    }
+
+    private HBox statusRow(String label, Label valueLabel, String accent) {
+        Label name = new Label(label);
+        name.setStyle("-fx-font-size: 13px; -fx-text-fill: #475569; -fx-font-weight: 600;");
+        valueLabel.setStyle("-fx-font-size: 26px; -fx-font-weight: 900; -fx-text-fill: " + accent + ";");
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox row = new HBox(12, name, spacer, valueLabel);
+        row.setAlignment(Pos.CENTER_LEFT);
+        return row;
+    }
+
+    private Label buildAvatar(String text) {
+        String label = text == null || text.isBlank() ? "?" : (text.startsWith("+") ? text : initials(text));
+        Label avatar = new Label(label);
+        avatar.setAlignment(Pos.CENTER);
+        avatar.setMinSize(30, 30);
+        avatar.setStyle("-fx-background-color: #eef2f7; -fx-text-fill: #475569; -fx-background-radius: 999; -fx-font-size: 11px; -fx-font-weight: 900;");
+        return avatar;
+    }
+
+    private Label sectionTitle(String text) {
+        Label label = new Label(text);
+        label.getStyleClass().add("section-kicker");
+        return label;
+    }
+
+    private Region spacerNode() {
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        return spacer;
+    }
+
+    private TableCell<AdminJobRowDTO, String> mutedStringCell() {
+        return new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty ? null : item);
+                if (!empty) {
+                    setAlignment(Pos.CENTER);
+                    setStyle("-fx-text-fill: #94a3b8; -fx-font-weight: 600;");
+                } else {
+                    setStyle("");
+                }
+                setGraphic(null);
+            }
+        };
+    }
+
+    private String statusChipStyle(String status) {
+        return switch (status == null ? "" : status) {
+            case "OPEN" -> "-fx-background-color: #ecfdf3; -fx-text-fill: #10b981; -fx-font-size: 11px; -fx-font-weight: 900; -fx-background-radius: 999; -fx-padding: 4 10 4 10;";
+            case "DRAFT" -> "-fx-background-color: #eff6ff; -fx-text-fill: #2563eb; -fx-font-size: 11px; -fx-font-weight: 900; -fx-background-radius: 999; -fx-padding: 4 10 4 10;";
+            case "EXPIRED" -> "-fx-background-color: #fff7ed; -fx-text-fill: #f59e0b; -fx-font-size: 11px; -fx-font-weight: 900; -fx-background-radius: 999; -fx-padding: 4 10 4 10;";
+            default -> "-fx-background-color: #f8fafc; -fx-text-fill: #64748b; -fx-font-size: 11px; -fx-font-weight: 900; -fx-background-radius: 999; -fx-padding: 4 10 4 10;";
+        };
+    }
+
+    private Label mutedText(String value) {
+        Label label = new Label(value);
+        label.setWrapText(true);
+        label.setStyle("-fx-font-size: 12px; -fx-text-fill: #94a3b8;");
+        return label;
+    }
+
+    private String formatDate(LocalDateTime dateTime) {
+        return dateTime == null ? "-" : dateTime.format(DATE_FORMAT);
+    }
+
+    private String formatDateTime(LocalDateTime dateTime) {
+        return dateTime == null ? "-" : dateTime.format(DETAIL_TIME_FORMAT);
+    }
+
+    private String formatDeadline(LocalDateTime dateTime) {
+        return dateTime == null ? "-" : dateTime.format(DETAIL_TIME_FORMAT);
+    }
+
+    private String joinList(List<String> values) {
+        return values == null || values.isEmpty() ? "-" : String.join(", ", values);
+    }
+
+    private String initials(String text) {
+        if (text == null || text.isBlank()) {
+            return "?";
+        }
+        String[] parts = text.trim().split("\\s+");
+        if (parts.length == 1) {
+            return parts[0].substring(0, Math.min(2, parts[0].length())).toUpperCase(Locale.ROOT);
+        }
+        return (parts[0].substring(0, 1) + parts[parts.length - 1].substring(0, 1)).toUpperCase(Locale.ROOT);
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private boolean contains(String text, String keyword) {
+        return text != null && text.toLowerCase(Locale.ROOT).contains(keyword);
+    }
+
+    private String mapStatusFilterToEnum(String selected) {
+        if (selected == null || I18n.t("all_status").equals(selected)) {
+            return null;
+        }
+        if (I18n.t("open").equals(selected)) return "OPEN";
+        if (I18n.t("closed").equals(selected)) return "CLOSED";
+        if (I18n.t("expired").equals(selected)) return "EXPIRED";
+        if (I18n.t("draft").equals(selected)) return "DRAFT";
+        return null;
+    }
+
+    private String mapTypeFilterToEnum(String selected) {
+        if (selected == null || I18n.t("all_types").equals(selected)) {
+            return null;
+        }
+        if (I18n.t("module_ta").equals(selected)) return "MODULE_TA";
+        if (I18n.t("invigilation").equals(selected)) return "INVIGILATION";
+        if (I18n.t("activity_support").equals(selected)) return "ACTIVITY_SUPPORT";
+        if (I18n.t("other").equals(selected)) return "OTHER";
+        return null;
+    }
+
+    private String blankToDash(String value) {
+        return value == null || value.isBlank() ? "-" : value;
+    }
+
+    private void showError(String message) {
+        DialogControllerFactory.validationError(message,
+                view.getScene() == null ? null : view.getScene().getWindow());
+    }
+}
