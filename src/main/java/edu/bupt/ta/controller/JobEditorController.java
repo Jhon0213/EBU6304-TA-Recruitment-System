@@ -86,9 +86,14 @@ public class JobEditorController {
         leftPanel.getChildren().add(formScroll);
         HBox.setHgrow(leftPanel, Priority.ALWAYS);
 
-        VBox previewPanel = buildPreviewPanel(fields);
+        ScrollPane previewScroll = new ScrollPane(buildPreviewPanel(fields));
+        previewScroll.setFitToWidth(true);
+        previewScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        previewScroll.getStyleClass().add("form-scroll");
+        previewScroll.setPrefWidth(560);
+        previewScroll.setMinWidth(500);
 
-        HBox body = new HBox(leftPanel, previewPanel);
+        HBox body = new HBox(leftPanel, previewScroll);
         HBox.setHgrow(leftPanel, Priority.ALWAYS);
         root.setCenter(body);
 
@@ -321,6 +326,7 @@ public class JobEditorController {
 
         VBox descriptionCard = previewSectionCard(I18n.t("job_description_upper"), nodes.description);
         VBox responsibilitiesCard = previewSectionCard(I18n.t("key_responsibilities_upper"), nodes.responsibilities);
+        VBox skillsCard = previewSection("SKILLS & REQUIREMENTS", buildPreviewSkillsBlock(nodes));
 
         GridPane infoGrid = new GridPane();
         infoGrid.setHgap(18);
@@ -336,13 +342,15 @@ public class JobEditorController {
         infoGrid.add(previewInfoCell(I18n.t("professor"), nodes.organiserValue), 1, 0);
         infoGrid.add(previewInfoCell(I18n.t("campus_label"), nodes.campusValue), 0, 1);
         infoGrid.add(previewInfoCell(I18n.t("term"), nodes.termValue), 1, 1);
+        infoGrid.add(previewInfoCell("JOB TYPE", nodes.typeValue), 0, 2);
+        infoGrid.add(previewInfoCell("MINIMUM GRADE", nodes.minimumGradeValue), 1, 2);
 
         VBox moduleCardBody = new VBox(infoGrid);
         moduleCardBody.getStyleClass().add("position-section-card");
         moduleCardBody.setPadding(new Insets(16));
         VBox moduleCard = previewSection(I18n.t("module_info_label"), moduleCardBody);
 
-        preview.getChildren().addAll(heading, headerPreview, metrics, descriptionCard, responsibilitiesCard, moduleCard);
+        preview.getChildren().addAll(heading, headerPreview, metrics, descriptionCard, responsibilitiesCard, skillsCard, moduleCard);
 
         Runnable updater = () -> updatePreview(fields, nodes);
 
@@ -384,6 +392,27 @@ public class JobEditorController {
         body.getStyleClass().add("position-section-card");
         body.setPadding(new Insets(16));
         return previewSection(headingText, body);
+    }
+
+    private VBox buildPreviewSkillsBlock(PreviewNodes nodes) {
+        GridPane grid = new GridPane();
+        grid.setHgap(18);
+        grid.setVgap(12);
+        ColumnConstraints c1 = new ColumnConstraints();
+        c1.setPercentWidth(50);
+        c1.setHgrow(Priority.ALWAYS);
+        ColumnConstraints c2 = new ColumnConstraints();
+        c2.setPercentWidth(50);
+        c2.setHgrow(Priority.ALWAYS);
+        grid.getColumnConstraints().setAll(c1, c2);
+
+        grid.add(previewInfoCell("REQUIRED SKILLS", nodes.requiredSkillsValue), 0, 0);
+        grid.add(previewInfoCell("PREFERRED SKILLS", nodes.preferredSkillsValue), 1, 0);
+
+        VBox body = new VBox(grid);
+        body.getStyleClass().add("position-section-card");
+        body.setPadding(new Insets(16));
+        return body;
     }
 
     private VBox previewSection(String headingText, VBox body) {
@@ -796,6 +825,8 @@ public class JobEditorController {
         String description = fallback(fields.description.getText(), I18n.t("no_job_description_provided"));
         nodes.description.setText(description);
         nodes.responsibilities.setText(description);
+        nodes.requiredSkillsValue.setText(formatListPreview(requiredSkills));
+        nodes.preferredSkillsValue.setText(formatListPreview(preferredSkills));
 
         nodes.organiserName.setText(fallback(selectedOrganiserName(fields), "-"));
         nodes.organiserDept.setText(moduleName + " " + I18n.t("department_label3"));
@@ -804,6 +835,8 @@ public class JobEditorController {
         nodes.campusValue.setText(formatCampusPreview(fields));
         nodes.termValue.setText(fallback(fields.semester.getText(), "-"));
         nodes.organiserValue.setText(fallback(selectedOrganiserName(fields), "-"));
+        nodes.typeValue.setText(fields.type.getValue() == null ? "-" : fields.type.getValue().name());
+        nodes.minimumGradeValue.setText(selectedMinimumGrade(fields));
     }
 
     private String previewStatusStyle(JobStatus status) {
@@ -836,6 +869,10 @@ public class JobEditorController {
             labels.add(Job.CAMPUS_SHAHE);
         }
         return labels.isEmpty() ? "-" : String.join(", ", labels);
+    }
+
+    private String formatListPreview(List<String> values) {
+        return values == null || values.isEmpty() ? "-" : String.join(", ", values);
     }
 
     private int resolvePreviewYear(EditorFields fields) {
@@ -992,10 +1029,14 @@ public class JobEditorController {
         private final Label deadlineMetric = new Label();
         private final Label description = new Label();
         private final Label responsibilities = new Label();
+        private final Label requiredSkillsValue = new Label();
+        private final Label preferredSkillsValue = new Label();
         private final Label codeValue = new Label();
         private final Label campusValue = new Label();
         private final Label termValue = new Label();
         private final Label organiserValue = new Label();
+        private final Label typeValue = new Label();
+        private final Label minimumGradeValue = new Label();
     }
 
     private static class EditorFields {

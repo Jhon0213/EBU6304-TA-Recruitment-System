@@ -51,8 +51,8 @@ public class MainShellController {
     private final Map<String, Button> navButtons = new LinkedHashMap<>();
     private String preferredApplicantJobId;
     private String preferredManagementJobId;
-    private String currentPageId = "dashboard";
-    private String currentPageIdBackup = "dashboard";
+    private String currentPageId;
+    private String currentPageIdBackup;
 
     private Popup notificationPopup;
     private StackPane bellContainer;
@@ -105,9 +105,19 @@ public class MainShellController {
         notificationPopup = createNotificationPopup();
 
         if (currentPageId == null || currentPageId.isBlank()) {
-            currentPageId = "dashboard";
+            currentPageId = defaultDashboardPageId();
         }
         navigateTo(currentPageId);
+    }
+
+    private String defaultDashboardPageId() {
+        if (user.getRole() == Role.MO) {
+            return "moDashboard";
+        }
+        if (user.getRole() == Role.ADMIN) {
+            return "adminDashboard";
+        }
+        return "dashboard";
     }
 
     private VBox buildSidebar() {

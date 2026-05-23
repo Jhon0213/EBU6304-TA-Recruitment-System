@@ -788,7 +788,7 @@ public class LoginController {
                 return I18n.t("studentid_format");
             }
             if (isStudentIdTaken(studentIdValue)) {
-                return I18n.t("studentid_required");
+                return I18n.t("studentid_exists", "Student ID already exists.");
             }
             if (emailValue.isBlank()) {
                 return I18n.t("email_required");
@@ -797,7 +797,7 @@ public class LoginController {
                 return I18n.t("email_invalid");
             }
             if (isEmailTaken(emailValue)) {
-                return I18n.t("email_required");
+                return I18n.t("email_exists", "Email address already exists.");
             }
             if (academicYear.getValue() == null) {
                 return I18n.t("academic_year_required");
@@ -838,7 +838,7 @@ public class LoginController {
                 return I18n.t("email_invalid");
             }
             if (isEmailTaken(contactEmailValue)) {
-                return I18n.t("contact_email_required");
+                return I18n.t("email_exists", "Email address already exists.");
             }
         }
         return null;
