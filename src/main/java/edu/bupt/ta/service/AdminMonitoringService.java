@@ -81,7 +81,7 @@ public class AdminMonitoringService {
                 .map(workload -> buildWorkloadRow(workload, profiles, users))
                 .sorted(Comparator
                         .comparingInt((AdminWorkloadRowDTO row) -> riskPriority(row.riskLevel()))
-                        .thenComparing(AdminWorkloadRowDTO::currentWeeklyHours, Comparator.reverseOrder())
+                        .thenComparing(AdminWorkloadRowDTO::acceptedJobs, Comparator.reverseOrder())
                         .thenComparing(AdminWorkloadRowDTO::applicantName))
                 .toList();
     }

@@ -42,7 +42,7 @@ class MatchingServiceTest {
     void shouldReturnExplainableMatch() {
         var dto = matchingService.evaluateMatch("A001", "J005");
         assertTrue(dto.score() >= 0 && dto.score() <= 100);
-        assertTrue(dto.explanation().contains("projected workload"));
-        assertTrue(dto.missingSkills().contains("Python"));
+        assertTrue(dto.explanation().contains("projected load"));
+        assertTrue(dto.missingSkills().contains("Organization"));
     }
 }

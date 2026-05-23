@@ -1,5 +1,5 @@
 .root {
-    -fx-font-family: "Inter", "Noto Sans SC", "PingFang SC", sans-serif;
+    -fx-font-family: "Inter", "PingFang SC", "Noto Sans SC", sans-serif;
     -fx-background-color: #f8fafc;
     -fx-text-fill: #0f172a;
 }
@@ -66,7 +66,7 @@
     -fx-font-weight: 900;
     -fx-text-fill: #0f172a;
     -fx-letter-spacing: -0.75px;
-    -fx-font-family: "Inter Black", "Inter SemiBold", "Inter", "Noto Sans SC", "PingFang SC", sans-serif;
+    -fx-font-family: "Inter Black", "Inter SemiBold", "Inter", "PingFang SC", "Noto Sans SC", sans-serif;
 }
 
 .job-browser-search-shell {
@@ -433,7 +433,7 @@
     -fx-font-size: 24px;
     -fx-font-weight: 700;
     -fx-text-fill: white;
-    -fx-font-family: "Inter SemiBold", "Inter", "Noto Sans SC", "PingFang SC", sans-serif;
+    -fx-font-family: "Inter SemiBold", "Inter", "PingFang SC", "Noto Sans SC", sans-serif;
 }
 
 .login-hero-title {
@@ -441,7 +441,7 @@
     -fx-font-weight: 900;
     -fx-text-fill: white;
     -fx-line-spacing: 2px;
-    -fx-font-family: "Inter Black", "Inter SemiBold", "Inter", "Noto Sans SC", "PingFang SC", sans-serif;
+    -fx-font-family: "Inter Black", "Inter SemiBold", "Inter", "PingFang SC", "Noto Sans SC", sans-serif;
 }
 
 .login-left-footer {
@@ -471,7 +471,7 @@
     -fx-font-size: 30px;
     -fx-font-weight: 900;
     -fx-text-fill: #0f172a;
-    -fx-font-family: "Inter Black", "Inter SemiBold", "Inter", "Noto Sans SC", "PingFang SC", sans-serif;
+    -fx-font-family: "Inter Black", "Inter SemiBold", "Inter", "PingFang SC", "Noto Sans SC", sans-serif;
 }
 
 .login-subheading {
@@ -629,7 +629,7 @@
 
 .shell-brand-title {
     -fx-font-size: 15px;
-    -fx-font-family: "Inter Black", "Inter SemiBold", "Inter", "Noto Sans SC", "PingFang SC", sans-serif;
+    -fx-font-family: "Inter Black", "Inter SemiBold", "Inter", "PingFang SC", "Noto Sans SC", sans-serif;
     -fx-font-weight: 900;
     -fx-text-fill: -ta-navy;
     -fx-letter-spacing: -0.3px;
@@ -637,7 +637,7 @@
 
 .shell-brand-sub {
     -fx-font-size: 10px;
-    -fx-font-family: "Inter SemiBold", "Inter", "Noto Sans SC", "PingFang SC", sans-serif;
+    -fx-font-family: "Inter SemiBold", "Inter", "PingFang SC", "Noto Sans SC", sans-serif;
     -fx-font-weight: 600;
     -fx-text-fill: -ta-muted;
 }
@@ -1738,7 +1738,7 @@
 .my-app-detail-title {
     -fx-font-size: 26px;
     -fx-font-weight: 900;
-    -fx-font-family: "Inter Black", "Inter SemiBold", "Inter", "Noto Sans SC", "PingFang SC", sans-serif;
+    -fx-font-family: "Inter Black", "Inter SemiBold", "Inter", "PingFang SC", "Noto Sans SC", sans-serif;
     -fx-letter-spacing: -0.3px;
     -fx-text-fill: #0f172a;
 }
@@ -2226,7 +2226,7 @@
 .login-hero-title,
 .login-heading {
     -fx-font-weight: 900;
-    -fx-font-family: "Inter Black", "Inter SemiBold", "Inter", "Noto Sans SC", "PingFang SC", sans-serif;
+    -fx-font-family: "Inter Black", "Inter SemiBold", "Inter", "PingFang SC", "Noto Sans SC", sans-serif;
 }
 
 .section-title,
@@ -2243,7 +2243,7 @@
 .cv-step-section-title,
 .cv-guideline-title {
     -fx-font-weight: 800;
-    -fx-font-family: "Inter SemiBold", "Inter", "Noto Sans SC", "PingFang SC", sans-serif;
+    -fx-font-family: "Inter SemiBold", "Inter", "PingFang SC", "Noto Sans SC", sans-serif;
 }
 
 .settings-card {

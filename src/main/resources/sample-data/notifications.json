@@ -17,7 +17,7 @@
   "createdAt" : "2026-05-24T09:10:00",
   "relatedJobId" : "J017",
   "relatedApplicationId" : "APP007",
-  "read" : true
+  "read" : false
 }, {
   "notificationId" : "NOT000012",
   "recipientUserId" : "A002",
