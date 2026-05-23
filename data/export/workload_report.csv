@@ -1,6 +1,6 @@
-"applicantId","currentWeeklyHours","riskLevel","acceptedJobIds"
-"A001","4","LOW","J001"
-"A002","8","MEDIUM","J005"
-"A003","2","LOW",""
-"A004","12","HIGH","J002;J006"
-"A005","7","MEDIUM","J003"
+applicantId,currentWeeklyHours,riskLevel
+A001,9,HIGH
+A002,0,LOW
+A003,0,LOW
+A004,5,LOW
+A005,0,LOW

@@ -639,12 +639,12 @@ public class JobBrowserController {
             status.setMaxWidth(Region.USE_PREF_SIZE);
 
             FontIcon starEmpty = FontIcon.of(FontAwesomeSolid.STAR, 14);
-            starEmpty.setIconColor(Color.web("#cbd5e1"));
-            FontIcon heartFilled = FontIcon.of(FontAwesomeSolid.HEART, 14);
-            heartFilled.setIconColor(Color.web("#ef4444"));
-            heartFilled.setVisible(false);
+            starEmpty.setIconColor(Color.web("#94a3b8"));
+            FontIcon starFilled = FontIcon.of(FontAwesomeSolid.STAR, 14);
+            starFilled.setIconColor(Color.web("#facc15"));
+            starFilled.setVisible(false);
             starEmpty.setVisible(true);
-            favouriteBtn.getChildren().setAll(starEmpty, heartFilled);
+            favouriteBtn.getChildren().setAll(starEmpty, starFilled);
             favouriteBtn.setCursor(javafx.scene.Cursor.HAND);
             favouriteBtn.setOnMouseClicked(event -> {
                 if (getItem() != null) {
@@ -713,9 +713,9 @@ public class JobBrowserController {
             status.setManaged(true);
 
             FontIcon starEmpty = (FontIcon) favouriteBtn.getChildren().get(0);
-            FontIcon heartFilled = (FontIcon) favouriteBtn.getChildren().get(1);
+            FontIcon starFilled = (FontIcon) favouriteBtn.getChildren().get(1);
             starEmpty.setVisible(!isFavourite);
-            heartFilled.setVisible(isFavourite);
+            starFilled.setVisible(isFavourite);
 
             fullTitle = job.getTitle() == null ? "-" : job.getTitle();
             title.setText(fullTitle);

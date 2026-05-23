@@ -481,7 +481,7 @@ public class ApplicantListController {
 
         insightBox.getChildren().add(detailCard(
                 I18n.t("workload_check"),
-                "Current " + dto.currentHours() + "h • Projected " + dto.projectedHours() + "h / Max " + dto.maxWeeklyHours() + "h • Risk " + dto.riskLevel()
+                "Risk: " + dto.riskLevel() + " • Review before accepting."
         ));
         insightBox.getChildren().add(detailCard(
                 I18n.t("statement_preview"),
