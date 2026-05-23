@@ -772,6 +772,12 @@ public final class I18n {
         put(en, zh, "risk_change_title", "TA Workload Risk Changed", "助教工作量风险变化");
         put(en, zh, "risk_change_message", "{name} risk level changed from {from} to {to}.", "{name} 的风险等级从 {from} 变为 {to}。");
 
+        // ===================== LANGUAGE CHANGE CONFIRMATION =====================
+        put(en, zh, "language_change_title", "Change Language", "切换语言");
+        put(en, zh, "language_change_confirm", "Are you sure you want to change the language? The system will reload and you will need to login again.", "确定要切换语言吗？系统将重新加载，您需要重新登录。");
+        put(en, zh, "yes_option", "Yes", "是");
+        put(en, zh, "no_option", "No", "否");
+
         translations.put(EN, en);
         translations.put(ZH, zh);
     }

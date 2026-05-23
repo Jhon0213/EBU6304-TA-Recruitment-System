@@ -6,6 +6,7 @@ import edu.bupt.ta.model.Job;
 import edu.bupt.ta.model.Notification;
 import edu.bupt.ta.model.User;
 import edu.bupt.ta.service.ServiceRegistry;
+import edu.bupt.ta.ui.AppBootstrap;
 import edu.bupt.ta.ui.IconFactory;
 import edu.bupt.ta.util.I18n;
 import javafx.geometry.Insets;
@@ -44,6 +45,7 @@ public class MainShellController {
     private final ServiceRegistry services;
     private final User user;
     private final Runnable onLogout;
+    private final AppBootstrap appBootstrap;
     private final BorderPane view = new BorderPane();
     private final StackPane contentPane = new StackPane();
     private final Label breadcrumbBase = new Label();
@@ -65,10 +67,11 @@ public class MainShellController {
         return null;
     }
 
-    public MainShellController(ServiceRegistry services, User user, Runnable onLogout) {
+    public MainShellController(ServiceRegistry services, User user, Runnable onLogout, AppBootstrap appBootstrap) {
         this.services = services;
         this.user = user;
         this.onLogout = onLogout;
+        this.appBootstrap = appBootstrap;
         I18n.initTranslations();
         initialize();
     }
@@ -558,7 +561,11 @@ public class MainShellController {
             }
             case "settings" -> {
                 breadcrumbCurrent.setText(I18n.t("settings"));
-                page = new SettingsController(services, user, getStage()).getView();
+                page = new SettingsController(services, user, getStage(), lang -> {
+                    if (appBootstrap != null) {
+                        appBootstrap.reloadWithLanguageChange(user.getUsername());
+                    }
+                }).getView();
             }
             default -> {
                 breadcrumbCurrent.setText(I18n.t("dashboard"));
