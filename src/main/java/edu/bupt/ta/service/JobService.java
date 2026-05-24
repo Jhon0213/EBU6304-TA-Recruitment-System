@@ -170,7 +170,7 @@ public class JobService {
             errors.add("Module name is required.");
         }
         if (job.getWeeklyHours() <= 0) {
-            errors.add("Load must be greater than 0.");
+            errors.add("Weekly hours must be greater than 0.");
         }
         if (job.getPositions() <= 0) {
             errors.add("Positions must be greater than 0.");

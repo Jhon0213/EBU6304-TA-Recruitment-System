@@ -236,7 +236,7 @@ public class ApplicantReviewController {
     private void doAccept() {
         if ("HIGH".equalsIgnoreCase(reviewData.riskLevel())) {
             DialogControllerFactory.workloadWarning(
-                    "High risk candidate. Please review carefully.",
+                    "Projected hours: " + reviewData.projectedHours() + "h / Max " + reviewData.maxWeeklyHours() + "h.",
                     view.getScene() == null ? null : view.getScene().getWindow());
         }
         boolean confirmed = DialogControllerFactory.confirmAction(I18n.t("accept_candidate"),

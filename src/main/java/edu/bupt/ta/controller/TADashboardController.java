@@ -502,8 +502,8 @@ public class TADashboardController {
         HBox footer = new HBox();
         footer.setAlignment(Pos.CENTER_LEFT);
 
-        Label load = new Label(I18n.t("load_label") + " " + job.getWeeklyHours());
-        load.setStyle("-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #334155;");
+        Label hours = new Label(job.getWeeklyHours() + I18n.t("hours_per_week"));
+        hours.setStyle("-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #334155;");
 
         Label deadline = new Label(I18n.t("deadline_label") + formatDate(job.getDeadline()));
         deadline.setStyle("-fx-font-size: 11px; -fx-font-weight: 400; -fx-text-fill: #94a3b8;");
@@ -514,7 +514,7 @@ public class TADashboardController {
         Label matchRate = new Label(I18n.tl("match_rate_percent", matchScore));
         matchRate.setStyle("-fx-font-size: 12px; -fx-font-weight: 800; -fx-text-fill: #6366f1;");
 
-        footer.getChildren().addAll(load, spacer, matchRate, deadline);
+        footer.getChildren().addAll(hours, spacer, matchRate, deadline);
         box.getChildren().addAll(tag, title, desc, footer);
         return box;
     }

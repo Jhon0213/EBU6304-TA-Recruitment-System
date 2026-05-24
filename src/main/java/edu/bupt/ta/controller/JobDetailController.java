@@ -66,7 +66,7 @@ public class JobDetailController {
 
     private final Button applyButton = new Button();
 
-    private final StackPane favoriteIcon = new StackPane();
+    private final StackPane heartIcon = new StackPane();
     private Consumer<String> onFavouriteToggle;
     private Job currentJob;
     private String currentApplicantId;
@@ -114,10 +114,10 @@ public class JobDetailController {
 
     public void updateHeartIconDirectly(String jobId, boolean isFavourite) {
         if (currentJob != null && currentJob.getJobId().equals(jobId)) {
-            FontIcon starFilled = (FontIcon) favoriteIcon.getChildren().get(0);
-            FontIcon starEmpty = (FontIcon) favoriteIcon.getChildren().get(1);
-            starFilled.setVisible(isFavourite);
-            starEmpty.setVisible(!isFavourite);
+            FontIcon heartFilled = (FontIcon) heartIcon.getChildren().get(0);
+            FontIcon heartEmpty = (FontIcon) heartIcon.getChildren().get(1);
+            heartFilled.setVisible(isFavourite);
+            heartEmpty.setVisible(!isFavourite);
         }
     }
 
@@ -167,10 +167,10 @@ public class JobDetailController {
     private void updateHeartIcon() {
         if (currentJob == null) return;
 
-        FontIcon starFilled = FontIcon.of(FontAwesomeSolid.STAR, 26);
-        starFilled.setIconColor(Color.web("#facc15"));
-        FontIcon starEmpty = FontIcon.of(FontAwesomeSolid.STAR, 26);
-        starEmpty.setIconColor(Color.web("#94a3b8"));
+        FontIcon heartFilled = FontIcon.of(FontAwesomeSolid.HEART, 26);
+        heartFilled.setIconColor(Color.web("#ef4444"));
+        FontIcon heartEmpty = FontIcon.of(FontAwesomeSolid.HEART, 26);
+        heartEmpty.setIconColor(Color.web("#94a3b8"));
 
         boolean isFav = false;
         if (currentApplicantId != null && !currentApplicantId.isBlank()) {
@@ -180,9 +180,9 @@ public class JobDetailController {
                     .orElse(false);
         }
 
-        starFilled.setVisible(isFav);
-        starEmpty.setVisible(!isFav);
-        favoriteIcon.getChildren().setAll(starFilled, starEmpty);
+        heartFilled.setVisible(isFav);
+        heartEmpty.setVisible(!isFav);
+        heartIcon.getChildren().setAll(heartFilled, heartEmpty);
     }
 
     private void initialize() {
@@ -257,8 +257,8 @@ public class JobDetailController {
     }
 
     private HBox buildHeader() {
-        favoriteIcon.getStyleClass().setAll("position-favorite-icon");
-        HBox favButton = new HBox(favoriteIcon);
+        heartIcon.getStyleClass().setAll("position-favorite-icon");
+        HBox favButton = new HBox(heartIcon);
         favButton.getStyleClass().add("position-favorite-button");
         favButton.setAlignment(Pos.CENTER);
         favButton.setMinSize(52, 52);

@@ -153,9 +153,6 @@ Required files used:
 - `data/applications.json`
 - `data/workloads.json`
 - `data/audit_log.txt`
-- `data/notifications.json`
-- `data/favourite_jobs.json`
-- `data/user_settings.json`
 - `data/export/workload_report.csv`
 - `data/export/application_report.csv`
 

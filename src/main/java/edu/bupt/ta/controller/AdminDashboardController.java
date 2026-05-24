@@ -50,7 +50,7 @@ public class AdminDashboardController {
 
     private enum SortMode {
         RISK_PRIORITY,
-        ACCEPTED_JOBS_DESC
+        HOURS_DESC
     }
 
     private enum MetricIcon {
@@ -130,10 +130,10 @@ public class AdminDashboardController {
 
     private HBox buildKpiRow() {
         HBox row = new HBox(16,
-                metricCard(MetricIcon.JOBS, I18n.t("total_jobs_kpi"), totalJobsValue, "#2563eb", "#eff6ff", false),
-                metricCard(MetricIcon.APPLICATIONS, I18n.t("total_applications_kpi"), totalApplicationsValue, "#7c3aed", "#f5f3ff", false),
-                metricCard(MetricIcon.ACCEPTED, I18n.t("accepted_apps_kpi"), acceptedValue, "#10b981", "#ecfdf3", false),
-                metricCard(MetricIcon.RISK, I18n.t("high_risk_tas_kpi"), highRiskValue, "#ef4444", "#fff1f2", true)
+                metricCard(MetricIcon.JOBS, I18n.t("total_jobs_kpi"), totalJobsValue, "+5%", "#2563eb", "#eff6ff", false),
+                metricCard(MetricIcon.APPLICATIONS, I18n.t("total_applications_kpi"), totalApplicationsValue, "-2%", "#7c3aed", "#f5f3ff", false),
+                metricCard(MetricIcon.ACCEPTED, I18n.t("accepted_apps_kpi"), acceptedValue, "+12%", "#10b981", "#ecfdf3", false),
+                metricCard(MetricIcon.RISK, I18n.t("high_risk_tas_kpi"), highRiskValue, "+3%", "#ef4444", "#fff1f2", true)
         );
         return row;
     }
@@ -141,6 +141,7 @@ public class AdminDashboardController {
     private VBox metricCard(MetricIcon iconType,
                             String title,
                             Label valueLabel,
+                            String delta,
                             String accent,
                             String iconTint,
                             boolean danger) {
@@ -160,6 +161,10 @@ public class AdminDashboardController {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
+        Label trend = new Label(delta);
+        trend.getStyleClass().add("metric-subtle");
+        trend.setStyle("-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: " + accent + ";");
+
         Label titleNode = new Label(title);
         titleNode.getStyleClass().add("metric-kicker");
         titleNode.setStyle("-fx-font-size: 11px; -fx-font-weight: 600; -fx-text-fill: #94a3b8;");
@@ -171,7 +176,7 @@ public class AdminDashboardController {
         }
 
         card.getChildren().addAll(top);
-        top.getChildren().addAll(icon, spacer);
+        top.getChildren().addAll(icon, spacer, trend);
         card.getChildren().addAll(titleNode, valueLabel);
         return card;
     }
@@ -243,6 +248,28 @@ public class AdminDashboardController {
         acceptedJobsCol.setCellValueFactory(cell -> new SimpleIntegerProperty(cell.getValue().acceptedJobs()));
         acceptedJobsCol.setCellFactory(column -> centeredNumberCell());
 
+        TableColumn<AdminWorkloadRowDTO, Number> hoursCol = new TableColumn<>(I18n.t("weekly_hours_label"));
+        hoursCol.setCellValueFactory(cell -> new SimpleIntegerProperty(cell.getValue().currentWeeklyHours()));
+        hoursCol.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(Number item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
+                    setGraphic(null);
+                    setText(null);
+                    return;
+                }
+                AdminWorkloadRowDTO row = getTableView().getItems().get(getIndex());
+                String risk = riskFromAcceptedJobs(row.acceptedJobs());
+                HBox box = new HBox(10, buildHoursBar(row.currentWeeklyHours(), row.maxWeeklyHours(), risk),
+                        coloredValueLabel(row.currentWeeklyHours() + "h", riskTextColor(risk)));
+                box.setAlignment(Pos.CENTER);
+                setAlignment(Pos.CENTER);
+                setGraphic(box);
+                setText(null);
+            }
+        });
+
         TableColumn<AdminWorkloadRowDTO, String> riskCol = new TableColumn<>(I18n.t("risk_level_label"));
         riskCol.setCellValueFactory(cell -> new SimpleStringProperty(riskFromAcceptedJobs(cell.getValue().acceptedJobs())));
         riskCol.setCellFactory(column -> new TableCell<>() {
@@ -286,10 +313,11 @@ public class AdminDashboardController {
 
         studentIdCol.setStyle("-fx-alignment: CENTER;");
         acceptedJobsCol.setStyle("-fx-alignment: CENTER;");
+        hoursCol.setStyle("-fx-alignment: CENTER;");
         riskCol.setStyle("-fx-alignment: CENTER;");
         noteCol.setStyle("-fx-alignment: CENTER;");
 
-        workloadTable.getColumns().setAll(applicantCol, studentIdCol, acceptedJobsCol, riskCol, noteCol);
+        workloadTable.getColumns().setAll(applicantCol, studentIdCol, acceptedJobsCol, hoursCol, riskCol, noteCol);
         workloadTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         workloadTable.setFixedCellSize(74);
         workloadTable.setPrefHeight(390);
@@ -388,16 +416,16 @@ public class AdminDashboardController {
 
         Comparator<AdminWorkloadRowDTO> comparator = sortMode == SortMode.RISK_PRIORITY
                 ? Comparator.comparingInt((AdminWorkloadRowDTO row) -> riskPriority(riskFromAcceptedJobs(row.acceptedJobs())))
-                .thenComparing(AdminWorkloadRowDTO::acceptedJobs, Comparator.reverseOrder())
+                .thenComparing(AdminWorkloadRowDTO::currentWeeklyHours, Comparator.reverseOrder())
                 .thenComparing(AdminWorkloadRowDTO::applicantName)
-                : Comparator.comparing(AdminWorkloadRowDTO::acceptedJobs, Comparator.reverseOrder())
+                : Comparator.comparing(AdminWorkloadRowDTO::currentWeeklyHours, Comparator.reverseOrder())
                 .thenComparingInt(row -> riskPriority(riskFromAcceptedJobs(row.acceptedJobs())))
                 .thenComparing(AdminWorkloadRowDTO::applicantName);
         workloads = workloads.stream().sorted(comparator).toList();
 
         workloadTable.setItems(FXCollections.observableArrayList(workloads));
         workloadFooter.setText(I18n.t("showing_n_of_m_tas").replace("{n}", String.valueOf(workloads.size())).replace("{m}", String.valueOf(allWorkloads.size())));
-        sortButton.setText(sortMode == SortMode.RISK_PRIORITY ? I18n.t("sort_by_risk") : I18n.t("sort_by_accepted_jobs"));
+        sortButton.setText(sortMode == SortMode.RISK_PRIORITY ? I18n.t("sort_by_risk") : I18n.t("sort_by_hours"));
 
         List<AuditLogItemDTO> auditLogs = services.adminMonitoringService().getAuditLogs();
         if (!keyword.isEmpty()) {
@@ -412,7 +440,7 @@ public class AdminDashboardController {
     }
 
     private void toggleSortMode() {
-        sortMode = sortMode == SortMode.RISK_PRIORITY ? SortMode.ACCEPTED_JOBS_DESC : SortMode.RISK_PRIORITY;
+        sortMode = sortMode == SortMode.RISK_PRIORITY ? SortMode.HOURS_DESC : SortMode.RISK_PRIORITY;
         refresh();
     }
 
@@ -476,6 +504,38 @@ public class AdminDashboardController {
                 setGraphic(null);
             }
         };
+    }
+
+    private HBox buildHoursBar(int currentHours, int maxHours, String riskLevel) {
+        double ratio = maxHours <= 0 ? 0 : Math.min(1.0, (double) currentHours / maxHours);
+
+        Rectangle track = new Rectangle(HOURS_BAR_WIDTH, 8);
+        track.setArcWidth(6);
+        track.setArcHeight(6);
+        track.setFill(Color.web("#dde6f0"));
+
+        double fillWidth = ratio <= 0 ? 0 : Math.max(18, HOURS_BAR_WIDTH * ratio);
+        Rectangle fill = new Rectangle(fillWidth, 8);
+        fill.setArcWidth(6);
+        fill.setArcHeight(6);
+        fill.setFill(Color.web(riskTextColor(riskLevel)));
+
+        StackPane bar = new StackPane(track);
+        bar.setMinSize(HOURS_BAR_WIDTH, 8);
+        bar.setPrefSize(HOURS_BAR_WIDTH, 8);
+        bar.setMaxSize(HOURS_BAR_WIDTH, 8);
+        StackPane.setAlignment(fill, Pos.CENTER_LEFT);
+        bar.getChildren().add(fill);
+
+        HBox wrapper = new HBox(bar);
+        wrapper.setAlignment(Pos.CENTER_LEFT);
+        return wrapper;
+    }
+
+    private Label coloredValueLabel(String text, String color) {
+        Label label = new Label(text);
+        label.setStyle("-fx-font-size: 12px; -fx-font-weight: 900; -fx-text-fill: " + color + ";");
+        return label;
     }
 
     private StackPane buildMetricIcon(MetricIcon type, String accent, String tint) {
