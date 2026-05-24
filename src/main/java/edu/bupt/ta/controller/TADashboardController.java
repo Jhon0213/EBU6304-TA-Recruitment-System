@@ -17,6 +17,7 @@ import edu.bupt.ta.util.ValidationResult;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
+import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -405,13 +406,25 @@ public class TADashboardController {
                 + "-fx-background-color: #6366f1; -fx-background-radius: 999;"
                 + "-fx-padding: 3 10 3 10;");
 
+        Button refreshAi = new Button(I18n.t("ai_refresh_match", "Refresh"));
+        refreshAi.getStyleClass().add("secondary-button");
+        refreshAi.setGraphic(IconFactory.glyph(IconFactory.IconType.REFRESH, 12, Color.web("#6366f1")));
+        refreshAi.setGraphicTextGap(6);
+        refreshAi.setStyle("-fx-font-size: 11px; -fx-font-weight: 700; -fx-padding: 4 10 4 10;");
+
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        header.getChildren().addAll(title, spacer, aiTag);
+        header.getChildren().addAll(title, spacer, refreshAi, aiTag);
         header.setAlignment(Pos.CENTER_LEFT);
 
-        List<DashboardRecommendation> recommendations = buildAiRecommendations();
+        HBox row = buildRecommendationRow(buildLocalRecommendations());
+        refreshAi.setOnAction(event -> refreshAiRecommendations(row, refreshAi));
 
+        card.getChildren().addAll(header, row);
+        return card;
+    }
+
+    private HBox buildRecommendationRow(List<DashboardRecommendation> recommendations) {
         HBox row = new HBox(14);
         row.setFillHeight(true);
         HBox.setHgrow(row, Priority.ALWAYS);
@@ -437,8 +450,35 @@ public class TADashboardController {
             row.getChildren().addAll(card1, card2);
         }
 
-        card.getChildren().addAll(header, row);
-        return card;
+        return row;
+    }
+
+    private void refreshAiRecommendations(HBox row, Button refreshAi) {
+        refreshAi.setDisable(true);
+        refreshAi.setText(I18n.t("ai_matching", "Matching..."));
+
+        Task<List<DashboardRecommendation>> task = new Task<>() {
+            @Override
+            protected List<DashboardRecommendation> call() {
+                List<DashboardRecommendation> recommendations = buildAiRecommendations();
+                return recommendations.isEmpty() ? buildLocalRecommendations() : recommendations;
+            }
+        };
+
+        task.setOnSucceeded(event -> {
+            row.getChildren().setAll(buildRecommendationRow(task.getValue()).getChildren());
+            refreshAi.setText(I18n.t("ai_refresh_match", "Refresh"));
+            refreshAi.setDisable(false);
+        });
+        task.setOnFailed(event -> {
+            row.getChildren().setAll(buildRecommendationRow(buildLocalRecommendations()).getChildren());
+            refreshAi.setText(I18n.t("ai_refresh_match", "Refresh"));
+            refreshAi.setDisable(false);
+        });
+
+        Thread worker = new Thread(task, "deepseek-job-match");
+        worker.setDaemon(true);
+        worker.start();
     }
 
     private List<DashboardRecommendation> buildAiRecommendations() {
@@ -468,6 +508,18 @@ public class TADashboardController {
             }
         }
 
+        return scoreLocally(openJobs);
+    }
+
+    private List<DashboardRecommendation> buildLocalRecommendations() {
+        List<Job> openJobs = services.jobService().searchJobs(null).stream()
+                .filter(job -> job.getStatus() == JobStatus.OPEN && job.getDeadline() != null)
+                .sorted(Comparator.comparing(Job::getDeadline, Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
+        return scoreLocally(openJobs);
+    }
+
+    private List<DashboardRecommendation> scoreLocally(List<Job> openJobs) {
         return openJobs.stream()
                 .map(job -> new DashboardRecommendation(job, recommendationScore(job)))
                 .sorted(Comparator.comparingInt(DashboardRecommendation::score).reversed())
