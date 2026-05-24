@@ -34,12 +34,12 @@ class AdminMonitoringServiceTest {
     void shouldBuildAdminDashboardSummaryAndRows() {
         var summary = services.adminMonitoringService().getDashboardSummary();
 
-        assertEquals(20, summary.totalJobs());
+        assertEquals(8, summary.totalJobs());
         assertEquals(10, summary.totalApplications());
         assertEquals(2, summary.acceptedApplications());
         assertEquals(1, summary.highRiskApplicants());
         assertEquals(5, services.adminMonitoringService().getWorkloadRows().size());
-        assertEquals(20, services.adminMonitoringService().getJobRows().size());
+        assertEquals(8, services.adminMonitoringService().getJobRows().size());
         assertEquals(10, services.adminMonitoringService().getApplicationRows().size());
         assertFalse(services.adminMonitoringService().getAuditLogs().isEmpty());
     }

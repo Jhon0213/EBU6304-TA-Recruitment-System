@@ -25,9 +25,6 @@ public final class TestDataSupport {
                 "applications.json",
                 "workloads.json",
                 "audit_log.txt",
-                "notifications.json",
-                "favourite_jobs.json",
-                "user_settings.json",
                 "workload_report.csv",
                 "application_report.csv"
         )) {

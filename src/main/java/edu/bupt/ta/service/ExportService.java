@@ -34,11 +34,11 @@ public class ExportService {
             Files.createDirectories(AppPaths.exportDir());
             Path target = AppPaths.workloadExportCsv();
             try (CSVWriter writer = new CSVWriter(Files.newBufferedWriter(target))) {
-                writer.writeNext(new String[]{"applicantId", "acceptedJobCount", "riskLevel", "acceptedJobIds"});
+                writer.writeNext(new String[]{"applicantId", "currentWeeklyHours", "riskLevel", "acceptedJobIds"});
                 for (Workload workload : workloadRepository.findAll()) {
                     writer.writeNext(new String[]{
                             workload.getApplicantId(),
-                            String.valueOf(workload.getAcceptedJobIds() == null ? 0 : workload.getAcceptedJobIds().size()),
+                            String.valueOf(workload.getCurrentWeeklyHours()),
                             String.valueOf(workload.getRiskLevel()),
                             String.join(";", workload.getAcceptedJobIds())
                     });

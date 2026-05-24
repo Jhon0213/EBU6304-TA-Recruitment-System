@@ -190,18 +190,6 @@ public final class I18n {
         put(en, zh, "registration_success", "Registration Successful", "注册成功");
         put(en, zh, "registration_success_msg", "Account created. Please log in with your new credentials.", "账号已创建，请使用新账号登录。");
 
-        // ===================== JOB EDITOR VALIDATION =====================
-        put(en, zh, "title_is_required", "Job title is required.", "职位名称不能为空。");
-        put(en, zh, "module_code_is_required", "Module code is required.", "模块代码不能为空。");
-        put(en, zh, "module_name_is_required", "Module name is required.", "模块名称不能为空。");
-        put(en, zh, "semester_is_required", "Semester is required.", "学期不能为空。");
-        put(en, zh, "positions_must_be_positive", "Positions must be greater than zero.", "名额必须大于零。");
-        put(en, zh, "deadline_is_required", "Deadline is required.", "截止日期不能为空。");
-        put(en, zh, "select_both_hour_minute", "Please select both hour and minute.", "请选择小时和分钟。");
-        put(en, zh, "open_job_future_deadline", "Open jobs must have a future deadline.", "开放职位的截止时间必须是未来时间。");
-        put(en, zh, "organiser_id_required", "An organiser must be selected.", "必须选择负责人。");
-        put(en, zh, "select_at_least_one_campus", "Please select at least one campus.", "请至少选择一个校区。");
-
         // Registration validation
         put(en, zh, "username_required_v", "Username is required.", "用户名不能为空。");
         put(en, zh, "username_format", "Username must be 3-30 characters and contain only letters, numbers, or underscores.", "用户名长度3-30位，仅限字母、数字和下划线。");
@@ -247,7 +235,7 @@ public final class I18n {
         put(en, zh, "recommended_for_you", "Recommended for You", "为您推荐");
         put(en, zh, "ai_auto_match", "AI Auto Match", "AI 自动匹配");
         put(en, zh, "recommended_skill_match", "Recommended based on your skills and workload", "根据您的技能和工作量推荐");
-        put(en, zh, "hours_per_week", "", "");
+        put(en, zh, "hours_per_week", "h/week", "小时/周");
         put(en, zh, "deadline_label", "Deadline: ", "截止日期：");
         put(en, zh, "match_rate_percent", "{n}% Match", "{n}% 匹配度");
         put(en, zh, "quick_actions", "Quick Actions", "快捷操作");
@@ -261,7 +249,7 @@ public final class I18n {
         put(en, zh, "missing_cv_msg", "Please upload your CV or portfolio before applying widely.", "请上传您的简历后再广泛申请职位。");
         put(en, zh, "profile_missing_sections", "Resume sections missing: {sections}", "简历部分缺失：{sections}");
         put(en, zh, "profile_incomplete_msg", "Update your applicant profile to reach full completion.", "请完善您的申请资料以达到完整状态。");
-        put(en, zh, "workload_warning_msg", "Current workload is close to the policy limit.", "当前工作量接近政策上限。");
+        put(en, zh, "workload_warning_msg", "Current workload is close to your weekly limit.", "当前工作量接近您的每周上限。");
         put(en, zh, "all_set_msg", "Your documents and workload status look healthy.", "您的文件和 workload 状态良好。");
         put(en, zh, "recruitment_deadlines", "Recruitment Deadlines", "招聘截止日期");
         put(en, zh, "no_upcoming_deadlines", "No upcoming deadlines right now.", "暂无即将到期的截止日期。");
@@ -322,45 +310,6 @@ public final class I18n {
         put(en, zh, "module_name", "Module Name", "模块名称");
         put(en, zh, "professor", "Professor", "教授");
         put(en, zh, "no_deadline_set", "No deadline set", "未设置截止日期");
-
-        // ===================== JOB EDITOR =====================
-        put(en, zh, "create_job_post", "Create Job Post", "创建职位发布");
-        put(en, zh, "edit_job_post", "Edit Job Post", "编辑职位发布");
-        put(en, zh, "publish_job", "Publish Job", "发布职位");
-        put(en, zh, "save_draft", "Save Draft", "保存草稿");
-        put(en, zh, "update_job", "Update Job", "更新职位");
-        put(en, zh, "basic_job_information", "Basic Job Information", "基础职位信息");
-        put(en, zh, "live_preview_summary", "Live Preview Summary", "实时预览摘要");
-        put(en, zh, "job_title_label", "Job Title", "职位名称");
-        put(en, zh, "module_code", "Module Code", "模块代码");
-        put(en, zh, "job_type", "Job Type", "职位类型");
-        put(en, zh, "positions_label", "Positions", "名额");
-        put(en, zh, "organiser", "Organiser", "负责人");
-        put(en, zh, "job_description_responsibilities", "Job Description / Responsibilities", "职位描述 / 主要职责");
-        put(en, zh, "required_skills_comma", "Required Skills (comma-separated)", "必需技能（逗号分隔）");
-        put(en, zh, "preferred_skills_comma", "Preferred Skills (comma-separated)", "优先技能（逗号分隔）");
-        put(en, zh, "essential_technical_skills", "Essential Technical Skills", "核心技术技能");
-        put(en, zh, "minimum_academic_grade", "Minimum Academic Grade", "最低学业成绩");
-        put(en, zh, "tip_required_skill", "Add at least one required skill to help candidates understand the role.", "请至少添加一项必需技能，以帮助申请人了解岗位要求。");
-        put(en, zh, "job_description_upper", "JOB DESCRIPTION", "职位描述");
-        put(en, zh, "key_responsibilities_upper", "KEY RESPONSIBILITIES", "主要职责");
-        put(en, zh, "module_info_label", "MODULE INFO", "模块信息");
-        put(en, zh, "deadline_upper", "DEADLINE", "截止日期");
-        put(en, zh, "code", "Code", "代码");
-        put(en, zh, "term", "Term", "学期");
-        put(en, zh, "seats", "Seats", "名额");
-        put(en, zh, "hour", "Hour", "小时");
-        put(en, zh, "minute", "Minute", "分钟");
-        put(en, zh, "department_label3", "Department", "部门");
-        put(en, zh, "no_job_description_provided", "No job description provided.", "暂无职位描述。");
-        put(en, zh, "spring_semester", "Spring Semester", "春季学期");
-        put(en, zh, "tbd", "TBD", "待定");
-        put(en, zh, "select_organiser", "Select an organiser", "请选择负责人");
-        put(en, zh, "add_skill", "Add Skill", "添加技能");
-        put(en, zh, "add_one_required_skill", "Add one required skill", "添加一项必需技能");
-        put(en, zh, "skill_name_colon", "Skill name:", "技能名称：");
-        put(en, zh, "a_90_plus", "A (90+)", "A（90分及以上）");
-        put(en, zh, "b_plus_85_plus", "B+ (85+)", "B+（85分及以上）");
 
         // ===================== JOB BROWSER =====================
         put(en, zh, "browse_opportunities", "Browse Opportunities", "浏览机会");
@@ -448,7 +397,7 @@ public final class I18n {
         put(en, zh, "technical_skills", "Technical Skills (comma separated)", "技术技能（逗号分隔）");
         put(en, zh, "language_skills", "Language Skills (comma separated)", "语言技能（逗号分隔）");
         put(en, zh, "availability_label", "Availability (comma separated)", "可用时间（逗号分隔）");
-        put(en, zh, "max_weekly_hours", "Load Capacity", "负载容量");
+        put(en, zh, "max_weekly_hours", "Max Weekly Hours", "每周最多小时数");
         put(en, zh, "experience_label", "Experience", "经验");
         put(en, zh, "personal_statement_label", "Personal Statement", "个人陈述");
         put(en, zh, "save_resume", "Save Resume", "保存简历");
@@ -545,6 +494,10 @@ public final class I18n {
 
         // ===================== APPLICANT PROFILE =====================
         put(en, zh, "personal_information", "Personal Information", "个人信息");
+        put(en, zh, "my_profile", "My Profile", "我的资料");
+        put(en, zh, "manage_personal_info", "Manage your personal information", "管理您的个人信息");
+        put(en, zh, "edit", "Edit", "编辑");
+        put(en, zh, "ta_applicant_label", "TA Applicant", "助教申请人");
         put(en, zh, "edit_basic_information", "Edit Basic Information", "编辑基本信息");
         put(en, zh, "select_year", "Select year", "选择年级");
         put(en, zh, "select", "Select", "选择");
@@ -660,7 +613,7 @@ public final class I18n {
         put(en, zh, "permission_denied", "Permission Denied", "权限不足");
         put(en, zh, "no_permission_action", "You do not have permission for this action.", "您没有执行此操作的权限。");
         put(en, zh, "workload_warn_title", "Workload Warning", "工作量警告");
-        put(en, zh, "workload_warn_msg", "This action may exceed the policy limit.", "此操作可能超出政策上限。");
+        put(en, zh, "workload_warn_msg", "This action may exceed weekly limit.", "此操作可能超出每周上限。");
         put(en, zh, "confirm_action", "Please confirm this action.", "请确认此操作。");
 
         // ===================== HELP CENTER =====================
@@ -673,7 +626,7 @@ public final class I18n {
         put(en, zh, "help_password", "- Password: Password123!", "- 密码：Password123!");
         put(en, zh, "help_ta_features", "TA Features", "TA 功能");
         put(en, zh, "help_ta_browse", "- Browse available positions and view job details.", "- 浏览可用职位并查看职位详情。");
-        put(en, zh, "help_ta_heart", "- Click the star icon to favourite jobs (displayed at top).", "- Click the star icon to favourite jobs (displayed at top).");
+        put(en, zh, "help_ta_heart", "- Click the heart icon to favourite jobs (displayed at top).", "- 点击爱心图标收藏职位（显示在顶部）。");
         put(en, zh, "help_ta_apply", "- Submit applications with a personal statement.", "- 提交申请并附上个人陈述。");
         put(en, zh, "help_ta_track", "- Track application status: Submitted → Under Review → Accepted/Rejected.", "- 跟踪申请状态：已提交 → 审核中 → 已接受/已拒绝。");
         put(en, zh, "help_ta_notifications", "- Receive notifications about application updates.", "- 接收申请状态更新的通知。");
@@ -706,13 +659,13 @@ public final class I18n {
         put(en, zh, "accepted_apps_kpi", "Accepted Applications", "已录用申请");
         put(en, zh, "high_risk_tas_kpi", "High Risk TAs", "高风险助教");
         put(en, zh, "workload_monitoring_table", "Workload Monitoring", "工作量监控表");
-        put(en, zh, "realtime_tracking_hours", "Real-time tracking of accepted jobs", "实时跟踪已接受岗位");
+        put(en, zh, "realtime_tracking_hours", "Real-time tracking of weekly hours", "实时跟踪每周工作小时数");
         put(en, zh, "filter", "Filter", "筛选");
         put(en, zh, "sort_by_risk", "Sort by Risk", "按风险排序");
-        put(en, zh, "sort_by_hours", "Sort by Accepted Jobs", "按已接受岗位排序");
+        put(en, zh, "sort_by_hours", "Sort by Hours", "按小时排序");
         put(en, zh, "ta_name", "TA Name", "助教姓名");
         put(en, zh, "accepted_jobs_label", "Accepted Jobs", "已接受职位");
-        put(en, zh, "weekly_hours_label", "Accepted Jobs", "已接受岗位");
+        put(en, zh, "weekly_hours_label", "Weekly Hours", "每周小时");
         put(en, zh, "max_limit_label", "Max Limit", "上限");
         put(en, zh, "risk_level_label", "Risk Level", "风险等级");
         put(en, zh, "notes_label", "Notes", "备注");
@@ -764,7 +717,7 @@ public final class I18n {
         put(en, zh, "job_details_upper", "JOB DETAILS", "职位详情");
         put(en, zh, "associated_module", "Associated Module", "关联模块");
         put(en, zh, "job_summary", "Job Summary", "职位概要");
-        put(en, zh, "weekly_hours_summary", "Load", "负载");
+        put(en, zh, "weekly_hours_summary", "Weekly Hours", "每周小时");
         put(en, zh, "positions_summary", "Positions", "名额");
         put(en, zh, "deadline_summary", "Deadline", "截止日期");
         put(en, zh, "created_summary", "Created", "创建时间");
@@ -811,10 +764,7 @@ public final class I18n {
         put(en, zh, "open_review_workspace", "Open Review Workspace", "打开审核工作区");
         put(en, zh, "add_observations_justification", "Add observations or justification...", "添加观察或说明...");
         put(en, zh, "match_score", "Match Score", "匹配分数");
-        put(en, zh, "workload_label", "Risk Assessment", "风险评估");
-        put(en, zh, "workload_check", "Risk Assessment", "风险评估");
-        put(en, zh, "load_label", "Load", "负载");
-        put(en, zh, "sort_by_accepted_jobs", "Sort by Accepted Jobs", "按已接受岗位排序");
+        put(en, zh, "workload_label", "Workload", "工作量");
         put(en, zh, "missing_skills_label", "Missing Skills", "缺失技能");
         put(en, zh, "statement_upper", "Statement", "陈述");
         put(en, zh, "degree_program", "Degree / Programme", "学位 / 专业");

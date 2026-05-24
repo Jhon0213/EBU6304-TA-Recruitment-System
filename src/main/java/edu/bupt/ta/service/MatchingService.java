@@ -36,7 +36,7 @@ public class MatchingService {
         int projected = workloadService.calculateProjectedHours(applicantId, jobId);
 
         String explanation = "Required skills matched " + matched.size() + ", missing " + missing.size()
-                + "; projected load increased.";
+                + "; projected workload " + projected + "h/week.";
 
         return new MatchExplanationDTO(score, matched, missing, current, projected, explanation);
     }

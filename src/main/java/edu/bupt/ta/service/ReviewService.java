@@ -299,7 +299,7 @@ public class ReviewService {
         int matchedCount = safeList(matchedSkills).size();
         int missingCount = safeList(missingSkills).size();
         return "Required skills matched " + matchedCount + ", missing " + missingCount
-                + "; projected load increased.";
+                + "; projected workload " + projectedHours + "h/week.";
     }
 
     private boolean equalsIgnoreCaseTrimmed(String left, String right) {

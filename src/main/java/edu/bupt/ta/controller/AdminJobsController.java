@@ -403,7 +403,7 @@ public class AdminJobsController {
         detailModuleMeta.setText(job.moduleCode() + "  |  " + job.typeLabel());
         detailModuleDescription.setText(blankToDash(job.description()));
         detailOrganiser.setText(job.organiserName() + " (" + job.organiserId() + ")");
-        detailWeeklyHours.setText(String.valueOf(job.weeklyHours()));
+        detailWeeklyHours.setText(job.weeklyHours() + " h/week");
         detailPositions.setText(String.valueOf(job.positions()));
         detailDeadline.setText(formatDeadline(job.deadline()));
         detailCreated.setText(formatDateTime(job.createdAt()));
@@ -628,6 +628,7 @@ public class AdminJobsController {
         VBox recruitmentCard = new VBox(10,
                 sectionTitle(I18n.t("job_summary")),
                 detailLine(I18n.t("module_organiser_label"), detailOrganiser),
+                detailLine(I18n.t("weekly_hours_summary"), detailWeeklyHours),
                 detailLine(I18n.t("positions_summary"), detailPositions),
                 detailLine(I18n.t("deadline_summary"), detailDeadline),
                 detailLine(I18n.t("created_summary"), detailCreated),
