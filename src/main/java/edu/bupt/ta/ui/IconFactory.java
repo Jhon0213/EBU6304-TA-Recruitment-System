@@ -38,7 +38,8 @@ public final class IconFactory {
         SHIELD,
         TRASH,
         HEART,
-        STAR
+        STAR,
+        REFRESH
     }
 
     private IconFactory() {
@@ -103,6 +104,7 @@ public final class IconFactory {
             case TRASH -> FontAwesomeSolid.TRASH_ALT;
             case HEART -> FontAwesomeSolid.HEART;
             case STAR -> FontAwesomeSolid.STAR;
+            case REFRESH -> FontAwesomeSolid.SYNC_ALT;
         };
     }
 }
