@@ -1,6 +1,7 @@
 package edu.bupt.ta.controller;
 
 import edu.bupt.ta.dto.MatchExplanationDTO;
+import edu.bupt.ta.dto.AiJobMatchDTO;
 import edu.bupt.ta.enums.ApplicationStatus;
 import edu.bupt.ta.enums.JobStatus;
 import edu.bupt.ta.model.ApplicantProfile;
@@ -46,7 +47,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class TADashboardController {
 
@@ -406,25 +410,21 @@ public class TADashboardController {
         header.getChildren().addAll(title, spacer, aiTag);
         header.setAlignment(Pos.CENTER_LEFT);
 
-        List<Job> recommendedJobs = services.jobService().searchJobs(null).stream()
-                .filter(job -> job.getStatus() == JobStatus.OPEN && job.getDeadline() != null)
-                .sorted(Comparator.comparing(Job::getDeadline))
-                .limit(2)
-                .toList();
+        List<DashboardRecommendation> recommendations = buildAiRecommendations();
 
         HBox row = new HBox(14);
         row.setFillHeight(true);
         HBox.setHgrow(row, Priority.ALWAYS);
         row.setMaxWidth(Double.MAX_VALUE);
 
-        if (recommendedJobs.size() >= 2) {
-            VBox card1 = recommendationCard(recommendedJobs.get(0), 92);
-            VBox card2 = recommendationCard(recommendedJobs.get(1), 85);
+        if (recommendations.size() >= 2) {
+            VBox card1 = recommendationCard(recommendations.get(0).job(), recommendations.get(0).score());
+            VBox card2 = recommendationCard(recommendations.get(1).job(), recommendations.get(1).score());
             HBox.setHgrow(card1, Priority.ALWAYS);
             HBox.setHgrow(card2, Priority.ALWAYS);
             row.getChildren().addAll(card1, card2);
-        } else if (recommendedJobs.size() == 1) {
-            VBox card1 = recommendationCard(recommendedJobs.get(0), 92);
+        } else if (recommendations.size() == 1) {
+            VBox card1 = recommendationCard(recommendations.get(0).job(), recommendations.get(0).score());
             VBox card2 = placeholderRecommendCard(87);
             HBox.setHgrow(card1, Priority.ALWAYS);
             HBox.setHgrow(card2, Priority.ALWAYS);
@@ -439,6 +439,40 @@ public class TADashboardController {
 
         card.getChildren().addAll(header, row);
         return card;
+    }
+
+    private List<DashboardRecommendation> buildAiRecommendations() {
+        List<Job> openJobs = services.jobService().searchJobs(null).stream()
+                .filter(job -> job.getStatus() == JobStatus.OPEN && job.getDeadline() != null)
+                .sorted(Comparator.comparing(Job::getDeadline, Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
+
+        if (openJobs.isEmpty()) {
+            return List.of();
+        }
+
+        List<AiJobMatchDTO> aiMatches = services.deepSeekJobMatchService().rankJobs(profile, resume, openJobs);
+        if (!aiMatches.isEmpty()) {
+            Map<String, Job> jobsById = openJobs.stream()
+                    .collect(Collectors.toMap(Job::getJobId, Function.identity(), (a, b) -> a));
+            List<DashboardRecommendation> aiRecommendations = aiMatches.stream()
+                    .map(match -> {
+                        Job job = jobsById.get(match.jobId());
+                        return job == null ? null : new DashboardRecommendation(job, match.score());
+                    })
+                    .filter(item -> item != null)
+                    .limit(2)
+                    .toList();
+            if (!aiRecommendations.isEmpty()) {
+                return aiRecommendations;
+            }
+        }
+
+        return openJobs.stream()
+                .map(job -> new DashboardRecommendation(job, recommendationScore(job)))
+                .sorted(Comparator.comparingInt(DashboardRecommendation::score).reversed())
+                .limit(2)
+                .toList();
     }
 
     private VBox placeholderRecommendCard(int matchScore) {
@@ -905,5 +939,8 @@ public class TADashboardController {
     }
 
     private record JobSummaryRow(Job job, String statusLabel, String statusTone, String actionLabel, boolean primaryAction) {
+    }
+
+    private record DashboardRecommendation(Job job, int score) {
     }
 }
