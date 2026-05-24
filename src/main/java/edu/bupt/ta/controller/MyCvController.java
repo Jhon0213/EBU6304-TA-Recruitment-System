@@ -83,7 +83,6 @@ public class MyCvController {
         pageRoot.setMaxWidth(Double.MAX_VALUE);
         pageRoot.setMinWidth(0);
 
-        pageRoot.getChildren().add(buildTitleBlock());
         pageRoot.getChildren().add(profileController.getView());
         pageRoot.getChildren().add(buildActionColumns(profile, resume, resumeCompletion));
         pageRoot.getChildren().add(buildGuidelineCard());
@@ -94,19 +93,6 @@ public class MyCvController {
         scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;");
 
         view.setCenter(scrollPane);
-    }
-
-    private VBox buildTitleBlock() {
-        Label heading = new Label(I18n.t("cv_management"));
-        heading.getStyleClass().add("page-title");
-
-        Label subtitle = new Label(I18n.t("upload_manage_cv"));
-        subtitle.getStyleClass().add("body-muted");
-        subtitle.setStyle("-fx-font-size: 16px;");
-
-        VBox titleBlock = new VBox(4, heading, subtitle);
-        titleBlock.setMaxWidth(Double.MAX_VALUE);
-        return titleBlock;
     }
 
     private HBox buildActionColumns(ApplicantProfile profile, ResumeInfo resume, int resumeCompletion) {
