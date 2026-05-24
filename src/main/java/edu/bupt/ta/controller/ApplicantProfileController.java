@@ -47,6 +47,7 @@ public class ApplicantProfileController {
     private final Label crossCampusValue = readOnlyValue();
 
     // Avatar labels (updated on save)
+    private final Label avatarInitialsLabel = new Label();
     private final Label avatarNameLabel = new Label();
     private final Label avatarRoleLabel = new Label();
 
@@ -139,8 +140,8 @@ public class ApplicantProfileController {
     }
 
     private HBox buildAvatarRow() {
-        Label avatar = new Label(initials());
-        avatar.setStyle("-fx-font-size: 28px; -fx-font-weight: 900; -fx-text-fill: white;"
+        avatarInitialsLabel.setText(initials());
+        avatarInitialsLabel.setStyle("-fx-font-size: 28px; -fx-font-weight: 900; -fx-text-fill: white;"
                 + "-fx-background-color: #354a5f; -fx-background-radius: 999;"
                 + "-fx-min-width: 72; -fx-min-height: 72; -fx-pref-width: 72; -fx-pref-height: 72;"
                 + "-fx-alignment: center;");
@@ -156,13 +157,14 @@ public class ApplicantProfileController {
         avatarRoleLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #64748b;");
 
         VBox meta = new VBox(4, avatarNameLabel, avatarRoleLabel);
-        HBox row = new HBox(16, avatar, meta);
+        HBox row = new HBox(16, avatarInitialsLabel, meta);
         row.setAlignment(Pos.CENTER_LEFT);
         return row;
     }
 
     private void refreshAvatarRow() {
         profile = services.applicantProfileService().getOrCreateProfile(user.getUserId());
+        avatarInitialsLabel.setText(initials());
         avatarNameLabel.setText(safe(profile.getFullName(), "TA Applicant"));
         String roleText = I18n.t("ta_applicant_label");
         if (profile.getYear() > 0) {
@@ -323,11 +325,11 @@ public class ApplicantProfileController {
     }
 
     private void saveProfile() {
-        profile.setFullName(fullNameField.getText());
-        profile.setStudentId(studentIdField.getText());
-        profile.setProgramme(programmeField.getText());
-        profile.setEmail(emailField.getText());
-        profile.setPhone(phoneField.getText());
+        profile.setFullName(trim(fullNameField.getText()));
+        profile.setStudentId(trim(studentIdField.getText()));
+        profile.setProgramme(trim(programmeField.getText()));
+        profile.setEmail(trim(emailField.getText()));
+        profile.setPhone(trim(phoneField.getText()));
         Integer selectedYear = yearCombo.getValue();
         profile.setYear(selectedYear == null ? 0 : selectedYear);
         profile.setCampus(campusCombo.getValue());
@@ -365,5 +367,9 @@ public class ApplicantProfileController {
 
     private String nullToEmpty(String value) {
         return value == null ? "" : value;
+    }
+
+    private String trim(String value) {
+        return value == null ? "" : value.trim();
     }
 }

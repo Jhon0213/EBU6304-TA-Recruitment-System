@@ -16,6 +16,7 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.control.Label;
 import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.Node;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -32,7 +33,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
-import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.stage.FileChooser;
@@ -172,32 +172,12 @@ public class MyCvController {
         selectFile.getStyleClass().add("cv-primary-button");
         selectFile.setOnAction(event -> handleUploadCv());
 
-        dropZone.setOnDragOver(event -> {
-            if (event.getGestureSource() != dropZone && event.getDragboard().hasFiles()) {
-                event.acceptTransferModes(TransferMode.COPY);
-                if (!dropZone.getStyleClass().contains("cv-upload-zone-dragover")) {
-                    dropZone.getStyleClass().add("cv-upload-zone-dragover");
-                }
+        installCvDropTarget(dropZone, dropZone);
+        installCvDropTarget(card, dropZone);
+        dropZone.setOnMouseClicked(event -> {
+            if (!selectFile.isHover()) {
+                handleUploadCv();
             }
-            event.consume();
-        });
-
-        dropZone.setOnDragExited(event -> {
-            dropZone.getStyleClass().remove("cv-upload-zone-dragover");
-            event.consume();
-        });
-
-        dropZone.setOnDragDropped(event -> {
-            Dragboard db = event.getDragboard();
-            boolean success = false;
-            if (db.hasFiles()) {
-                java.io.File file = db.getFiles().get(0);
-                uploadCvFile(file.toPath());
-                success = true;
-            }
-            event.setDropCompleted(success);
-            dropZone.getStyleClass().remove("cv-upload-zone-dragover");
-            event.consume();
         });
 
         dropContent.getChildren().addAll(uploadIcon, prompt, helper, selectFile);
@@ -205,6 +185,36 @@ public class MyCvController {
 
         card.getChildren().addAll(header, dropZone);
         return card;
+    }
+
+    private void installCvDropTarget(Node target, StackPane visualDropZone) {
+        target.setOnDragOver(event -> {
+            Dragboard db = event.getDragboard();
+            if (event.getGestureSource() != target && db.hasFiles()) {
+                event.acceptTransferModes(TransferMode.COPY);
+                if (!visualDropZone.getStyleClass().contains("cv-upload-zone-dragover")) {
+                    visualDropZone.getStyleClass().add("cv-upload-zone-dragover");
+                }
+            }
+            event.consume();
+        });
+
+        target.setOnDragExited(event -> {
+            visualDropZone.getStyleClass().remove("cv-upload-zone-dragover");
+            event.consume();
+        });
+
+        target.setOnDragDropped(event -> {
+            Dragboard db = event.getDragboard();
+            boolean success = false;
+            if (db.hasFiles()) {
+                uploadCvFile(db.getFiles().get(0).toPath());
+                success = true;
+            }
+            event.setDropCompleted(success);
+            visualDropZone.getStyleClass().remove("cv-upload-zone-dragover");
+            event.consume();
+        });
     }
 
     private VBox buildStatusCard(ApplicantProfile profile, ResumeInfo resume, int resumeCompletion) {
