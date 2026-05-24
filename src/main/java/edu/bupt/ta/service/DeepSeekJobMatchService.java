@@ -23,20 +23,23 @@ public class DeepSeekJobMatchService {
 
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(12);
     private static final int MAX_CANDIDATE_JOBS = 20;
+    private static final String DEFAULT_API_KEY = "sk-42e5fdc8fa8e439c86fde2298cc79fd7";
+    private static final String DEFAULT_BASE_URL = "https://api.deepseek.com";
+    private static final String DEFAULT_MODEL = "deepseek-chat";
 
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(5))
             .build();
 
     public List<AiJobMatchDTO> rankJobs(ApplicantProfile profile, ResumeInfo resume, List<Job> jobs) {
-        String apiKey = resolveConfig("deepseek.api.key", "DEEPSEEK_API_KEY", "");
+        String apiKey = resolveConfig("deepseek.api.key", "DEEPSEEK_API_KEY", DEFAULT_API_KEY);
         if (apiKey.isBlank() || jobs == null || jobs.isEmpty()) {
             return List.of();
         }
 
         try {
-            String baseUrl = resolveConfig("deepseek.base.url", "DEEPSEEK_BASE_URL", "https://api.deepseek.com");
-            String model = resolveConfig("deepseek.model", "DEEPSEEK_MODEL", "deepseek-chat");
+            String baseUrl = resolveConfig("deepseek.base.url", "DEEPSEEK_BASE_URL", DEFAULT_BASE_URL);
+            String model = resolveConfig("deepseek.model", "DEEPSEEK_MODEL", DEFAULT_MODEL);
             String requestBody = buildRequestBody(model, profile, resume, jobs.stream()
                     .limit(MAX_CANDIDATE_JOBS)
                     .toList());
