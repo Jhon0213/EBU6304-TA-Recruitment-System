@@ -18,6 +18,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -152,6 +153,7 @@ public class ApplicantListController {
         leftPanel.setPadding(new Insets(16));
         HBox.setHgrow(leftPanel, Priority.ALWAYS);
 
+        listView.getStyleClass().add("applicant-list");
         listView.setCellFactory(param -> new ApplicantRowCell());
         listView.setPrefHeight(660);
         listView.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> updateDetail(newV));
@@ -481,7 +483,7 @@ public class ApplicantListController {
 
         insightBox.getChildren().add(detailCard(
                 I18n.t("workload_check"),
-                "Current " + dto.currentHours() + "h • Projected " + dto.projectedHours() + "h / Max " + dto.maxWeeklyHours() + "h • Risk " + dto.riskLevel()
+                "Risk: " + dto.riskLevel() + " • Review before accepting."
         ));
         insightBox.getChildren().add(detailCard(
                 I18n.t("statement_preview"),
@@ -585,6 +587,43 @@ public class ApplicantListController {
     }
 
     private static class ApplicantRowCell extends ListCell<Row> {
+        private final VBox card = new VBox(8);
+        private final HBox top = new HBox();
+        private final Label name = new Label();
+        private final Region spacer = new Region();
+        private final Label status = new Label();
+        private final Label meta = new Label();
+        private final Label job = new Label();
+
+        private ApplicantRowCell() {
+            setText(null);
+            setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+            setStyle("-fx-background-color: transparent; -fx-padding: 0 0 12 0; -fx-background-insets: 0; -fx-border-color: transparent; -fx-border-width: 0;");
+
+            card.getStyleClass().add("open-position-card");
+            card.setPadding(new Insets(14, 18, 14, 18));
+            card.setMinWidth(0);
+            card.prefWidthProperty().bind(widthProperty().subtract(14));
+            card.minWidthProperty().bind(card.prefWidthProperty());
+            card.maxWidthProperty().bind(card.prefWidthProperty());
+
+            top.setAlignment(Pos.CENTER_LEFT);
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+
+            name.setStyle("-fx-font-size: 16px; -fx-font-weight: 900; -fx-text-fill: #0f172a;");
+            status.setMinWidth(Region.USE_PREF_SIZE);
+            status.setMaxWidth(Region.USE_PREF_SIZE);
+
+            meta.setWrapText(true);
+            meta.setStyle("-fx-font-size: 12px; -fx-font-weight: 400; -fx-text-fill: #64748b;");
+
+            job.setWrapText(true);
+            job.setStyle("-fx-font-size: 12px; -fx-font-weight: 400; -fx-text-fill: #94a3b8;");
+
+            top.getChildren().addAll(name, spacer, status);
+            card.getChildren().addAll(top, meta, job);
+        }
+
         @Override
         protected void updateItem(Row item, boolean empty) {
             super.updateItem(item, empty);
@@ -594,34 +633,13 @@ public class ApplicantListController {
                 return;
             }
 
-            VBox card = new VBox(8);
-            card.setPadding(new Insets(16));
-            card.getStyleClass().add(isSelected() ? "list-card-selected" : "list-card");
-
-            HBox top = new HBox();
-            top.setAlignment(Pos.CENTER_LEFT);
-
-            Label name = new Label(item.applicantName);
-            name.setStyle("-fx-font-size: 16px; -fx-font-weight: 900; -fx-text-fill: #0f172a;");
-
-            Region spacer = new Region();
-            HBox.setHgrow(spacer, Priority.ALWAYS);
-
-            Label status = new Label(item.statusLabel());
+            name.setText(item.applicantName);
+            status.setText(item.statusLabel());
             status.setStyle(item.statusStyle());
-
-            top.getChildren().addAll(name, spacer, status);
-
-            Label meta = new Label(item.programme + (item.year > 0 ? ", Year " + item.year : "")
+            meta.setText(item.programme + (item.year > 0 ? ", Year " + item.year : "")
                     + "   •   Score " + DisplayPlaceholders.MATCH_VALUE);
-            meta.setWrapText(true);
-            meta.setStyle("-fx-font-size: 12px; -fx-font-weight: 400; -fx-text-fill: #64748b;");
-
-            Label job = new Label(item.jobTitle + "  |  " + item.applicationId);
-            job.setWrapText(true);
-            job.setStyle("-fx-font-size: 12px; -fx-font-weight: 400; -fx-text-fill: #94a3b8;");
-
-            card.getChildren().addAll(top, meta, job);
+            job.setText(item.jobTitle + "  |  " + item.applicationId);
+            applyCardSelection(isSelected());
             setGraphic(card);
             setText(null);
         }
@@ -629,7 +647,20 @@ public class ApplicantListController {
         @Override
         public void updateSelected(boolean selected) {
             super.updateSelected(selected);
-            updateItem(getItem(), getItem() == null);
+            applyCardSelection(selected);
+            if (getItem() != null) {
+                status.setStyle(getItem().statusStyle());
+            }
+        }
+
+        private void applyCardSelection(boolean selected) {
+            card.getStyleClass().setAll("open-position-card");
+            if (selected) {
+                card.getStyleClass().add("open-position-card-selected");
+                card.setPadding(new Insets(13, 17, 13, 17));
+            } else {
+                card.setPadding(new Insets(14, 18, 14, 18));
+            }
         }
     }
 

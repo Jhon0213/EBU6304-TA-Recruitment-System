@@ -7,7 +7,9 @@ import edu.bupt.ta.service.ServiceRegistry;
 import edu.bupt.ta.ui.IconFactory;
 import edu.bupt.ta.util.DateTimeUtils;
 import edu.bupt.ta.util.I18n;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
+import javafx.geometry.Bounds;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
@@ -16,7 +18,6 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.control.Label;
 import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.Node;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -33,8 +34,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
-import javafx.scene.input.Dragboard;
-import javafx.scene.input.TransferMode;
 import javafx.stage.FileChooser;
 
 public class MyCvController {
@@ -48,7 +47,7 @@ public class MyCvController {
     private final ScrollPane scrollPane = new ScrollPane();
     private final String applicantId;
     private VBox pageRoot;
-    private ApplicantProfileController profileController;
+    private final VBox editorSection = new VBox(16);
 
     public MyCvController(ServiceRegistry services, User user) {
         this(services, user, () -> {
@@ -70,8 +69,10 @@ public class MyCvController {
 
     private void initialize() {
         view.getStyleClass().add("app-surface");
+        editorSection.setManaged(false);
+        editorSection.setVisible(false);
+        editorSection.setMaxWidth(Double.MAX_VALUE);
 
-        profileController = new ApplicantProfileController(services, user);
         ApplicantProfile profile = services.applicantProfileService().getOrCreateProfile(user.getUserId());
         ResumeInfo resume = services.resumeService().getOrCreateResume(applicantId);
         int resumeCompletion = services.resumeService().calculateResumeCompletion(applicantId);
@@ -83,8 +84,10 @@ public class MyCvController {
         pageRoot.setMaxWidth(Double.MAX_VALUE);
         pageRoot.setMinWidth(0);
 
-        pageRoot.getChildren().add(profileController.getView());
+        pageRoot.getChildren().add(buildTitleBlock());
+        pageRoot.getChildren().add(buildBasicInfoCard(profile, resume, resumeCompletion));
         pageRoot.getChildren().add(buildActionColumns(profile, resume, resumeCompletion));
+        pageRoot.getChildren().add(editorSection);
         pageRoot.getChildren().add(buildGuidelineCard());
 
         scrollPane.setContent(pageRoot);
@@ -93,6 +96,66 @@ public class MyCvController {
         scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;");
 
         view.setCenter(scrollPane);
+    }
+
+    private VBox buildTitleBlock() {
+        Label heading = new Label(I18n.t("cv_management"));
+        heading.getStyleClass().add("page-title");
+
+        Label subtitle = new Label(I18n.t("upload_manage_cv"));
+        subtitle.getStyleClass().add("body-muted");
+        subtitle.setStyle("-fx-font-size: 16px;");
+
+        VBox titleBlock = new VBox(4, heading, subtitle);
+        titleBlock.setMaxWidth(Double.MAX_VALUE);
+        return titleBlock;
+    }
+
+    private VBox buildBasicInfoCard(ApplicantProfile profile, ResumeInfo resume, int resumeCompletion) {
+        VBox card = new VBox(0);
+        card.getStyleClass().add("cv-card");
+        card.setMaxWidth(Double.MAX_VALUE);
+
+        HBox header = new HBox();
+        header.getStyleClass().add("cv-basic-card-header");
+        header.setPadding(new Insets(16, 24, 16, 24));
+        header.setAlignment(Pos.CENTER_LEFT);
+
+        Label title = new Label(I18n.t("basic_information_upper"));
+        title.getStyleClass().add("cv-card-title");
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        Label more = new Label("...");
+        more.getStyleClass().add("cv-card-menu");
+
+        header.getChildren().addAll(title, spacer, more);
+
+        VBox body = new VBox(24);
+        body.setPadding(new Insets(24));
+
+        HBox row1 = new HBox(24,
+                infoCell(I18n.t("full_name_upper"), safe(profile.getFullName())),
+                infoCell(I18n.t("student_id_upper"), safe(profile.getStudentId())),
+                infoCell(I18n.t("degree_program_upper"), safe(profile.getProgramme()))
+        );
+
+        HBox row2 = new HBox(24,
+                infoCell(I18n.t("email_upper"), safe(profile.getEmail())),
+                infoCell(I18n.t("cv_completion"), I18n.t("cv_complete_percent", resumeCompletion)),
+                infoCell(I18n.t("phone_upper"), safe(profile.getPhone()))
+        );
+
+        HBox row3 = new HBox(24,
+                infoCell(I18n.t("select_campus"), safe(profile.getCampus())),
+                infoCell(I18n.t("accept_cross_campus_upper"), profile.isAcceptCrossCampus() ? I18n.t("yes_option") : I18n.t("no_option")),
+                infoCell(I18n.t("academic_year_upper"), profile.getYear() > 0 ? I18n.t("year_label").replace("{n}", String.valueOf(profile.getYear())) : "-")
+        );
+
+        body.getChildren().addAll(row1, row2, row3);
+        card.getChildren().addAll(header, body);
+        return card;
     }
 
     private HBox buildActionColumns(ApplicantProfile profile, ResumeInfo resume, int resumeCompletion) {
@@ -158,61 +221,11 @@ public class MyCvController {
         selectFile.getStyleClass().add("cv-primary-button");
         selectFile.setOnAction(event -> handleUploadCv());
 
-        installCvDropTarget(dropZone, card, dropZone);
-        installCvDropTarget(card, card, dropZone);
-        dropZone.setOnMouseClicked(event -> {
-            if (!selectFile.isHover()) {
-                handleUploadCv();
-            }
-        });
-
         dropContent.getChildren().addAll(uploadIcon, prompt, helper, selectFile);
         dropZone.getChildren().add(dropContent);
 
         card.getChildren().addAll(header, dropZone);
         return card;
-    }
-
-    private void installCvDropTarget(Node target, VBox uploadCard, StackPane visualDropZone) {
-        target.setOnDragOver(event -> {
-            Dragboard db = event.getDragboard();
-            if (event.getGestureSource() != target && db.hasFiles()) {
-                event.acceptTransferModes(TransferMode.COPY);
-                addDragStyle(uploadCard, visualDropZone);
-            }
-            event.consume();
-        });
-
-        target.setOnDragExited(event -> {
-            removeDragStyle(uploadCard, visualDropZone);
-            event.consume();
-        });
-
-        target.setOnDragDropped(event -> {
-            Dragboard db = event.getDragboard();
-            boolean success = false;
-            if (db.hasFiles()) {
-                uploadCvFile(db.getFiles().get(0).toPath());
-                success = true;
-            }
-            event.setDropCompleted(success);
-            removeDragStyle(uploadCard, visualDropZone);
-            event.consume();
-        });
-    }
-
-    private void addDragStyle(VBox uploadCard, StackPane visualDropZone) {
-        if (!uploadCard.getStyleClass().contains("cv-upload-card-dragover")) {
-            uploadCard.getStyleClass().add("cv-upload-card-dragover");
-        }
-        if (!visualDropZone.getStyleClass().contains("cv-upload-zone-dragover")) {
-            visualDropZone.getStyleClass().add("cv-upload-zone-dragover");
-        }
-    }
-
-    private void removeDragStyle(VBox uploadCard, StackPane visualDropZone) {
-        uploadCard.getStyleClass().remove("cv-upload-card-dragover");
-        visualDropZone.getStyleClass().remove("cv-upload-zone-dragover");
     }
 
     private VBox buildStatusCard(ApplicantProfile profile, ResumeInfo resume, int resumeCompletion) {
@@ -348,6 +361,22 @@ public class MyCvController {
         return card;
     }
 
+    private VBox infoCell(String label, String value) {
+        VBox cell = new VBox(4);
+        cell.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(cell, Priority.ALWAYS);
+
+        Label name = new Label(label);
+        name.getStyleClass().add("cv-meta-label");
+
+        Label data = new Label(value);
+        data.getStyleClass().add("cv-meta-value");
+        data.setWrapText(true);
+
+        cell.getChildren().addAll(name, data);
+        return cell;
+    }
+
     private Button stepButton(String text, IconFactory.IconType iconType, Runnable action) {
         Button button = new Button();
         button.getStyleClass().add("cv-step-button");
@@ -390,13 +419,51 @@ public class MyCvController {
     }
 
     private void showProfileEditor() {
-        if (profileController != null) {
-            profileController.enterEditMode();
-        }
+        showEditor(I18n.t("edit_basic_information"), new ApplicantProfileController(services, user).getView());
     }
 
-    private void reloadPage() {
-        initialize();
+    private void showEditor(String titleText, Parent editorView) {
+        editorSection.getChildren().clear();
+        editorSection.setManaged(true);
+        editorSection.setVisible(true);
+
+        HBox header = new HBox();
+        header.setAlignment(Pos.CENTER_LEFT);
+
+        Label title = new Label(titleText);
+        title.getStyleClass().add("section-title");
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        Button close = new Button(I18n.t("cancel"));
+        close.getStyleClass().add("secondary-button");
+        close.setOnAction(event -> hideEditor());
+
+        header.getChildren().addAll(title, spacer, close);
+
+        editorSection.getChildren().addAll(header, editorView);
+        scrollEditorIntoView();
+    }
+
+    private void hideEditor() {
+        editorSection.getChildren().clear();
+        editorSection.setVisible(false);
+        editorSection.setManaged(false);
+    }
+
+    private void scrollEditorIntoView() {
+        Platform.runLater(() -> {
+            if (pageRoot == null || scrollPane.getContent() == null || !editorSection.isVisible()) {
+                return;
+            }
+            Bounds viewportBounds = scrollPane.getViewportBounds();
+            double viewportHeight = viewportBounds == null ? 0 : viewportBounds.getHeight();
+            double contentHeight = pageRoot.getBoundsInLocal().getHeight();
+            double maxScroll = Math.max(1, contentHeight - viewportHeight);
+            double targetY = editorSection.getBoundsInParent().getMinY();
+            scrollPane.setVvalue(Math.max(0, Math.min(1, targetY / maxScroll)));
+        });
     }
 
     private String buildResumeMeta(ResumeInfo resume, int resumeCompletion) {
@@ -445,11 +512,7 @@ public class MyCvController {
         if (selected == null) {
             return;
         }
-        uploadCvFile(selected);
-    }
-
-    private void uploadCvFile(Path filePath) {
-        var result = services.resumeService().uploadCvFile(applicantId, filePath);
+        var result = services.resumeService().uploadCvFile(applicantId, selected);
         if (!result.isValid()) {
             DialogControllerFactory.validationError(String.join("\n", result.getErrors()),
                     view.getScene() == null ? null : view.getScene().getWindow());
@@ -499,6 +562,11 @@ public class MyCvController {
         DialogControllerFactory.success(I18n.t("cv_deleted_label"), I18n.t("uploaded_cv_removed"),
                 view.getScene() == null ? null : view.getScene().getWindow());
         reloadPage();
+    }
+
+    private void reloadPage() {
+        hideEditor();
+        initialize();
     }
 
     private boolean hasUploadedCv(ResumeInfo resume) {

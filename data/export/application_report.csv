@@ -1,4 +1,12 @@
-applicationId,jobId,applicantId,status,matchScore
-APP001,J001,A001,SUBMITTED,82
-APP003,J002,A004,ACCEPTED,90
-APP005,J003,A003,REJECTED,61
+"applicationId","jobId","jobTitle","applicantId","status","matchScore"
+"APP001","J001","TA for EBU6304 - Software Engineering Project Practice","A001","ACCEPTED","--"
+"APP002","J001","TA for EBU6304 - Software Engineering Project Practice","A002","UNDER_REVIEW","--"
+"APP003","J002","Lab Assistant - EBC6106 Embedded Systems and Signal Processing","A004","ACCEPTED","--"
+"APP004","J003","Support Assistant - CBU6208 Data Collection and Experiment Management","A005","UNDER_REVIEW","--"
+"APP005","J004","Workshop Support - EBU6310 AI Literacy Bootcamp","A003","REJECTED","--"
+"APP006","J005","Exam Support - CBU6205 Communication Networks and Professional Practice","A002","UNDER_REVIEW","--"
+"APP007","J017","Project Assistant - EBU6302 Research Methods and Analysis","A001","ACCEPTED","--"
+"APP008","J006","Lab Mentor - CBU6201 IoT Systems Design and Experiment","A001","REJECTED","--"
+"APP009","J008","Workshop Support - EBU6308 Intelligent Science and Design Workshop","A003","UNDER_REVIEW","--"
+"APP010","J020","Tutorial Support - CBU6206 Calculus Tutorial Support","A005","SUBMITTED","--"
+"APP011","J012","Academic Writing Tutor - CBU6204 Academic Writing and Communication","A001","SUBMITTED","--"
