@@ -1,31 +1,91 @@
 [ {
   "notificationId" : "NOT000010",
-  "recipientUserId" : "U102",
+  "recipientUserId" : "U101",
   "type" : "NEW_APPLICATION",
   "title" : "New Application Received",
-  "message" : "Haocheng Gao has applied for \"Tutorial Support - MATH101 Calculus\".",
-  "createdAt" : "2026-05-21T16:18:32.7398057",
-  "relatedJobId" : "J020",
-  "relatedApplicationId" : "APP019",
-  "read" : false
+  "message" : "Alice Chen has applied for \"TA for EBU6304 - Software Engineering Project Practice\".",
+  "createdAt" : "2026-05-24T09:05:00",
+  "relatedJobId" : "J001",
+  "relatedApplicationId" : "APP001",
+  "read" : true
+}, {
+  "notificationId" : "NOT000011",
+  "recipientUserId" : "A001",
+  "type" : "APPLICATION_ACCEPTED",
+  "title" : "Application Accepted",
+  "message" : "Your application for \"Project Assistant - EBU6302 Research Methods and Analysis\" has been accepted by Dr. Zhang.",
+  "createdAt" : "2026-05-24T09:10:00",
+  "relatedJobId" : "J017",
+  "relatedApplicationId" : "APP007",
+  "read" : true
 }, {
   "notificationId" : "NOT000012",
   "recipientUserId" : "A002",
-  "type" : "APPLICATION_REJECTED",
-  "title" : "Application Rejected",
-  "message" : "Your application for \"TA for CS202 - Software Engineering Fundamentals\" has been rejected by U101.",
-  "createdAt" : "2026-05-21T16:26:33.9129992",
-  "relatedJobId" : "J019",
-  "relatedApplicationId" : "APP016",
+  "type" : "APPLICATION_UNDER_REVIEW",
+  "title" : "Application Under Review",
+  "message" : "Your application for \"TA for EBU6304 - Software Engineering Project Practice\" is now under review.",
+  "createdAt" : "2026-05-24T09:12:00",
+  "relatedJobId" : "J001",
+  "relatedApplicationId" : "APP002",
   "read" : false
 }, {
-  "notificationId" : "NOT000014",
+  "notificationId" : "NOT000013",
   "recipientUserId" : "U102",
   "type" : "NEW_APPLICATION",
   "title" : "New Application Received",
-  "message" : "Haocheng Gao has applied for \"Exam Coordinator - Final Week Summer\".",
-  "createdAt" : "2026-05-21T16:30:19.8165007",
-  "relatedJobId" : "J018",
-  "relatedApplicationId" : "APP021",
+  "message" : "Brian Li has applied for \"Exam Support - CBU6205 Communication Networks and Professional Practice\".",
+  "createdAt" : "2026-05-24T09:15:00",
+  "relatedJobId" : "J005",
+  "relatedApplicationId" : "APP006",
   "read" : false
+}, {
+  "notificationId" : "NOT000014",
+  "recipientUserId" : "U101",
+  "type" : "NEW_APPLICATION",
+  "title" : "New Application Received",
+  "message" : "Alice Chen has applied for \"Academic Writing Tutor - CBU6204 Academic Writing and Communication\".",
+  "createdAt" : "2026-05-24T09:30:10.592614",
+  "relatedJobId" : "J012",
+  "relatedApplicationId" : "APP011",
+  "read" : true
+}, {
+  "notificationId" : "NOT000015",
+  "recipientUserId" : "A001",
+  "type" : "APPLICATION_ACCEPTED",
+  "title" : "Application Accepted",
+  "message" : "Your application for \"TA for EBU6304 - Software Engineering Project Practice\" has been accepted by U101.",
+  "createdAt" : "2026-05-24T09:32:42.160748",
+  "relatedJobId" : "J001",
+  "relatedApplicationId" : "APP001",
+  "read" : true
+}, {
+  "notificationId" : "NOT000016",
+  "recipientUserId" : "U101",
+  "type" : "NEW_APPLICATION",
+  "title" : "New Application Received",
+  "message" : "Alice Chen has applied for \"abc\".",
+  "createdAt" : "2026-05-24T10:05:07.874938",
+  "relatedJobId" : "J021",
+  "relatedApplicationId" : "APP012",
+  "read" : false
+}, {
+  "notificationId" : "NOT000017",
+  "recipientUserId" : "A001",
+  "type" : "APPLICATION_REJECTED",
+  "title" : "Application Rejected",
+  "message" : "Your application for \"abc\" has been rejected by U101.",
+  "createdAt" : "2026-05-24T10:08:33.288041",
+  "relatedJobId" : "J021",
+  "relatedApplicationId" : "APP012",
+  "read" : true
+}, {
+  "notificationId" : "NOT000018",
+  "recipientUserId" : "A001",
+  "type" : "APPLICATION_ACCEPTED",
+  "title" : "Application Accepted",
+  "message" : "Your application for \"abc\" has been accepted by U101.",
+  "createdAt" : "2026-05-24T10:08:54.828457",
+  "relatedJobId" : "J021",
+  "relatedApplicationId" : "APP012",
+  "read" : true
 } ]

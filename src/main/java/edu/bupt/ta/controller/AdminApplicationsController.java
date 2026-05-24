@@ -484,8 +484,7 @@ public class AdminApplicationsController {
         emailValue.setText(blankToDash(profile.getEmail()));
         phoneValue.setText(blankToDash(profile.getPhone()));
         matchScoreValue.setText(DisplayPlaceholders.MATCH_VALUE);
-        workloadValue.setText("Current " + application.currentWeeklyHours() + "h/week -> Projected "
-                + application.projectedWeeklyHours() + "h/week (" + application.riskLevel() + ")");
+        workloadValue.setText("Risk " + application.riskLevel());
         statementValue.setText(blankToDash(reviewData.statement()));
         attachmentNameValue.setText(blankToDash(resume.getCvFileName()));
         attachmentMetaValue.setText(buildAttachmentMeta(resume));
@@ -553,7 +552,7 @@ public class AdminApplicationsController {
     private boolean quickAccept(AdminApplicationRowDTO selected, String decisionNote, Stage detailStage) {
         if ("HIGH".equalsIgnoreCase(selected.riskLevel())) {
             DialogControllerFactory.workloadWarning(
-                    "Projected hours: " + selected.projectedWeeklyHours() + "h/week.",
+                    "High risk candidate. Please review carefully.",
                     view.getScene() == null ? null : view.getScene().getWindow());
         }
 

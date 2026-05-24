@@ -1,7 +1,6 @@
 package edu.bupt.ta.controller;
 
 import edu.bupt.ta.dto.MatchExplanationDTO;
-import edu.bupt.ta.dto.AiJobMatchDTO;
 import edu.bupt.ta.enums.ApplicationStatus;
 import edu.bupt.ta.enums.JobStatus;
 import edu.bupt.ta.model.ApplicantProfile;
@@ -17,7 +16,6 @@ import edu.bupt.ta.util.ValidationResult;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
-import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -48,10 +46,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class TADashboardController {
 
@@ -264,7 +259,7 @@ public class TADashboardController {
     }
 
     private HBox buildMainArea() {
-        VBox left = new VBox(18, buildRecentJobsCard(), buildRecommendedCard());
+        VBox left = new VBox(18, buildRecentJobsCard());
         VBox right = new VBox(18, buildQuickActionsCard(), buildDeadlineCard());
 
         HBox.setHgrow(left, Priority.ALWAYS);
@@ -406,38 +401,30 @@ public class TADashboardController {
                 + "-fx-background-color: #6366f1; -fx-background-radius: 999;"
                 + "-fx-padding: 3 10 3 10;");
 
-        Button refreshAi = new Button(I18n.t("ai_refresh_match", "Refresh"));
-        refreshAi.getStyleClass().add("secondary-button");
-        refreshAi.setGraphic(IconFactory.glyph(IconFactory.IconType.REFRESH, 12, Color.web("#6366f1")));
-        refreshAi.setGraphicTextGap(6);
-        refreshAi.setStyle("-fx-font-size: 11px; -fx-font-weight: 700; -fx-padding: 4 10 4 10;");
-
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        header.getChildren().addAll(title, spacer, refreshAi, aiTag);
+        header.getChildren().addAll(title, spacer, aiTag);
         header.setAlignment(Pos.CENTER_LEFT);
 
-        HBox row = buildRecommendationRow(buildLocalRecommendations());
-        refreshAi.setOnAction(event -> refreshAiRecommendations(row, refreshAi));
+        List<Job> recommendedJobs = services.jobService().searchJobs(null).stream()
+                .filter(job -> job.getStatus() == JobStatus.OPEN && job.getDeadline() != null)
+                .sorted(Comparator.comparing(Job::getDeadline))
+                .limit(2)
+                .toList();
 
-        card.getChildren().addAll(header, row);
-        return card;
-    }
-
-    private HBox buildRecommendationRow(List<DashboardRecommendation> recommendations) {
         HBox row = new HBox(14);
         row.setFillHeight(true);
         HBox.setHgrow(row, Priority.ALWAYS);
         row.setMaxWidth(Double.MAX_VALUE);
 
-        if (recommendations.size() >= 2) {
-            VBox card1 = recommendationCard(recommendations.get(0).job(), recommendations.get(0).score());
-            VBox card2 = recommendationCard(recommendations.get(1).job(), recommendations.get(1).score());
+        if (recommendedJobs.size() >= 2) {
+            VBox card1 = recommendationCard(recommendedJobs.get(0), 92);
+            VBox card2 = recommendationCard(recommendedJobs.get(1), 85);
             HBox.setHgrow(card1, Priority.ALWAYS);
             HBox.setHgrow(card2, Priority.ALWAYS);
             row.getChildren().addAll(card1, card2);
-        } else if (recommendations.size() == 1) {
-            VBox card1 = recommendationCard(recommendations.get(0).job(), recommendations.get(0).score());
+        } else if (recommendedJobs.size() == 1) {
+            VBox card1 = recommendationCard(recommendedJobs.get(0), 92);
             VBox card2 = placeholderRecommendCard(87);
             HBox.setHgrow(card1, Priority.ALWAYS);
             HBox.setHgrow(card2, Priority.ALWAYS);
@@ -450,94 +437,8 @@ public class TADashboardController {
             row.getChildren().addAll(card1, card2);
         }
 
-        return row;
-    }
-
-    private void refreshAiRecommendations(HBox row, Button refreshAi) {
-        refreshAi.setDisable(true);
-        refreshAi.setText(I18n.t("ai_matching", "Matching..."));
-
-        Task<List<DashboardRecommendation>> task = new Task<>() {
-            @Override
-            protected List<DashboardRecommendation> call() {
-                List<DashboardRecommendation> recommendations = buildAiRecommendations();
-                return recommendations.isEmpty() ? buildLocalRecommendations() : recommendations;
-            }
-        };
-
-        task.setOnSucceeded(event -> {
-            row.getChildren().setAll(buildRecommendationRow(task.getValue()).getChildren());
-            refreshAi.setText(I18n.t("ai_refresh_match", "Refresh"));
-            refreshAi.setDisable(false);
-        });
-        task.setOnFailed(event -> {
-            row.getChildren().setAll(buildRecommendationRow(buildLocalRecommendations()).getChildren());
-            refreshAi.setText(I18n.t("ai_refresh_match", "Refresh"));
-            refreshAi.setDisable(false);
-        });
-
-        Thread worker = new Thread(task, "deepseek-job-match");
-        worker.setDaemon(true);
-        worker.start();
-    }
-
-    private List<DashboardRecommendation> buildAiRecommendations() {
-        List<Job> openJobs = services.jobService().searchJobs(null).stream()
-                .filter(job -> job.getStatus() == JobStatus.OPEN && job.getDeadline() != null)
-                .sorted(Comparator.comparing(Job::getDeadline, Comparator.nullsLast(Comparator.naturalOrder())))
-                .toList();
-
-        if (openJobs.isEmpty()) {
-            return List.of();
-        }
-
-        List<AiJobMatchDTO> aiMatches = services.deepSeekJobMatchService().rankJobs(profile, resume, openJobs);
-        if (!aiMatches.isEmpty()) {
-            Map<String, Job> jobsById = openJobs.stream()
-                    .collect(Collectors.toMap(Job::getJobId, Function.identity(), (a, b) -> a));
-            List<DashboardRecommendation> aiRecommendations = aiMatches.stream()
-                    .map(match -> {
-                        Job job = jobsById.get(match.jobId());
-                        return job == null ? null : new DashboardRecommendation(job, match.score());
-                    })
-                    .filter(item -> item != null)
-                    .limit(2)
-                    .toList();
-            if (!aiRecommendations.isEmpty()) {
-                return applyDisplayScores(aiRecommendations);
-            }
-        }
-
-        return scoreLocally(openJobs);
-    }
-
-    private List<DashboardRecommendation> buildLocalRecommendations() {
-        List<Job> openJobs = services.jobService().searchJobs(null).stream()
-                .filter(job -> job.getStatus() == JobStatus.OPEN && job.getDeadline() != null)
-                .sorted(Comparator.comparing(Job::getDeadline, Comparator.nullsLast(Comparator.naturalOrder())))
-                .toList();
-        return scoreLocally(openJobs);
-    }
-
-    private List<DashboardRecommendation> scoreLocally(List<Job> openJobs) {
-        return openJobs.stream()
-                .map(job -> new DashboardRecommendation(job, recommendationScore(job)))
-                .sorted(Comparator.comparingInt(DashboardRecommendation::score).reversed())
-                .limit(2)
-                .collect(Collectors.collectingAndThen(Collectors.toList(), this::applyDisplayScores));
-    }
-
-    private List<DashboardRecommendation> applyDisplayScores(List<DashboardRecommendation> rankedRecommendations) {
-        List<DashboardRecommendation> display = new java.util.ArrayList<>();
-        for (int i = 0; i < rankedRecommendations.size(); i++) {
-            DashboardRecommendation recommendation = rankedRecommendations.get(i);
-            display.add(new DashboardRecommendation(recommendation.job(), displayScoreForRank(i)));
-        }
-        return display;
-    }
-
-    private int displayScoreForRank(int rankIndex) {
-        return Math.max(30, 90 - rankIndex * 10);
+        card.getChildren().addAll(header, row);
+        return card;
     }
 
     private VBox placeholderRecommendCard(int matchScore) {
@@ -601,8 +502,8 @@ public class TADashboardController {
         HBox footer = new HBox();
         footer.setAlignment(Pos.CENTER_LEFT);
 
-        Label hours = new Label(job.getWeeklyHours() + I18n.t("hours_per_week"));
-        hours.setStyle("-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #334155;");
+        Label load = new Label(I18n.t("load_label") + " " + job.getWeeklyHours());
+        load.setStyle("-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #334155;");
 
         Label deadline = new Label(I18n.t("deadline_label") + formatDate(job.getDeadline()));
         deadline.setStyle("-fx-font-size: 11px; -fx-font-weight: 400; -fx-text-fill: #94a3b8;");
@@ -613,7 +514,7 @@ public class TADashboardController {
         Label matchRate = new Label(I18n.tl("match_rate_percent", matchScore));
         matchRate.setStyle("-fx-font-size: 12px; -fx-font-weight: 800; -fx-text-fill: #6366f1;");
 
-        footer.getChildren().addAll(hours, spacer, matchRate, deadline);
+        footer.getChildren().addAll(load, spacer, matchRate, deadline);
         box.getChildren().addAll(tag, title, desc, footer);
         return box;
     }
@@ -1004,8 +905,5 @@ public class TADashboardController {
     }
 
     private record JobSummaryRow(Job job, String statusLabel, String statusTone, String actionLabel, boolean primaryAction) {
-    }
-
-    private record DashboardRecommendation(Job job, int score) {
     }
 }

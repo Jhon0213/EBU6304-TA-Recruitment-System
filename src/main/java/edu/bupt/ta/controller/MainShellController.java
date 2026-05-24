@@ -32,6 +32,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
 import java.util.function.Consumer;
 
 public class MainShellController {
@@ -470,7 +471,7 @@ public class MainShellController {
 
         Label timeLabel = new Label();
         String timeText = notification.getCreatedAt() != null
-                ? notification.getCreatedAt().format(DateTimeFormatter.ofPattern("MMM d, HH:mm"))
+                ? notification.getCreatedAt().format(DateTimeFormatter.ofPattern("MMM d, HH:mm", Locale.ENGLISH))
                 : "";
         timeLabel.setText(timeText);
         timeLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #94a3b8;");

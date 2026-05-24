@@ -38,7 +38,6 @@ public class ServiceRegistry {
     private final MatchingService matchingService = new MatchingService(
             resumeInfoRepository, jobRepository, workloadService
     );
-    private final DeepSeekJobMatchService deepSeekJobMatchService = new DeepSeekJobMatchService();
     private final ApplicationService applicationService = new ApplicationService(
             applicationRepository, jobRepository, applicantProfileRepository, resumeInfoRepository,
             auditLogRepository, matchingService
@@ -132,10 +131,6 @@ public class ServiceRegistry {
 
     public MatchingService matchingService() {
         return matchingService;
-    }
-
-    public DeepSeekJobMatchService deepSeekJobMatchService() {
-        return deepSeekJobMatchService;
     }
 
     public AdminMonitoringService adminMonitoringService() {

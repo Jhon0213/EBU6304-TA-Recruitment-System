@@ -68,7 +68,7 @@ public class HelpCenterController {
         document.setStyle(
                 "-fx-font-size: 14px; " +
                 "-fx-text-fill: #334155; " +
-                "-fx-font-family: 'Segoe UI', sans-serif; " +
+                "-fx-font-family: 'PingFang SC', 'Inter', 'Noto Sans SC', sans-serif; " +
                 "-fx-background-color: #ffffff; " +
                 "-fx-border-color: #e2e8f0; " +
                 "-fx-border-radius: 12; " +
@@ -76,7 +76,7 @@ public class HelpCenterController {
                 "-fx-padding: 20; " +
                 "-fx-control-inner-background: #ffffff;"
         );
-        document.setFont(Font.font("Segoe UI", 14));
+        document.setFont(Font.font("PingFang SC", 14));
 
         VBox container = new VBox(24, heading, document);
         container.setFillWidth(true);

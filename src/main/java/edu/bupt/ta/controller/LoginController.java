@@ -158,7 +158,7 @@ public class LoginController {
 
         VBox titleBlock = new VBox(8, heading, subtitle);
 
-        Label userLabel = new Label(I18n.t("university_id"));
+        Label userLabel = new Label(I18n.t("login_username"));
         userLabel.getStyleClass().add("login-field-label");
         usernameField.setPromptText(I18n.t("eg_2023211000"));
         usernameField.getStyleClass().add("login-input-field");
