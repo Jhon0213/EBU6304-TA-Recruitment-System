@@ -504,7 +504,7 @@ public class TADashboardController {
                     .limit(2)
                     .toList();
             if (!aiRecommendations.isEmpty()) {
-                return aiRecommendations;
+                return applyDisplayScores(aiRecommendations);
             }
         }
 
@@ -524,7 +524,20 @@ public class TADashboardController {
                 .map(job -> new DashboardRecommendation(job, recommendationScore(job)))
                 .sorted(Comparator.comparingInt(DashboardRecommendation::score).reversed())
                 .limit(2)
-                .toList();
+                .collect(Collectors.collectingAndThen(Collectors.toList(), this::applyDisplayScores));
+    }
+
+    private List<DashboardRecommendation> applyDisplayScores(List<DashboardRecommendation> rankedRecommendations) {
+        List<DashboardRecommendation> display = new java.util.ArrayList<>();
+        for (int i = 0; i < rankedRecommendations.size(); i++) {
+            DashboardRecommendation recommendation = rankedRecommendations.get(i);
+            display.add(new DashboardRecommendation(recommendation.job(), displayScoreForRank(i)));
+        }
+        return display;
+    }
+
+    private int displayScoreForRank(int rankIndex) {
+        return Math.max(30, 90 - rankIndex * 10);
     }
 
     private VBox placeholderRecommendCard(int matchScore) {
