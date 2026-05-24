@@ -172,8 +172,8 @@ public class MyCvController {
         selectFile.getStyleClass().add("cv-primary-button");
         selectFile.setOnAction(event -> handleUploadCv());
 
-        installCvDropTarget(dropZone, dropZone);
-        installCvDropTarget(card, dropZone);
+        installCvDropTarget(dropZone, card, dropZone);
+        installCvDropTarget(card, card, dropZone);
         dropZone.setOnMouseClicked(event -> {
             if (!selectFile.isHover()) {
                 handleUploadCv();
@@ -187,20 +187,18 @@ public class MyCvController {
         return card;
     }
 
-    private void installCvDropTarget(Node target, StackPane visualDropZone) {
+    private void installCvDropTarget(Node target, VBox uploadCard, StackPane visualDropZone) {
         target.setOnDragOver(event -> {
             Dragboard db = event.getDragboard();
             if (event.getGestureSource() != target && db.hasFiles()) {
                 event.acceptTransferModes(TransferMode.COPY);
-                if (!visualDropZone.getStyleClass().contains("cv-upload-zone-dragover")) {
-                    visualDropZone.getStyleClass().add("cv-upload-zone-dragover");
-                }
+                addDragStyle(uploadCard, visualDropZone);
             }
             event.consume();
         });
 
         target.setOnDragExited(event -> {
-            visualDropZone.getStyleClass().remove("cv-upload-zone-dragover");
+            removeDragStyle(uploadCard, visualDropZone);
             event.consume();
         });
 
@@ -212,9 +210,23 @@ public class MyCvController {
                 success = true;
             }
             event.setDropCompleted(success);
-            visualDropZone.getStyleClass().remove("cv-upload-zone-dragover");
+            removeDragStyle(uploadCard, visualDropZone);
             event.consume();
         });
+    }
+
+    private void addDragStyle(VBox uploadCard, StackPane visualDropZone) {
+        if (!uploadCard.getStyleClass().contains("cv-upload-card-dragover")) {
+            uploadCard.getStyleClass().add("cv-upload-card-dragover");
+        }
+        if (!visualDropZone.getStyleClass().contains("cv-upload-zone-dragover")) {
+            visualDropZone.getStyleClass().add("cv-upload-zone-dragover");
+        }
+    }
+
+    private void removeDragStyle(VBox uploadCard, StackPane visualDropZone) {
+        uploadCard.getStyleClass().remove("cv-upload-card-dragover");
+        visualDropZone.getStyleClass().remove("cv-upload-zone-dragover");
     }
 
     private VBox buildStatusCard(ApplicantProfile profile, ResumeInfo resume, int resumeCompletion) {
