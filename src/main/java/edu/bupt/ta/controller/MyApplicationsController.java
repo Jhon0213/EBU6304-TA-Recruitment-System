@@ -30,6 +30,7 @@ import javafx.stage.Stage;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -79,10 +80,10 @@ public class MyApplicationsController {
 
     private Consumer<Job> onViewJobDetails;
 
-    private static final DateTimeFormatter CARD_APPLY_DATE = DateTimeFormatter.ofPattern("MMM dd");
-    private static final DateTimeFormatter STAGE_DATE = DateTimeFormatter.ofPattern("MMM dd, yyyy");
-    private static final DateTimeFormatter FEEDBACK_TIME = DateTimeFormatter.ofPattern("MMM dd, HH:mm");
-    private static final DateTimeFormatter TIMELINE_TIME = DateTimeFormatter.ofPattern("MMM dd, yyyy · h:mm a");
+    private static final DateTimeFormatter CARD_APPLY_DATE = DateTimeFormatter.ofPattern("MMM dd", Locale.ENGLISH);
+    private static final DateTimeFormatter STAGE_DATE = DateTimeFormatter.ofPattern("MMM dd, yyyy", Locale.ENGLISH);
+    private static final DateTimeFormatter FEEDBACK_TIME = DateTimeFormatter.ofPattern("MMM dd, HH:mm", Locale.ENGLISH);
+    private static final DateTimeFormatter TIMELINE_TIME = DateTimeFormatter.ofPattern("MMM dd, yyyy · h:mm a", Locale.ENGLISH);
     private static final double CARD_RIGHT_INFO_WIDTH = 166;
 
     private final Button viewJobButton = new Button(I18n.t("view_job_details"));
