@@ -1,6 +1,7 @@
 package edu.bupt.ta.controller;
 
 import edu.bupt.ta.dto.MatchExplanationDTO;
+import edu.bupt.ta.dto.AiJobMatchDTO;
 import edu.bupt.ta.enums.ApplicationStatus;
 import edu.bupt.ta.enums.JobStatus;
 import edu.bupt.ta.model.ApplicantProfile;
@@ -13,9 +14,11 @@ import edu.bupt.ta.service.ServiceRegistry;
 import edu.bupt.ta.ui.IconFactory;
 import edu.bupt.ta.util.I18n;
 import edu.bupt.ta.util.ValidationResult;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
+import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -46,11 +49,15 @@ import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class TADashboardController {
 
     private static final DateTimeFormatter DEADLINE_FORMAT = DateTimeFormatter.ofPattern("dd MMM", Locale.ENGLISH);
+    private static final DateTimeFormatter RECOMMENDATION_DEADLINE_FORMAT = DateTimeFormatter.ofPattern("MMM dd, yyyy", Locale.ENGLISH);
 
     private final ServiceRegistry services;
     private final User user;
@@ -259,7 +266,7 @@ public class TADashboardController {
     }
 
     private HBox buildMainArea() {
-        VBox left = new VBox(18, buildRecentJobsCard());
+        VBox left = new VBox(18, buildRecentJobsCard(), buildRecommendedCard());
         VBox right = new VBox(18, buildQuickActionsCard(), buildDeadlineCard());
 
         HBox.setHgrow(left, Priority.ALWAYS);
@@ -401,44 +408,156 @@ public class TADashboardController {
                 + "-fx-background-color: #6366f1; -fx-background-radius: 999;"
                 + "-fx-padding: 3 10 3 10;");
 
+        Button refreshAi = new Button(I18n.t("ai_refresh_match", "Refresh"));
+        refreshAi.getStyleClass().add("secondary-button");
+        refreshAi.setGraphic(IconFactory.glyph(IconFactory.IconType.REFRESH, 12, Color.web("#6366f1")));
+        refreshAi.setGraphicTextGap(6);
+        refreshAi.setStyle("-fx-font-size: 11px; -fx-font-weight: 700; -fx-padding: 4 10 4 10;");
+
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        header.getChildren().addAll(title, spacer, aiTag);
+        header.getChildren().addAll(title, spacer, refreshAi, aiTag);
         header.setAlignment(Pos.CENTER_LEFT);
 
-        List<Job> recommendedJobs = services.jobService().searchJobs(null).stream()
-                .filter(job -> job.getStatus() == JobStatus.OPEN && job.getDeadline() != null)
-                .sorted(Comparator.comparing(Job::getDeadline))
-                .limit(2)
-                .toList();
+        HBox row = buildRecommendationRow(buildLocalRecommendations());
+        refreshAi.setOnAction(event -> refreshAiRecommendations(row, refreshAi));
 
+        card.getChildren().addAll(header, row);
+        return card;
+    }
+
+    private HBox buildRecommendationRow(List<DashboardRecommendation> recommendations) {
         HBox row = new HBox(14);
         row.setFillHeight(true);
         HBox.setHgrow(row, Priority.ALWAYS);
         row.setMaxWidth(Double.MAX_VALUE);
 
-        if (recommendedJobs.size() >= 2) {
-            VBox card1 = recommendationCard(recommendedJobs.get(0), 92);
-            VBox card2 = recommendationCard(recommendedJobs.get(1), 85);
+        if (recommendations.size() >= 2) {
+            VBox card1 = recommendationCard(recommendations.get(0).job(), recommendations.get(0).score());
+            VBox card2 = recommendationCard(recommendations.get(1).job(), recommendations.get(1).score());
             HBox.setHgrow(card1, Priority.ALWAYS);
             HBox.setHgrow(card2, Priority.ALWAYS);
             row.getChildren().addAll(card1, card2);
-        } else if (recommendedJobs.size() == 1) {
-            VBox card1 = recommendationCard(recommendedJobs.get(0), 92);
+            bindEqualRecommendationWidths(row, card1, card2);
+        } else if (recommendations.size() == 1) {
+            VBox card1 = recommendationCard(recommendations.get(0).job(), recommendations.get(0).score());
             VBox card2 = placeholderRecommendCard(87);
             HBox.setHgrow(card1, Priority.ALWAYS);
             HBox.setHgrow(card2, Priority.ALWAYS);
             row.getChildren().addAll(card1, card2);
+            bindEqualRecommendationWidths(row, card1, card2);
         } else {
             VBox card1 = placeholderRecommendCard(90);
             VBox card2 = placeholderRecommendCard(83);
             HBox.setHgrow(card1, Priority.ALWAYS);
             HBox.setHgrow(card2, Priority.ALWAYS);
             row.getChildren().addAll(card1, card2);
+            bindEqualRecommendationWidths(row, card1, card2);
         }
 
-        card.getChildren().addAll(header, row);
-        return card;
+        return row;
+    }
+
+    private void bindEqualRecommendationWidths(HBox row, Region first, Region second) {
+        var cardWidth = Bindings.createDoubleBinding(
+                () -> Math.max(0, row.getWidth() - row.getSpacing()) / 2.0,
+                row.widthProperty()
+        );
+        bindRecommendationWidth(first, cardWidth);
+        bindRecommendationWidth(second, cardWidth);
+    }
+
+    private void bindRecommendationWidth(Region card, javafx.beans.binding.DoubleBinding widthBinding) {
+        card.setMinWidth(0);
+        card.setMaxWidth(Double.MAX_VALUE);
+        card.prefWidthProperty().bind(widthBinding);
+    }
+
+    private void refreshAiRecommendations(HBox row, Button refreshAi) {
+        refreshAi.setDisable(true);
+        refreshAi.setText(I18n.t("ai_matching", "Matching..."));
+
+        Task<List<DashboardRecommendation>> task = new Task<>() {
+            @Override
+            protected List<DashboardRecommendation> call() {
+                List<DashboardRecommendation> recommendations = buildAiRecommendations();
+                return recommendations.isEmpty() ? buildLocalRecommendations() : recommendations;
+            }
+        };
+
+        task.setOnSucceeded(event -> {
+            row.getChildren().setAll(buildRecommendationRow(task.getValue()).getChildren());
+            refreshAi.setText(I18n.t("ai_refresh_match", "Refresh"));
+            refreshAi.setDisable(false);
+        });
+        task.setOnFailed(event -> {
+            row.getChildren().setAll(buildRecommendationRow(buildLocalRecommendations()).getChildren());
+            refreshAi.setText(I18n.t("ai_refresh_match", "Refresh"));
+            refreshAi.setDisable(false);
+        });
+
+        Thread worker = new Thread(task, "deepseek-job-match");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    private List<DashboardRecommendation> buildAiRecommendations() {
+        List<Job> openJobs = services.jobService().searchJobs(null).stream()
+                .filter(job -> job.getStatus() == JobStatus.OPEN && job.getDeadline() != null)
+                .sorted(Comparator.comparing(Job::getDeadline, Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
+
+        if (openJobs.isEmpty()) {
+            return List.of();
+        }
+
+        List<AiJobMatchDTO> aiMatches = services.deepSeekJobMatchService().rankJobs(profile, resume, openJobs);
+        if (!aiMatches.isEmpty()) {
+            Map<String, Job> jobsById = openJobs.stream()
+                    .collect(Collectors.toMap(Job::getJobId, Function.identity(), (a, b) -> a));
+            List<DashboardRecommendation> aiRecommendations = aiMatches.stream()
+                    .map(match -> {
+                        Job job = jobsById.get(match.jobId());
+                        return job == null ? null : new DashboardRecommendation(job, match.score());
+                    })
+                    .filter(item -> item != null)
+                    .limit(2)
+                    .toList();
+            if (!aiRecommendations.isEmpty()) {
+                return applyDisplayScores(aiRecommendations);
+            }
+        }
+
+        return scoreLocally(openJobs);
+    }
+
+    private List<DashboardRecommendation> buildLocalRecommendations() {
+        List<Job> openJobs = services.jobService().searchJobs(null).stream()
+                .filter(job -> job.getStatus() == JobStatus.OPEN && job.getDeadline() != null)
+                .sorted(Comparator.comparing(Job::getDeadline, Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
+        return scoreLocally(openJobs);
+    }
+
+    private List<DashboardRecommendation> scoreLocally(List<Job> openJobs) {
+        return openJobs.stream()
+                .map(job -> new DashboardRecommendation(job, recommendationScore(job)))
+                .sorted(Comparator.comparingInt(DashboardRecommendation::score).reversed())
+                .limit(2)
+                .collect(Collectors.collectingAndThen(Collectors.toList(), this::applyDisplayScores));
+    }
+
+    private List<DashboardRecommendation> applyDisplayScores(List<DashboardRecommendation> rankedRecommendations) {
+        List<DashboardRecommendation> display = new java.util.ArrayList<>();
+        for (int i = 0; i < rankedRecommendations.size(); i++) {
+            DashboardRecommendation recommendation = rankedRecommendations.get(i);
+            display.add(new DashboardRecommendation(recommendation.job(), displayScoreForRank(i)));
+        }
+        return display;
+    }
+
+    private int displayScoreForRank(int rankIndex) {
+        return Math.max(30, 90 - rankIndex * 10);
     }
 
     private VBox placeholderRecommendCard(int matchScore) {
@@ -453,11 +572,18 @@ public class TADashboardController {
         Region descBar1 = skeletonBar(Double.MAX_VALUE, 10);
         Region descBar2 = skeletonBar(Double.MAX_VALUE, 10);
         Region descBar3 = skeletonBar(120, 10);
-        Region hoursBar = skeletonBar(60, 10);
-        Region deadlineBar = skeletonBar(80, 10);
+        Region hoursIconBar = skeletonBar(14, 14);
+        Region hoursBar = skeletonBar(72, 10);
+        Region matchBar = skeletonBar(54, 10);
+        Region deadlineIconBar = skeletonBar(14, 14);
+        Region deadlineBar = skeletonBar(96, 10);
         Region footerSpacer = new Region();
         HBox.setHgrow(footerSpacer, Priority.ALWAYS);
-        HBox footer = new HBox(hoursBar, footerSpacer, deadlineBar);
+        HBox hoursGroup = new HBox(6, hoursIconBar, hoursBar);
+        hoursGroup.setAlignment(Pos.CENTER_LEFT);
+        HBox deadlineGroup = new HBox(6, deadlineIconBar, deadlineBar);
+        deadlineGroup.setAlignment(Pos.CENTER_LEFT);
+        HBox footer = new HBox(8, hoursGroup, footerSpacer, matchBar, deadlineGroup);
         footer.setAlignment(Pos.CENTER_LEFT);
 
         box.getChildren().addAll(tagBar, titleBar1, titleBar2, descBar1, descBar2, descBar3, footer);
@@ -499,14 +625,17 @@ public class TADashboardController {
         desc.setMaxWidth(Double.MAX_VALUE);
         desc.setStyle("-fx-font-size: 12px; -fx-font-weight: 400; -fx-text-fill: #64748b;");
 
-        HBox footer = new HBox();
+        HBox footer = new HBox(8);
         footer.setAlignment(Pos.CENTER_LEFT);
 
-        Label load = new Label(I18n.t("load_label") + " " + job.getWeeklyHours());
-        load.setStyle("-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #334155;");
-
-        Label deadline = new Label(I18n.t("deadline_label") + formatDate(job.getDeadline()));
-        deadline.setStyle("-fx-font-size: 11px; -fx-font-weight: 400; -fx-text-fill: #94a3b8;");
+        HBox hoursGroup = footerMetaGroup(
+                IconFactory.IconType.BRIEFCASE,
+                job.getWeeklyHours() + I18n.t("hours_per_week")
+        );
+        HBox deadlineGroup = footerMetaGroup(
+                IconFactory.IconType.CALENDAR,
+                formatRecommendationDeadline(job.getDeadline())
+        );
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -514,9 +643,25 @@ public class TADashboardController {
         Label matchRate = new Label(I18n.tl("match_rate_percent", matchScore));
         matchRate.setStyle("-fx-font-size: 12px; -fx-font-weight: 800; -fx-text-fill: #6366f1;");
 
-        footer.getChildren().addAll(load, spacer, matchRate, deadline);
+        footer.getChildren().addAll(hoursGroup, spacer, matchRate, deadlineGroup);
         box.getChildren().addAll(tag, title, desc, footer);
         return box;
+    }
+
+    private HBox footerMetaGroup(IconFactory.IconType iconType, String text) {
+        HBox group = new HBox(6);
+        group.setAlignment(Pos.CENTER_LEFT);
+        group.getChildren().addAll(
+                IconFactory.glyph(iconType, 13, Color.web("#94a3b8")),
+                footerMetaLabel(text)
+        );
+        return group;
+    }
+
+    private Label footerMetaLabel(String text) {
+        Label label = new Label(text);
+        label.setStyle("-fx-font-size: 12px; -fx-font-weight: 600; -fx-text-fill: #94a3b8;");
+        return label;
     }
 
     private VBox buildQuickActionsCard() {
@@ -890,6 +1035,10 @@ public class TADashboardController {
         return dateTime == null ? "-" : dateTime.format(DEADLINE_FORMAT).toUpperCase(Locale.ROOT);
     }
 
+    private String formatRecommendationDeadline(LocalDateTime dateTime) {
+        return dateTime == null ? "-" : dateTime.format(RECOMMENDATION_DEADLINE_FORMAT);
+    }
+
     private String fallback(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value;
     }
@@ -905,5 +1054,8 @@ public class TADashboardController {
     }
 
     private record JobSummaryRow(Job job, String statusLabel, String statusTone, String actionLabel, boolean primaryAction) {
+    }
+
+    private record DashboardRecommendation(Job job, int score) {
     }
 }

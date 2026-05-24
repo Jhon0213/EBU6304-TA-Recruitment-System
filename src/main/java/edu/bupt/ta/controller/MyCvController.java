@@ -34,11 +34,12 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import java.util.Locale;
 import javafx.stage.FileChooser;
 
 public class MyCvController {
 
-    private static final DateTimeFormatter UPDATED_FORMAT = DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm");
+    private static final DateTimeFormatter UPDATED_FORMAT = DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm", Locale.ENGLISH);
 
     private final ServiceRegistry services;
     private final User user;

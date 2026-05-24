@@ -29,6 +29,7 @@ import javafx.scene.paint.Color;
 import java.awt.Desktop;
 import java.nio.file.Path;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.Optional;
 
 public class ApplicantReviewController {
@@ -340,7 +341,7 @@ public class ApplicantReviewController {
         String metaText = hasCv
                 ? readableSize(resume.getCvFileSizeBytes()) + "  ·  Uploaded "
                   + (resume.getCvUploadedAt() != null
-                        ? resume.getCvUploadedAt().format(DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm"))
+                        ? resume.getCvUploadedAt().format(DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm", Locale.ENGLISH))
                         : "Unknown date")
                 : I18n.t("no_cv_msg");
         Label fileSub = labelStyle(metaText, "-fx-font-size: 11px; -fx-text-fill: #64748b;");

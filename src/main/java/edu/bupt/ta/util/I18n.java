@@ -2,6 +2,8 @@ package edu.bupt.ta.util;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Locale;
+import java.util.Set;
 import java.util.function.Consumer;
 
 public final class I18n {
@@ -11,6 +13,7 @@ public final class I18n {
 
     private static String currentLanguage = EN;
     private static final Map<String, Map<String, String>> translations = new HashMap<>();
+    private static final Set<String> HUMANIZED_ACRONYMS = Set.of("ai", "cv", "id", "mo", "ta");
     private static Consumer<String> onLanguageChange;
 
     private I18n() {
@@ -35,14 +38,19 @@ public final class I18n {
         if (translations.isEmpty()) {
             initTranslations();
         }
-        return translations.getOrDefault(currentLanguage, translations.get(EN)).getOrDefault(key, key);
+        String translated = lookupTranslation(key);
+        return translated != null ? translated : humanizeKey(key);
     }
 
     public static String t(String key, String defaultVal) {
         if (translations.isEmpty()) {
             initTranslations();
         }
-        return translations.getOrDefault(currentLanguage, translations.get(EN)).getOrDefault(key, defaultVal);
+        String translated = lookupTranslation(key);
+        if (translated != null) {
+            return translated;
+        }
+        return defaultVal == null || defaultVal.isBlank() ? humanizeKey(key) : defaultVal;
     }
 
     public static String t(String key, String placeholder, String replacement) {
@@ -79,6 +87,51 @@ public final class I18n {
 
     public static String tl(String key, int v1, long v2, int v3) {
         return t(key).replace("{n1}", String.valueOf(v1)).replace("{n2}", String.valueOf(v2)).replace("{n3}", String.valueOf(v3));
+    }
+
+    private static String lookupTranslation(String key) {
+        Map<String, String> current = translations.getOrDefault(currentLanguage, translations.get(EN));
+        if (current != null) {
+            String translated = current.get(key);
+            if (translated != null) {
+                return translated;
+            }
+        }
+
+        Map<String, String> english = translations.get(EN);
+        if (english != null) {
+            return english.get(key);
+        }
+        return null;
+    }
+
+    private static String humanizeKey(String key) {
+        if (key == null || key.isBlank()) {
+            return "";
+        }
+
+        StringBuilder result = new StringBuilder();
+        for (String part : key.trim().replace('-', ' ').replace('_', ' ').split("\\s+")) {
+            if (part.isBlank()) {
+                continue;
+            }
+
+            if (result.length() > 0) {
+                result.append(' ');
+            }
+
+            String lower = part.toLowerCase(Locale.ROOT);
+            if (HUMANIZED_ACRONYMS.contains(lower)) {
+                result.append(lower.toUpperCase(Locale.ROOT));
+                continue;
+            }
+
+            result.append(Character.toUpperCase(lower.charAt(0)));
+            if (lower.length() > 1) {
+                result.append(lower.substring(1));
+            }
+        }
+        return result.toString();
     }
 
     public static void initTranslations() {
@@ -248,7 +301,7 @@ public final class I18n {
         put(en, zh, "recommended_for_you", "Recommended for You", "为您推荐");
         put(en, zh, "ai_auto_match", "AI Auto Match", "AI 自动匹配");
         put(en, zh, "recommended_skill_match", "Recommended based on your skills and workload", "根据您的技能和工作量推荐");
-        put(en, zh, "hours_per_week", "", "");
+        put(en, zh, "hours_per_week", " hrs/wk", " 小时/周");
         put(en, zh, "deadline_label", "Deadline: ", "截止日期：");
         put(en, zh, "match_rate_percent", "{n}% Match", "{n}% 匹配度");
         put(en, zh, "quick_actions", "Quick Actions", "快捷操作");
