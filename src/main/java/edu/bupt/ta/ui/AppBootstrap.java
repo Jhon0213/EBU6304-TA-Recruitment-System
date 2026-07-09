@@ -27,6 +27,8 @@ public class AppBootstrap {
     private final ServiceRegistry services = new ServiceRegistry();
     private final StackPane root = new StackPane();
 
+    private String storedUsername;
+
     public Scene createInitialScene() {
         loadBundledFonts();
         loadUserSettings();
@@ -36,6 +38,19 @@ public class AppBootstrap {
         applyFontSize(scene);
         Platform.runLater(() -> resizeWindow(LOGIN_WIDTH, LOGIN_HEIGHT, LOGIN_MIN_WIDTH, LOGIN_MIN_HEIGHT));
         return scene;
+    }
+
+    public void reloadWithLanguageChange(String username) {
+        this.storedUsername = username;
+        showLogin();
+        Platform.runLater(() -> {
+            if (root.getScene() != null) {
+                applyFontSize(root.getScene());
+                resizeWindow(LOGIN_WIDTH, LOGIN_HEIGHT, LOGIN_MIN_WIDTH, LOGIN_MIN_HEIGHT);
+                LoginController loginController = new LoginController(services, this::showMainShell);
+                loginController.prefillUsername(username);
+            }
+        });
     }
 
     private void loadBundledFonts() {
@@ -82,7 +97,7 @@ public class AppBootstrap {
         MainShellController shellController = new MainShellController(services, user, () -> {
             services.authenticationService().logout();
             showLogin();
-        });
+        }, this);
         root.getChildren().setAll(shellController.getView());
         if (root.getScene() != null) {
             applyFontSize(root.getScene());

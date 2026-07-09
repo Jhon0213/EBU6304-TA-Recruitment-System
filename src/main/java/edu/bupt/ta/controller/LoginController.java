@@ -65,6 +65,11 @@ public class LoginController {
         return view;
     }
 
+    public void prefillUsername(String username) {
+        usernameField.setText(username);
+        passwordField.requestFocus();
+    }
+
     private void initialize() {
         view.getStyleClass().add("login-root");
 

@@ -20,11 +20,14 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
+import java.util.function.Consumer;
+
 public class SettingsController {
 
     private final ServiceRegistry services;
     private final User user;
     private final Stage ownerStage;
+    private final Consumer<String> onLanguageChangeRequest;
 
     private final BorderPane view = new BorderPane();
     private PasswordField currentPasswordField;
@@ -35,11 +38,13 @@ public class SettingsController {
     private RadioButton langZh;
 
     private boolean isZh;
+    private String pendingLanguage;
 
-    public SettingsController(ServiceRegistry services, User user, Stage ownerStage) {
+    public SettingsController(ServiceRegistry services, User user, Stage ownerStage, Consumer<String> onLanguageChangeRequest) {
         this.services = services;
         this.user = user;
         this.ownerStage = ownerStage;
+        this.onLanguageChangeRequest = onLanguageChangeRequest;
         I18n.initTranslations();
         isZh = I18n.getLanguage().equals(I18n.ZH);
         initialize();
@@ -119,25 +124,73 @@ public class SettingsController {
 
         langEn.setOnAction(e -> {
             if (!isZh) return;
-            UserSettings settings = services.userSettingsRepository().getOrCreateGlobal();
-            settings.setLanguage(I18n.EN);
-            services.userSettingsRepository().save(settings);
-            isZh = false;
-            I18n.setLanguage(I18n.EN);
+            pendingLanguage = I18n.EN;
+            showLanguageChangeConfirmDialog();
         });
 
         langZh.setOnAction(e -> {
             if (isZh) return;
-            UserSettings settings = services.userSettingsRepository().getOrCreateGlobal();
-            settings.setLanguage(I18n.ZH);
-            services.userSettingsRepository().save(settings);
-            isZh = true;
-            I18n.setLanguage(I18n.ZH);
+            pendingLanguage = I18n.ZH;
+            showLanguageChangeConfirmDialog();
         });
 
         options.getChildren().addAll(langEn, langZh);
         card.getChildren().addAll(title, options);
         return card;
+    }
+
+    private void showLanguageChangeConfirmDialog() {
+        Stage dialog = new Stage();
+        dialog.setTitle(I18n.t("language_change_title"));
+        dialog.initOwner(ownerStage);
+        dialog.initModality(Modality.APPLICATION_MODAL);
+
+        Label message = new Label(I18n.t("language_change_confirm"));
+        message.setStyle("-fx-font-size: 14px; -fx-text-fill: #334155; -fx-wrap-text: true;");
+        message.setMaxWidth(340);
+
+        Button yesBtn = new Button(I18n.t("yes_option"));
+        yesBtn.setStyle("-fx-background-color: #0f172a; -fx-text-fill: #ffffff; -fx-font-size: 13px; -fx-font-weight: 600; -fx-padding: 8 24; -fx-background-radius: 8; -fx-cursor: hand;");
+
+        Button noBtn = new Button(I18n.t("no_option"));
+        noBtn.setStyle("-fx-background-color: #e2e8f0; -fx-text-fill: #334155; -fx-font-size: 13px; -fx-font-weight: 600; -fx-padding: 8 24; -fx-background-radius: 8; -fx-cursor: hand;");
+
+        HBox buttonRow = new HBox(12);
+        buttonRow.setAlignment(Pos.CENTER_RIGHT);
+        buttonRow.getChildren().addAll(yesBtn, noBtn);
+
+        VBox root = new VBox(20);
+        root.setPadding(new Insets(24));
+        root.setStyle("-fx-background-color: #ffffff;");
+        root.setPrefWidth(400);
+        root.getChildren().addAll(message, buttonRow);
+
+        yesBtn.setOnAction(e -> {
+            dialog.close();
+            if (pendingLanguage != null) {
+                UserSettings settings = services.userSettingsRepository().getOrCreateGlobal();
+                settings.setLanguage(pendingLanguage);
+                services.userSettingsRepository().save(settings);
+                I18n.setLanguage(pendingLanguage);
+                isZh = pendingLanguage.equals(I18n.ZH);
+                if (onLanguageChangeRequest != null) {
+                    onLanguageChangeRequest.accept(pendingLanguage);
+                }
+            }
+        });
+
+        noBtn.setOnAction(e -> {
+            dialog.close();
+            // Restore radio button selection
+            if (isZh) {
+                langZh.setSelected(true);
+            } else {
+                langEn.setSelected(true);
+            }
+        });
+
+        dialog.setScene(new javafx.scene.Scene(root, 400, 160));
+        dialog.showAndWait();
     }
 
     private VBox buildUsernameSection() {
